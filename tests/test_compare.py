@@ -27,6 +27,8 @@ from fpcompat.compare import (
     RELAXATIONS,
     Rules,
     Tolerance,
+    _arrow_sort_key,
+    _sort_key,
     canonical_type,
     check_error,
     check_warnings,
@@ -411,6 +413,100 @@ def test_row_order_sorts_everything():
     left = pd.DataFrame({"a": [3, 1, 2]})
     rules = Rules(relaxations=frozenset({"row_order"}), reason="pandas documents this as undefined")
     assert compare(left, left.sort_values("a").reset_index(drop=True), rules)
+
+
+# ---------------------------------------------------------------------------
+# The two ways of computing the permutation
+# ---------------------------------------------------------------------------
+#
+# Arrow sorts almost everything and the interpreter sorts what is left. The tests
+# below are about the seam between the two, which is the only place this can go
+# wrong: two permutations produced by two different rules disagree about equal data.
+
+
+ORDER = Rules(relaxations=frozenset({"row_order"}), reason="a test")
+
+
+def test_arrow_refuses_a_dictionary_column_and_says_so_rather_than_raising():
+    table = pa.table({"k": pa.array(["b", "a"]).dictionary_encode()})
+    assert _arrow_sort_key(table, ["k"]) is None
+
+
+def test_arrow_refuses_a_nested_column():
+    table = pa.table({"k": pa.array([[1, 2], [3]])})
+    assert _arrow_sort_key(table, ["k"]) is None
+
+
+def test_arrow_takes_the_ordinary_columns():
+    table = pa.table({"a": [3, 1, 2]})
+    assert list(_arrow_sort_key(table, ["a"])) == [1, 2, 0]
+
+
+def test_the_two_sorts_agree_on_which_rows_pair_up():
+    """Not on the order they produce, which they genuinely disagree about, because one
+    of them compares 10 against 9 as strings. What has to hold is that a table and a
+    permutation of it end up paired the same way under either rule."""
+    table = pa.table({"a": [9, 10, 1, None, 2]})
+    shuffled = table.take([3, 1, 4, 0, 2])
+    arrow = [
+        table.take(pa.array(_arrow_sort_key(table, ["a"]))),
+        shuffled.take(pa.array(_arrow_sort_key(shuffled, ["a"]))),
+    ]
+    rendered = [
+        table.take(pa.array(_sort_key(table, ["a"]))),
+        shuffled.take(pa.array(_sort_key(shuffled, ["a"]))),
+    ]
+    assert arrow[0].equals(arrow[1])
+    assert rendered[0].equals(rendered[1])
+
+
+def test_a_dictionary_key_column_still_compares_under_the_relaxation():
+    """The case the fallback exists for. A categorical group key arrives dictionary
+    encoded, Arrow will not sort it, and the comparison has to work anyway."""
+    frame = pd.DataFrame({"k": pd.Categorical(["b", "a", "c"]), "v": [1, 2, 3]})
+    grouped = frame.groupby("k", observed=True).sum()
+    assert compare(grouped, grouped.iloc[[2, 0, 1]], RELAXED)
+
+
+def test_a_nested_column_still_compares_under_the_relaxation():
+    frame = pd.DataFrame({"a": [[1, 2], [3], [4, 5]], "b": [1, 2, 3]})
+    assert compare(frame, frame.iloc[::-1].reset_index(drop=True), ORDER)
+
+
+def test_nulls_in_a_key_column_do_not_change_which_rows_pair_up():
+    frame = pd.DataFrame({"a": [1.0, None, 3.0], "b": ["x", None, "z"]})
+    assert compare(frame, frame.iloc[[1, 2, 0]].reset_index(drop=True), ORDER)
+
+
+def test_one_side_refusing_arrow_puts_both_sides_on_the_rendered_sort(monkeypatch):
+    """The seam. If the left table sorted in Arrow and the right one in the
+    interpreter, the two permutations would follow different rules about where a null
+    goes and whether 9 comes before 10, and a case whose sides are equal would fail."""
+    import fpcompat.compare as module
+
+    seen = []
+
+    real_arrow, real_rendered = module._arrow_sort_key, module._sort_key
+    monkeypatch.setattr(
+        module,
+        "_arrow_sort_key",
+        lambda t, c: (seen.append("arrow"), None if len(seen) > 1 else real_arrow(t, c))[1],
+    )
+    monkeypatch.setattr(
+        module, "_sort_key", lambda t, c: (seen.append("rendered"), real_rendered(t, c))[1]
+    )
+    frame = pd.DataFrame({"a": [9, 10, 1]})
+    assert compare(frame, frame.iloc[::-1].reset_index(drop=True), ORDER)
+    assert seen.count("rendered") == 2
+
+
+def test_a_ten_thousand_row_answer_sorts_in_arrow_rather_than_in_python():
+    """The reason any of this was rewritten. Not a timing assertion, which would be
+    flaky, but a check that the fast path is the one a plain answer takes, since the
+    fallback is correct and would pass every other test in this file while being two
+    orders of magnitude slower."""
+    table = pa.table({"a": list(range(10000, 0, -1)), "b": [str(i) for i in range(10000)]})
+    assert _arrow_sort_key(table, ["a", "b"]) is not None
 
 
 # ---------------------------------------------------------------------------

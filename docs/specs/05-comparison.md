@@ -36,6 +36,8 @@ Normalized to columns before comparison, per document 03, and then compared like
 
 **Row order.** Compared exactly everywhere except the grouped case above and the four cases where pandas itself documents the order as undefined. Not "sorted before comparing to be safe". An engine that returns the right rows in the wrong order has a bug that a user will hit, and hiding it here means finding it in somebody's program instead.
 
+Sorting before comparing is done by Arrow where Arrow will do it, and by a sort over rendered values in the interpreter where it will not, which is dictionary encoded and nested key columns. The two rules produce different orders, since one of them compares 10 against 9 as strings, and that is harmless as long as both sides of one comparison take the same path, which they do: if Arrow refuses either table, neither table goes through Arrow. This is not a detail worth a paragraph on its own except that the rendered sort was doing all of the work for a while, and it cost 160 seconds of a 195 second oracle run, almost all of it on six merge answers with ten million rows in them.
+
 ## Errors
 
 An error case declares the exception type and a substring the message must contain. The type must match exactly, including which of the 46 `pandas.errors` types it is, and the substring is the thing a user would search for, which is a column name, a dtype name or a value. Message text beyond that substring is not compared, because pandas rewords its messages between releases and pinning them would make a pandas upgrade a hundred failing cases.
