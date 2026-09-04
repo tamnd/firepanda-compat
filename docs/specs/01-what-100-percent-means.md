@@ -22,7 +22,7 @@ L4 also covers the warnings, because pandas 3.0 signals deprecations through `Pa
 
 The published number is the fraction of pandas callables at L3 or better, per namespace, with L4 reported separately because the error surface is a different job with a different completion date.
 
-There are 1127 public callables in pandas 3.0.3 across the 21 namespaces listed in document 02. That is the denominator, and it does not shrink. Anything firepanda deliberately does not do is a registered divergence under document 06, and a divergence is displayed in the score line rather than removed from it:
+There are 1125 public callables in pandas 3.0.3 across the 21 namespaces listed in document 02. That is the denominator, and it does not shrink. Anything firepanda deliberately does not do is a registered divergence under document 06, and a divergence is displayed in the score line rather than removed from it:
 
 ```
 GroupBy   58 callables   L3 41   L2 9   L1 4   L0 2   divergent 2

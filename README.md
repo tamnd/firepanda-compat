@@ -18,8 +18,8 @@ Here is what that checklist is measuring against, counted this morning by `pixi 
 | | pandas 3.0.3 |
 |---|---|
 | Public names across 21 namespaces | 1413 |
-| Public callables | 1127 |
-| Parameters on those callables | 3864 |
+| Public callables | 1125 |
+| Parameters on those callables | 3267 |
 | Exception and warning types in `pandas.errors` | 46 |
 | Option keys under `describe_option` | 70 |
 
@@ -37,7 +37,7 @@ A name is scored at one of five levels and reaches a level only by passing every
 | **L3** | every parameter takes every one of its values, and the combinations that interact are enumerated |
 | **L4** | bad input raises the same `pandas.errors` type with a message naming the same column, dtype or value |
 
-The published number is the fraction of the 1127 callables at L3 or better, per section. Anything firepanda deliberately does not do is a registered divergence, and a divergence is displayed in the score line rather than removed from the denominator.
+The published number is the fraction of the 1125 callables at L3 or better, per section. Anything firepanda deliberately does not do is a registered divergence, and a divergence is displayed in the score line rather than removed from the denominator.
 
 ## The rules
 

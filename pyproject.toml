@@ -1,0 +1,9 @@
+# There is no package to build here. This file exists so that pytest puts the
+# repository root on the import path: `uvx pytest` runs an installed pytest whose
+# working directory is not on `sys.path`, so without this the test modules import
+# `fpcompat` and do not find it, while `python -m pytest` locally does find it.
+# A green run locally and a red one in CI, for a reason that has nothing to do
+# with the code, is worth one file to remove.
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

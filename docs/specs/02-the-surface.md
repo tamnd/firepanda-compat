@@ -4,38 +4,40 @@ Every number in this document was produced by `pixi run surface` in the compat r
 
 ## The inventory
 
-| Namespace | Public names | Callables | Parameters |
-|---|---|---|---|
-| top level `pandas` | 119 | 102 | 616 |
-| `DataFrame` | 203 | 186 | 1037 |
-| `Series` | 203 | 180 | 849 |
-| `Index` | 91 | 73 | 210 |
-| `MultiIndex` | 108 | 86 | 252 |
-| `DatetimeIndex` | 144 | 91 | 261 |
-| `.str` | 57 | 57 | 104 |
-| `.dt` | 42 | 13 | 19 |
-| `.cat` | 11 | 8 | 8 |
-| `.list` | 2 | 2 | 0 |
-| `.struct` | 3 | 2 | 1 |
-| `GroupBy` | 64 | 58 | 191 |
-| `Rolling` | 33 | 22 | 63 |
-| `Expanding` | 33 | 22 | 61 |
-| `ExponentialMovingWindow` | 27 | 9 | 25 |
-| `Resampler` | 34 | 27 | 50 |
-| `Timestamp` | 75 | 42 | 47 |
-| `Timedelta` | 22 | 10 | 8 |
-| `offsets` | 47 | 46 | 3 |
-| `errors` | 50 | 46 | 5 |
-| `api.types` | 45 | 45 | 54 |
-| **Total** | **1413** | **1127** | **3864** |
+| Namespace | Public names | Callables | Parameters | Properties |
+|---|---|---|---|---|
+| top level `pandas` | 119 | 102 | 616 | 0 |
+| `DataFrame` | 203 | 186 | 857 | 15 |
+| `Series` | 203 | 180 | 677 | 22 |
+| `Index` | 91 | 73 | 138 | 13 |
+| `MultiIndex` | 108 | 86 | 171 | 13 |
+| `DatetimeIndex` | 144 | 91 | 171 | 47 |
+| `.str` | 57 | 57 | 104 | 0 |
+| `.dt` | 42 | 13 | 19 | 29 |
+| `.cat` | 11 | 8 | 8 | 3 |
+| `.list` | 2 | 2 | 0 | 0 |
+| `.struct` | 3 | 2 | 1 | 1 |
+| `GroupBy` | 64 | 56 | 189 | 5 |
+| `Rolling` | 33 | 22 | 63 | 0 |
+| `Expanding` | 33 | 22 | 61 | 0 |
+| `ExponentialMovingWindow` | 27 | 9 | 25 | 0 |
+| `Resampler` | 34 | 27 | 50 | 3 |
+| `Timestamp` | 75 | 42 | 47 | 2 |
+| `Timedelta` | 22 | 10 | 8 | 0 |
+| `offsets` | 47 | 46 | 3 | 0 |
+| `errors` | 50 | 46 | 5 | 0 |
+| `api.types` | 45 | 45 | 54 | 0 |
+| **Total** | **1413** | **1125** | **3267** | **153** |
 
-`DataFrame` and `Series` share 174 names and have 29 each of their own, so the two together are 232 distinct names rather than 406. The totals above are per namespace and are not deduplicated, because a name that behaves differently on a frame and on a series is two behaviours to match and `apply` is the obvious example.
+Parameters exclude `self`, since a user never passes it, and they exclude the constructors, since the tool counts what is on a namespace rather than what makes one. `DataFrame` and `Series` share 174 names and have 29 each of their own, so the two together are 232 distinct names rather than 406. The totals above are per namespace and are not deduplicated, because a name that behaves differently on a frame and on a series is two behaviours to match and `apply` is the obvious example.
+
+The denominator is a function of three versions, not one, which CI found before this document predicted it. The same pandas 3.0.3 walked on Python 3.12 reports 3266 parameters and on 3.14 reports 3267, because `Timestamp.fromisoformat` is a C level callable whose `object` parameter only became visible to `inspect.signature` in the newer interpreter. So the committed file records pandas exactly and records the Python and pyarrow minor versions, the check compares those three before it compares anything else and says which one moved, and both the pixi environment and CI pin all three to what the file names. One parameter in three thousand is precisely the size of drift that gets waved through, and a denominator that quietly depends on which laptop ran the tool is not a denominator.
 
 Two rows deserve a second look. `.dt` has 42 public names and only 13 callables, because 29 of them are properties, and a property is not less work to implement than a method. `offsets` has 46 callables carrying 3 parameters between them, because the parameters live on the constructors of 46 separate classes that this counting method does not open. Both numbers are lower bounds, and where a count is a lower bound the tool says so in the JSON rather than in a comment here.
 
 ## What document 06 does not mention
 
-Document 06 in the parent folder names 444 distinct symbols. The tool subtracts those from the inventory, and what is left is the honest gap list. It is not a criticism of that document, which was written as a plan rather than as an inventory, and the whole reason this repository exists is that the difference matters.
+Document 06 in the parent folder names 444 distinct symbols in backticks, and 231 of them are public pandas names, out of the 689 the inventory holds once the namespaces are deduplicated. `python -m fpcompat.surface --gaps` subtracts one from the other, and what is left is the honest gap list. It is not a criticism of that document, which was written as a plan rather than as an inventory, and the whole reason this repository exists is that the difference matters.
 
 **The `Index` object, entirely.** 91 public names, of which 30 are not mentioned anywhere in document 06: `union`, `intersection`, `difference`, `symmetric_difference`, `get_loc`, `get_indexer`, `get_indexer_non_unique`, `get_level_values`, `slice_locs`, `slice_indexer`, `asof_locs`, `append`, `delete`, `putmask`, `has_duplicates`, `identical`, `is_`, `inferred_type`, `nlevels`, `names`, `set_names`, `sortlevel`, `to_flat_index`, `to_series`, `ravel`, `view`, `nbytes`, `drop`, `get_slice_bound`, `get_indexer_for`. Document 06 says the index is optional and explicit, and it then describes only the frame methods that use one. `loc` is built on `get_loc` and `get_indexer`, `reindex` is built on `get_indexer`, and a merge on an index is built on `get_indexer_non_unique`. The index API is not an add on to the index work, it is the index work.
 
@@ -61,4 +63,4 @@ Three conclusions, and they are the reason document 08 in this folder rewrites t
 
 **The cheap names should land first and together.** The 20 arithmetic spellings, the 10 forgotten frame methods and the alias pairs are a day of work between them and they move the L0 and L1 numbers more than anything else on the list. They are exactly the kind of work that never gets prioritised because each one alone feels too small to be worth an issue, which is why they are one issue.
 
-**The error types are a milestone of their own and should start now.** Every operation that can fail should raise the pandas type from the first day it exists, because retrofitting error types across 1127 callables afterwards is the kind of task that never gets done. The cost per operation is one line at the point of raising, if the exception types exist to be raised. They should exist before M6 lands anything, which makes them a prerequisite rather than a follow up.
+**The error types are a milestone of their own and should start now.** Every operation that can fail should raise the pandas type from the first day it exists, because retrofitting error types across 1125 callables afterwards is the kind of task that never gets done. The cost per operation is one line at the point of raising, if the exception types exist to be raised. They should exist before M6 lands anything, which makes them a prerequisite rather than a follow up.

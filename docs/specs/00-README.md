@@ -13,8 +13,8 @@ The short version of the argument is that the parity checklist counts names and 
 | | pandas 3.0.3 | in the parity checklist |
 |---|---|---|
 | Public names across 21 namespaces | 1413 | 444 |
-| Public callables | 1127 | not counted |
-| Parameters on those callables | 3864 | not counted |
+| Public callables | 1125 | not counted |
+| Parameters on those callables | 3267 | not counted |
 
 A single row of document 06 reads `- [ ] rolling with window, min_periods, center, closed, step (M6)`. That is one checkbox over five parameters whose interactions are the entire difficulty of the feature, and `closed` alone has four values that each change the answer. Ticking it is a judgement call. Running two hundred generated cases over it and comparing every answer to pandas is not.
 
