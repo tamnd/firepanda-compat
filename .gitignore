@@ -8,6 +8,7 @@ site/
 
 # The frames are generated from a seed in under a second and a binary in git is a
 # binary in git forever. The manifest that describes them is committed; they are not.
+corpus/*.arrow
 corpus/*.parquet
 corpus/*.csv
 

@@ -19,13 +19,21 @@ platforms = ["linux-64", "linux-aarch64", "osx-arm64", "osx-64"]
 # Timestamp.fromisoformat only shows its parameter to inspect.signature on the
 # newer one. Loosening any of these means a contributor regenerates the inventory
 # and gets a diff that is about their laptop rather than about pandas.
+#
+# pandas is pinned to the exact patch and pixi.lock is committed, which is the
+# other half of that. Both are here because `pandas = "3.0.*"` and no lockfile is
+# how this environment silently became pandas 3.0.5 while the committed inventory
+# said 3.0.3, and the check that caught it is the one PR #3 added. As it happens
+# 3.0.5 walks to exactly the same 1413 names, 1125 callables, 3267 parameters and
+# 153 properties, so moving to it is a one line change plus a regenerated file
+# rather than a project. The point is that the move is a commit.
 [dependencies]
 python = "3.14.*"
 # 3.0 and not 2.x. The target is one major version of pandas and a suite that
 # straddles two spends its life on the differences between them rather than on the
 # differences that matter. The exact version is recorded in every result file,
 # because a conformance claim without the pandas version attached is not a claim.
-pandas = "3.0.*"
+pandas = "==3.0.3"
 pyarrow = "25.0.*"
 pytest = "*"
 

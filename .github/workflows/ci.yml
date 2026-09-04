@@ -64,6 +64,18 @@ jobs:
             --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
             --with pytest pytest -q
 
+      # The frames are not committed, so this both proves they still generate and
+      # proves they generate the same. A digest that moved without the manifest
+      # moving means the inputs changed under a conformance number that did not,
+      # and that is the one failure mode a suite cannot detect from its own results.
+      - name: Corpus is current
+        run: |
+          [ -f fpcompat/corpus.py ] || { echo "::notice::no corpus yet"; exit 0; }
+          uvx --python "${{ steps.pins.outputs.python }}" \
+            --with "pandas==${{ steps.pins.outputs.pandas }}" \
+            --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
+            python -m fpcompat.corpus --check
+
       # pandas against pandas, through the full pipeline. A perfect score or the
       # build fails, because a harness that disagrees with itself has no business
       # publishing a number about anything else. docs/specs/05-comparison.md.
