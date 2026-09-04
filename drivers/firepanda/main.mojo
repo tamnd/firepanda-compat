@@ -867,6 +867,15 @@ def main() raises:
                 Series("value", frame.column("value").argsort()),
                 out,
             )
+        elif case_id == "stats/argsort-ties":
+            # The key column rather than the value one, because ten distinct keys
+            # over ten thousand rows means nearly every position in the answer is
+            # the tie break and not a comparison.
+            emit_series(
+                "key",
+                Series("key", frame.column("key").argsort()),
+                out,
+            )
         else:
             print('{"status":"absent"}')
     except error:
