@@ -1,0 +1,20 @@
+.pixi/
+__pycache__/
+.venv/
+.ruff_cache/
+.pytest_cache/
+.DS_Store
+site/
+
+# The frames are generated from a seed in under a second and a binary in git is a
+# binary in git forever. The manifest that describes them is committed; they are not.
+corpus/*.parquet
+corpus/*.csv
+
+# Result files stay on the machine that produced them. CI uploads them as run
+# artifacts and draws the site from them, and nothing commits them back here.
+results/*.json
+
+# The compiled Mojo driver and the hash of the sources it was built from.
+drivers/firepanda/firepanda-compat-driver
+drivers/firepanda/firepanda-compat-driver.sources

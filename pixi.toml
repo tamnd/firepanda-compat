@@ -1,0 +1,57 @@
+[workspace]
+name = "firepanda-compat"
+version = "0.1.0"
+description = "The pandas conformance suite for firepanda"
+authors = ["tamnd <tamnd87@gmail.com>"]
+license = "Apache-2.0"
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64", "osx-64"]
+
+# The dependency set is deliberately four packages. A conformance run has to be
+# cheap enough to sit on every pull request to the library, and every package added
+# here is a package that has to solve on four platforms before a case can run.
+# Polars, DuckDB and cuDF belong to firepanda-bench and are not welcome in this
+# environment, because the oracle is pandas and there is one oracle.
+[dependencies]
+python = ">=3.13"
+# 3.0 and not 2.x. The target is one major version of pandas and a suite that
+# straddles two spends its life on the differences between them rather than on the
+# differences that matter. The exact version is recorded in every result file,
+# because a conformance claim without the pandas version attached is not a claim.
+pandas = ">=3.0,<4"
+pyarrow = ">=25.0,<26"
+pytest = "*"
+
+# The Mojo toolchain is not here. It lives in the firepanda checkout, pinned by
+# that repository, and `drivers/firepanda` is built with it. Two pins for one
+# toolchain is how a driver ends up compiled against a library it does not match.
+
+[tasks]
+# Walks the 21 pandas namespaces and writes the committed inventory. Run it when
+# pandas moves; the diff is the work list.
+surface = "python -m fpcompat.surface"
+
+# Regenerates the frames from the seed and verifies every digest in the manifest.
+corpus = "python -m fpcompat.corpus"
+
+# pandas against pandas, through the whole pipeline. Anything other than a perfect
+# score is a bug in this repository, and no number it produces is publishable until
+# it is fixed. This runs on every commit here.
+oracle = "python -m fpcompat.runner --engine pandas --oracle"
+
+# pandas against firepanda. Needs either an importable firepanda, which arrives at
+# M3, or a built driver in drivers/firepanda.
+conformance = "python -m fpcompat.runner --engine firepanda"
+
+report = "python -m fpcompat.report"
+
+# Which pandas names and which parameters no case has ever touched. An uncovered
+# parameter is not a pass and it is not a failure, it is a hole in the measurement.
+coverage = "python -m fpcompat.report --coverage"
+
+# The operation level cost matrix: wall clock and peak resident set per operation
+# against pandas, on the budget corpus. docs/specs/09-resources.md.
+budget = "python -m fpcompat.budget"
+
+test = "pytest -q"
+lint = "ruff check . && ruff format --check ."

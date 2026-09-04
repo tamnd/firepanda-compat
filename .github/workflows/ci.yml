@@ -1,0 +1,70 @@
+# Actions are pinned to commit SHAs, matching the sibling repositories.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  harness:
+    name: Harness checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+        with:
+          enable-cache: true
+
+      - name: Lint
+        run: |
+          [ -n "$(find fpcompat -name '*.py' -print -quit)" ] || {
+            echo "::notice::no harness yet"; exit 0; }
+          uvx ruff check . && uvx ruff format --check .
+
+      # pytest over the harness itself. This is not the conformance run; it is the
+      # tests that stop the thing doing the measuring from being wrong.
+      - name: Tests
+        run: |
+          [ -n "$(find tests -name 'test_*.py' -print -quit)" ] || {
+            echo "::notice::no tests yet"; exit 0; }
+          uvx --with pandas --with pyarrow --with pytest pytest -q
+
+      # pandas against pandas, through the full pipeline. A perfect score or the
+      # build fails, because a harness that disagrees with itself has no business
+      # publishing a number about anything else. docs/specs/05-comparison.md.
+      - name: Oracle
+        run: |
+          [ -f fpcompat/runner.py ] || { echo "::notice::no runner yet"; exit 0; }
+          uvx --with pandas --with pyarrow python -m fpcompat.runner --engine pandas --oracle
+
+      # The committed inventory has to match the pandas in the environment, or every
+      # coverage number computed from it is stale. Regenerating it is one task and
+      # the diff is the work list, so a mismatch is a failure with a fix attached.
+      - name: Inventory is current
+        run: |
+          [ -f fpcompat/surface.py ] || { echo "::notice::no surface tool yet"; exit 0; }
+          uvx --with pandas --with pyarrow python -m fpcompat.surface --check
+
+  links:
+    name: Link check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
+        with:
+          args: --no-progress --max-concurrency 4 './**/*.md'
+          fail: true
