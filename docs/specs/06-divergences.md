@@ -59,4 +59,4 @@ This entry is the one to read twice before shipping. A user porting a program th
 
 The scoreboard prints divergences as their own column and the report has a page listing every entry with its reason, generated from the TOML, which is the public document users read when their program does something different. That page is the honest version of the migration guide, and it is generated rather than written so it cannot fall behind the code.
 
-Counts as of today: 7 entries, covering approximately 50 of the 1127 callables, or 4.4 percent of the surface. That number goes on the front page of the report next to the pass rate, because a 95 percent pass rate over a surface with 5 percent registered divergences is a different claim from a 95 percent pass rate with none.
+Counts as of today: 7 entries, covering approximately 50 of the 1125 callables, or 4.4 percent of the surface. That number goes on the front page of the report next to the pass rate, because a 95 percent pass rate over a surface with 5 percent registered divergences is a different claim from a 95 percent pass rate with none.

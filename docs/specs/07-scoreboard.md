@@ -7,7 +7,7 @@ What a run produces, who reads it, and the rules that stop it from becoming an a
 One line, printed at the end of every run and pasted into the milestone issue after every merge.
 
 ```
-firepanda 0.6.40 vs pandas 3.0.3   L3 312/1127 (27.7%)   L2 401   L1 486   L0 1127
+firepanda 0.6.40 vs pandas 3.0.3   L3 312/1125 (27.7%)   L2 401   L1 486   L0 1125
 divergent 50   unimplemented 641   fail 44   cases 2183 in 214s
 ```
 
