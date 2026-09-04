@@ -74,7 +74,7 @@ def namespaces() -> dict[str, Any]:
     def build(fn):
         try:
             return fn()
-        except Exception as exc:  # recorded, not swallowed
+        except Exception as exc:  # noqa: BLE001  recorded, not swallowed
             return exc
 
     return {
@@ -190,7 +190,7 @@ def walk(name: str, obj: Any) -> dict[str, Any]:
     for member in names:
         try:
             value = getattr(obj, member)
-        except Exception as exc:  # a name that raises on access is still a name
+        except Exception as exc:  # noqa: BLE001  a name that raises on access is still a name
             members[member] = {"kind": "unreadable", "reason": type(exc).__name__}
             continue
         on_owner = getattr(owner, member, None)

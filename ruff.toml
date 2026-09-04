@@ -2,7 +2,17 @@ line-length = 100
 target-version = "py313"
 
 [lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+# A and BLE are on for the sake of two rules this repository leans on. A002 catches a
+# parameter called id, which the case declaration deliberately has because that is what
+# the field is called in document 03 and in every result file, and the noqa on it is the
+# record of that decision. BLE001 catches a bare except Exception, which the runner does
+# on purpose in three places because a crash in the engine under test is a result rather
+# than an accident, and those three are the only ones allowed to.
+#
+# PLC0415 is deliberately not on. Half the imports in here are late on purpose: an
+# engine imports its library when it is loaded and not when the module is read, so that
+# a machine with no firepanda on it can still run the pandas oracle.
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "A", "BLE"]
 
 # RUF001 and its two siblings warn that a string contains a character which looks
 # like another character. In the corpus that is the requirement rather than a

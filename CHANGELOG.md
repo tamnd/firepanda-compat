@@ -12,3 +12,7 @@ divergence registry format.
 
 - The specification, 12 documents in `docs/specs/`, mirrored from the author's notes.
 - The scaffold: pixi environment pinned to pandas 3.0 and pyarrow 25, CI, licence.
+- The surface tool, which counts the pandas API rather than remembering it, and the committed inventory of pandas 3.0.3 that every coverage number is computed against.
+- The corpus, 56 frames generated from one seed, described by a committed manifest and never committed as data.
+- The comparison layer, which decides what the same answer means, with four tolerance classes and a closed list of relaxations that each have to say why.
+- The case registry and the runner, 623 cases over 1429 runs, four outcomes and no skip, one engine per process, and a worker crash attributed to the case that caused it.
