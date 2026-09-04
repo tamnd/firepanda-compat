@@ -56,20 +56,34 @@ ROOT = Path(__file__).resolve().parent.parent
 SURFACE_DIR = ROOT / "surface"
 
 
-def namespaces() -> dict[str, Any]:
+def namespaces(module: Any = None) -> dict[str, Any]:
     """Builds one sample object per pandas namespace.
 
     Accessors are descriptors, so `pandas.Series.str` is not the string namespace
     and only an actual string series can be asked what is in it. Each entry here is
     therefore a live object of the right dtype, built as cheaply as possible.
 
+    The module is a parameter because the resolution cases build these same objects
+    out of the engine under test. Every expression below is written in the pandas API
+    and nothing else, which is the point of a library that is a copy of another
+    library, so the same twenty one lines describe firepanda's namespaces too.
+
+    Args:
+        module: The module to build out of, defaulting to pandas. Passing firepanda
+            here is how the resolution cases ask it what is in its `.str` accessor.
+
     Returns:
         A mapping from namespace name to the object to walk. A namespace whose
         sample object cannot be built is present with the exception as its value,
         so that the caller records it as unavailable rather than losing it.
     """
-    import pandas as pd
     import pyarrow as pa
+
+    if module is None:
+        import pandas
+
+        module = pandas
+    pd = module
 
     def build(fn):
         try:
@@ -103,8 +117,11 @@ def namespaces() -> dict[str, Any]:
         "Timestamp": build(lambda: pd.Timestamp("2026-01-01")),
         "Timedelta": build(lambda: pd.Timedelta("1D")),
         "offsets": build(lambda: pd.offsets),
-        "errors": build(lambda: __import__("pandas.errors", fromlist=["x"])),
-        "api.types": build(lambda: __import__("pandas.api.types", fromlist=["x"])),
+        # Attribute access rather than an import, so that these resolve out of
+        # whichever module was passed in. They are the same two module objects either
+        # way, so the committed inventory does not move.
+        "errors": build(lambda: pd.errors),
+        "api.types": build(lambda: pd.api.types),
     }
 
 

@@ -42,9 +42,15 @@ from typing import Any
 from fpcompat import corpus, surface
 from fpcompat.compare import Rules, resolve_error
 
-# One module per parity section. The module name is the section, which is one field
-# nobody has to keep in sync with anything.
-SECTIONS = (
+# One module per group of cases. The module name becomes the case's `section` field,
+# which is one field nobody has to keep in sync with anything.
+#
+# This is the suite's own organisation and it is not the same list as the parity
+# sections the scoreboard counts against, which are a partition of the pandas surface.
+# These are files. The two lists mostly agree, and where they do not it is deliberate:
+# `errors.py` holds an L4 case about `dt.tz_localize` and that case is evidence about
+# the temporal part of pandas rather than about an errors part.
+CASE_MODULES = (
     "basics",
     "indexing",
     "strings",
@@ -57,6 +63,8 @@ SECTIONS = (
     "nested",
     "errors",
     "divergences",
+    "resolution",
+    "signature",
 )
 
 LEVELS = ("L0", "L1", "L2", "L3", "L4")
@@ -233,8 +241,13 @@ def _members(api: str) -> tuple[str, str, dict[str, Any]]:
     parts = api.split(".")
     if len(parts) < 2:
         raise CaseError(f"{api} is not a pandas name, it needs a namespace in front")
-    namespace, member = parts[-2], parts[-1]
+    member = parts[-1]
     spaces = _inventory()["namespaces"]
+    # Inventory namespaces are one component, so `Series.str.pad` is `str.pad`, except
+    # for `api.types` which is two. Try the long form first and fall back to the short.
+    namespace = ".".join(parts[:-1])
+    if namespace not in spaces:
+        namespace = parts[-2]
     if namespace not in spaces:
         raise CaseError(
             f"{api} names the namespace {namespace}, which the inventory does not "
@@ -375,13 +388,13 @@ def section(name: str) -> None:
     Called once at the top of each module in this package.
 
     Args:
-        name: The section name, which must be one of `SECTIONS`.
+        name: The module name, which must be one of `CASE_MODULES`.
 
     Raises:
         CaseError: When the name is not a known section.
     """
-    if name not in SECTIONS:
-        raise CaseError(f"{name} is not a parity section, the sections are {', '.join(SECTIONS)}")
+    if name not in CASE_MODULES:
+        raise CaseError(f"{name} is not a case module, the modules are {', '.join(CASE_MODULES)}")
     _CURRENT_SECTION.append(name)
 
 
@@ -392,7 +405,7 @@ def registry() -> dict[str, Case]:
         Case id to case, in declaration order, which is the order the runner uses so
         that a failure list reads in the same order as the source.
     """
-    for name in SECTIONS:
+    for name in CASE_MODULES:
         importlib.import_module(f"fpcompat.cases.{name}")
     return dict(_REGISTERED)
 

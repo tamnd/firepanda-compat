@@ -17,7 +17,16 @@ from __future__ import annotations
 import pytest
 
 from fpcompat import cases
-from fpcompat.cases import ID_PATTERN, LEVELS, OPERATORS, SECTIONS, Case, CaseError, case, registry
+from fpcompat.cases import (
+    CASE_MODULES,
+    ID_PATTERN,
+    LEVELS,
+    OPERATORS,
+    Case,
+    CaseError,
+    case,
+    registry,
+)
 
 
 @pytest.fixture
@@ -111,7 +120,7 @@ def test_unknown_level_is_fatal(isolated):
 
 
 def test_unknown_section_is_fatal():
-    with pytest.raises(CaseError, match="is not a parity section"):
+    with pytest.raises(CaseError, match="is not a case module"):
         cases.section("not_a_section")
 
 
@@ -165,10 +174,10 @@ def test_operator_list_is_closed(isolated):
 
 
 def test_every_section_has_cases():
-    """A section listed in SECTIONS with nothing in it is a silent hole."""
+    """A section listed in CASE_MODULES with nothing in it is a silent hole."""
     declared = registry()
     sections = {item.section for item in declared.values()}
-    assert sections == set(SECTIONS)
+    assert sections == set(CASE_MODULES)
 
 
 def test_every_case_is_well_formed():
@@ -177,7 +186,7 @@ def test_every_case_is_well_formed():
         assert ID_PATTERN.match(item.id)
         assert item.level in LEVELS
         assert item.frames
-        assert item.section in SECTIONS
+        assert item.section in CASE_MODULES
 
 
 def test_ids_start_with_their_section():

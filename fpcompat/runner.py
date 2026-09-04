@@ -33,6 +33,7 @@ import argparse
 import json
 import subprocess
 import sys
+import threading
 import time
 import traceback
 import warnings
@@ -365,6 +366,30 @@ def _spawn(engine_name: str, oracle: bool) -> subprocess.Popen[str]:
     )
 
 
+def _feed(process: subprocess.Popen[str], work: list[tuple[str, str]]) -> None:
+    """Writes a work list to a worker's stdin.
+
+    Runs in a thread, and it has to. Writing the whole list before reading anything
+    back deadlocks as soon as the list is larger than the pipe buffer: the parent
+    blocks writing, the worker blocks writing its results, and neither of them is
+    reading. That took 1502 runs to fit and 3138 cases to stop fitting, which is the
+    kind of limit that is invisible until the day it is not.
+
+    Args:
+        process: The worker.
+        work: Case id and frame name pairs.
+    """
+    assert process.stdin is not None
+    try:
+        for case_id, frame_name in work:
+            process.stdin.write(f"{case_id}\t{frame_name}\n")
+        process.stdin.close()
+    except (BrokenPipeError, ValueError):
+        # The worker died part way through. The reader loop notices, and it is the one
+        # that knows which case killed it, so there is nothing useful to do here.
+        pass
+
+
 def drive(work: list[tuple[str, str]], engine_name: str, oracle: bool) -> list[dict[str, Any]]:
     """Runs a work list in a worker, restarting it when it dies.
 
@@ -383,9 +408,8 @@ def drive(work: list[tuple[str, str]], engine_name: str, oracle: bool) -> list[d
     while remaining:
         process = _spawn(engine_name, oracle)
         assert process.stdin is not None and process.stdout is not None
-        for case_id, frame_name in remaining:
-            process.stdin.write(f"{case_id}\t{frame_name}\n")
-        process.stdin.close()
+        writer = threading.Thread(target=_feed, args=(process, list(remaining)), daemon=True)
+        writer.start()
 
         started: tuple[str, str] | None = None
         done = 0
@@ -398,6 +422,7 @@ def drive(work: list[tuple[str, str]], engine_name: str, oracle: bool) -> list[d
             started = None
             done += 1
         code = process.wait()
+        writer.join(timeout=5)
 
         if done == len(remaining) and started is None:
             return records
