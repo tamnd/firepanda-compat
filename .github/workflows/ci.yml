@@ -35,11 +35,24 @@ jobs:
 
       # pytest over the harness itself. This is not the conformance run; it is the
       # tests that stop the thing doing the measuring from being wrong.
+      # The pandas version is not written here. It is the version the committed
+      # inventory was generated against, read out of the filename, so that the
+      # denominator and the environment that checks it can never drift apart.
+      - name: Pin pandas to the committed inventory
+        id: pins
+        run: |
+          version=$(ls surface/pandas-*.json 2>/dev/null | sed 's|.*pandas-||; s|\.json$||' \
+            | sort -V | tail -1)
+          [ -n "$version" ] || version="3.0.*"
+          echo "pandas=$version" >> "$GITHUB_OUTPUT"
+          echo "::notice::pandas $version"
+
       - name: Tests
         run: |
           [ -n "$(find tests -name 'test_*.py' -print -quit)" ] || {
             echo "::notice::no tests yet"; exit 0; }
-          uvx --with pandas --with pyarrow --with pytest pytest -q
+          uvx --with "pandas==${{ steps.pins.outputs.pandas }}" --with 'pyarrow>=25,<26' \
+            --with pytest pytest -q
 
       # pandas against pandas, through the full pipeline. A perfect score or the
       # build fails, because a harness that disagrees with itself has no business
@@ -47,7 +60,8 @@ jobs:
       - name: Oracle
         run: |
           [ -f fpcompat/runner.py ] || { echo "::notice::no runner yet"; exit 0; }
-          uvx --with pandas --with pyarrow python -m fpcompat.runner --engine pandas --oracle
+          uvx --with "pandas==${{ steps.pins.outputs.pandas }}" --with 'pyarrow>=25,<26' \
+            python -m fpcompat.runner --engine pandas --oracle
 
       # The committed inventory has to match the pandas in the environment, or every
       # coverage number computed from it is stale. Regenerating it is one task and
@@ -55,7 +69,8 @@ jobs:
       - name: Inventory is current
         run: |
           [ -f fpcompat/surface.py ] || { echo "::notice::no surface tool yet"; exit 0; }
-          uvx --with pandas --with pyarrow python -m fpcompat.surface --check
+          uvx --with "pandas==${{ steps.pins.outputs.pandas }}" --with 'pyarrow>=25,<26' \
+            python -m fpcompat.surface --check
 
   links:
     name: Link check
