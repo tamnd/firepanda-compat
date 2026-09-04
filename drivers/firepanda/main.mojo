@@ -286,6 +286,27 @@ def emit_series(name: String, var column: Series, path: String) raises:
     print('{"status":"ok","kind":"series","index":0,"name":' + quote(name) + "}")
 
 
+def emit_series_unnamed(var column: Series, path: String) raises:
+    """Writes a series answer whose pandas name is None.
+
+    `groupby(...).size()` is the one that needs this. It returns a Series with no
+    name, and a driver that sent the firepanda column label instead would fail the
+    case for the wrong reason and then pass it for the wrong reason once somebody
+    renamed the column.
+
+    Args:
+        column: The values. Consumed.
+        path: Where to write them.
+
+    Raises:
+        Error: If the series cannot be written.
+    """
+    var series = List[Series]()
+    series.append(column^.rename("__value__"))
+    write_arrow(DataFrame.from_series(series^), path)
+    print('{"status":"ok","kind":"series","index":0,"name":null}')
+
+
 def emit_index(var column: Series, path: String) raises:
     """Writes an index answer, which is what `DataFrame.columns` is.
 
@@ -325,6 +346,53 @@ def labels_of(frame: DataFrame) raises -> Series:
     for i in range(len(names)):
         builder.append(names[i].as_bytes())
     return Series("__value__", builder^.finish())
+
+
+def one_key(name: String) -> List[String]:
+    """Wraps a single key column name as the list `group_agg` takes.
+
+    Args:
+        name: The key column.
+
+    Returns:
+        A list of one name.
+    """
+    var keys = List[String]()
+    keys.append(name)
+    return keys^
+
+
+def grouped(
+    frame: DataFrame,
+    keys: List[String],
+    kind: AggKind,
+    dropna: Bool = True,
+    sort: Bool = True,
+) raises -> DataFrame:
+    """Runs one reduction per group over every column that is not a key.
+
+    This is `df.groupby(keys).sum()` and its family, in the firepanda spelling. The
+    shape it produces is not the pandas one and cannot be made into it here: pandas
+    puts the keys in the index and firepanda has no index, so the keys come back as
+    ordinary leading columns. The driver reports what firepanda produced and lets the
+    comparison say the two answers differ, which is the truthful thing to do. Moving
+    the keys into the protocol's index slot would launder a real difference into a
+    pass, and the difference is the largest single conformance item in the tree.
+
+    Args:
+        frame: The frame.
+        keys: The key columns.
+        kind: The reduction to apply to everything else.
+        dropna: Whether a group whose key is null is dropped.
+        sort: Whether the result comes back sorted by key.
+
+    Returns:
+        The aggregated frame, keys first.
+
+    Raises:
+        Error: Whatever `group_agg` raises.
+    """
+    return frame.group_agg(keys, kind, dropna, sort)
 
 
 def main() raises:
@@ -528,6 +596,134 @@ def main() raises:
             emit_series(
                 "value", frame.column("value").cast(LogicalType.STRING), out
             )
+        # Grouped aggregations. Every one of these except `as-index-false` and
+        # `ngroups` produces a frame whose keys are columns where the pandas answer
+        # has them in the index, so every one of them fails on that and would fail
+        # even if every number in it were right. That is the point of running them:
+        # the comparison lists the value differences next to the shape difference, so
+        # a wrong group sum is still visible underneath a missing index, and there is
+        # no other way to find one before the index lands.
+        elif case_id == "groupby/sum":
+            emit_frame(grouped(frame, one_key("key"), AggKind.SUM), out)
+        elif case_id == "groupby/mean":
+            emit_frame(grouped(frame, one_key("key"), AggKind.MEAN), out)
+        elif case_id == "groupby/min":
+            emit_frame(grouped(frame, one_key("key"), AggKind.MIN), out)
+        elif case_id == "groupby/max":
+            emit_frame(grouped(frame, one_key("key"), AggKind.MAX), out)
+        elif case_id == "groupby/count":
+            emit_frame(grouped(frame, one_key("key"), AggKind.COUNT), out)
+        elif case_id == "groupby/first":
+            emit_frame(grouped(frame, one_key("key"), AggKind.FIRST), out)
+        elif case_id == "groupby/last":
+            emit_frame(grouped(frame, one_key("key"), AggKind.LAST), out)
+        elif case_id == "groupby/median":
+            emit_frame(grouped(frame, one_key("key"), AggKind.MEDIAN), out)
+        elif case_id == "groupby/nunique":
+            emit_frame(grouped(frame, one_key("key"), AggKind.NUNIQUE), out)
+        elif case_id == "groupby/std":
+            emit_frame(grouped(frame, one_key("key"), AggKind.STD), out)
+        elif case_id == "groupby/var":
+            emit_frame(grouped(frame, one_key("key"), AggKind.VAR), out)
+        elif case_id == "groupby/size":
+            # pandas returns an unnamed Series here, one row per group, so the size
+            # column travels alone rather than beside the key.
+            emit_series_unnamed(
+                frame.group_count(one_key("key")).column("size"), out
+            )
+        # The same reductions asked for with the keys left as columns, which is the
+        # shape firepanda already produces, so these are the ones that say whether
+        # the numbers are right. An indexed answer fails on the shape and the
+        # comparison stops before it reads a single value, so without these the
+        # section could not tell a correct grouped sum from a wrong one.
+        elif case_id == "groupby/flat-sum":
+            emit_frame(grouped(frame, one_key("key"), AggKind.SUM), out)
+        elif case_id == "groupby/flat-mean":
+            emit_frame(grouped(frame, one_key("key"), AggKind.MEAN), out)
+        elif case_id == "groupby/flat-min":
+            emit_frame(grouped(frame, one_key("key"), AggKind.MIN), out)
+        elif case_id == "groupby/flat-max":
+            emit_frame(grouped(frame, one_key("key"), AggKind.MAX), out)
+        elif case_id == "groupby/flat-count":
+            emit_frame(grouped(frame, one_key("key"), AggKind.COUNT), out)
+        elif case_id == "groupby/flat-first":
+            emit_frame(grouped(frame, one_key("key"), AggKind.FIRST), out)
+        elif case_id == "groupby/flat-last":
+            emit_frame(grouped(frame, one_key("key"), AggKind.LAST), out)
+        elif case_id == "groupby/flat-median":
+            emit_frame(grouped(frame, one_key("key"), AggKind.MEDIAN), out)
+        elif case_id == "groupby/flat-nunique":
+            emit_frame(grouped(frame, one_key("key"), AggKind.NUNIQUE), out)
+        elif case_id == "groupby/flat-std":
+            emit_frame(grouped(frame, one_key("key"), AggKind.STD), out)
+        elif case_id == "groupby/flat-var":
+            emit_frame(grouped(frame, one_key("key"), AggKind.VAR), out)
+        elif case_id == "groupby/flat-dropna-false":
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.SUM, False, True), out
+            )
+        elif case_id == "groupby/flat-sort-false":
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.SUM, True, False), out
+            )
+        elif case_id == "groupby/flat-two-keys":
+            var flat_pair = List[String]()
+            flat_pair.append("left")
+            flat_pair.append("right")
+            emit_frame(grouped(frame, flat_pair, AggKind.SUM), out)
+        elif case_id == "groupby/two-keys":
+            var pair = List[String]()
+            pair.append("left")
+            pair.append("right")
+            emit_frame(grouped(frame, pair, AggKind.SUM), out)
+        elif case_id == "groupby/two-keys-size":
+            var pair_size = List[String]()
+            pair_size.append("left")
+            pair_size.append("right")
+            emit_series_unnamed(
+                frame.group_count(pair_size).column("size"), out
+            )
+        elif case_id == "groupby/series":
+            emit_series(
+                "value",
+                grouped(frame, one_key("key"), AggKind.SUM).column("value"),
+                out,
+            )
+        elif case_id == "groupby/sort-false":
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.SUM, True, False), out
+            )
+        elif case_id == "groupby/dropna-false":
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.SUM, False, True), out
+            )
+        elif case_id == "groupby/on-tall":
+            emit_series(
+                "value",
+                grouped(frame, one_key("key"), AggKind.MEAN).column("value"),
+                out,
+            )
+        elif case_id == "groupby/bool-key":
+            emit_series(
+                "value",
+                grouped(frame, one_key("flag"), AggKind.SUM).column("value"),
+                out,
+            )
+        elif case_id == "groupby/as-index-false":
+            # The one aggregation in the section whose pandas answer has a default
+            # index, because `as_index=False` asks for the keys as columns. It is
+            # therefore the only one that can pass, and what it passes on is the
+            # arithmetic rather than the shape.
+            emit_frame(grouped(frame, one_key("key"), AggKind.SUM), out)
+        elif case_id == "groupby/ngroups":
+            write_arrow(
+                scalar_frame[DType.int64](
+                    "value",
+                    Int64(len(frame.group_by(one_key("key"), List[AggSpec]()))),
+                ),
+                out,
+            )
+            print('{"status":"ok","kind":"scalar"}')
         else:
             print('{"status":"absent"}')
     except error:

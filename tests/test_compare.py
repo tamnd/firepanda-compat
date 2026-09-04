@@ -409,6 +409,23 @@ def test_grouped_order_does_not_hide_a_wrong_value():
     assert not compare(grouped, wrong, RELAXED)
 
 
+def test_an_order_relaxation_works_on_a_string_view_column():
+    # Arrow's `take` has no kernel for the view layouts, so reordering a table with a
+    # string view key raised out of pyarrow and the runner recorded "the comparison
+    # itself raised" in the result file. firepanda's strings are views, so this was
+    # every grouped comparison on a text key, which is not an exotic case.
+    left = pa.table({"k": pa.array(["b", "a", "c"]), "v": pa.array([1, 2, 3])})
+    schema = pa.schema([pa.field("k", pa.string_view()), pa.field("v", pa.int64())])
+    shuffled = left.take([2, 0, 1]).cast(schema)
+    assert compare(left, shuffled, Rules(relaxations=frozenset({"row_order"}), reason="a test"))
+
+
+def test_widening_a_view_does_not_hide_a_wrong_value():
+    left = pa.table({"k": pa.array(["a", "b"]), "v": pa.array([1, 2])})
+    view = pa.table({"k": pa.array(["a", "b"], pa.string_view()), "v": pa.array([1, 99])})
+    assert not compare(left, view, Rules(relaxations=frozenset({"row_order"}), reason="a test"))
+
+
 def test_row_order_sorts_everything():
     left = pd.DataFrame({"a": [3, 1, 2]})
     rules = Rules(relaxations=frozenset({"row_order"}), reason="pandas documents this as undefined")
