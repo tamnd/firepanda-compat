@@ -90,6 +90,7 @@ pixi run budget          # measure every operation, one process each
 pixi run budget-matrix   # the table
 pixi run budget-baseline # record this machine's floor from the last sweep
 pixi run budget-gate     # fail if a row got 10% slower or heavier than that floor
+pixi run operations      # rewrite operations.json, the table other repos read
 ```
 
 ## What the cost matrix is for
@@ -99,6 +100,8 @@ The goal is ten times the speed on a tenth of the resources. firepanda-bench che
 53 operations, 20 of them chains like filter then group or merge then aggregate, because peak memory in pandas is dominated by intermediates and a single reduction cannot use much less memory than its input however good the engine is. One process per engine per operation, since a peak resident set is a property of a process. Seven repeats with the median published and the interquartile range beside it. The answer is consumed before the timer stops, which matters here because firepanda is lazy underneath after M4 and every row would otherwise read as instant.
 
 The budget corpus is not the correctness corpus. That one is 64 rows and mean by design, and timing a call on 64 rows measures interpreter overhead. This one is the same generator, the same constants and the same seed at one million rows, with no edge value placement. It is generated rather than committed and `corpus/budget-manifest.json` is what makes a change to the inputs show up as a diff.
+
+`operations.json` is the same table with the numbers taken out, committed so that firepanda-bench can say which operations a benchmark query is made of without importing this package, which it cannot do because a bench environment carries Polars, DuckDB and cuDF and this one deliberately carries none of them. CI checks it against the registry, so a row added or renamed here shows up as a diff rather than as a link over there that quietly points at nothing.
 
 The rows we lose go in the same table as the rows we win, with no separate section and no footnote. A matrix where firepanda wins every row has either been curated or is measuring the wrong thing, and the first person to notice will be somebody deciding whether to trust the project. A row below one is a performance bug with a name and an input size, and the table is where it gets its name.
 

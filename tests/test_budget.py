@@ -257,6 +257,40 @@ def test_a_dead_worker_becomes_a_row_rather_than_an_exception(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# The published table
+# ---------------------------------------------------------------------------
+
+
+def test_the_committed_operation_table_matches_the_registry():
+    assert budget.publish(check=True) == 0
+
+
+def test_the_published_table_carries_no_timings():
+    document = json.loads(budget.TABLE.read_text())
+    text = json.dumps(document)
+    for word in ("median", "seconds", "rss", "machine", "iqr"):
+        assert word not in text
+
+
+def test_every_published_row_names_at_least_one_pandas_callable():
+    document = json.loads(budget.TABLE.read_text())
+    for name, entry in document["operations"].items():
+        assert entry["covers"], f"{name} covers nothing, so no query could ever link to it"
+
+
+def test_the_check_fails_when_the_committed_table_is_stale(tmp_path, monkeypatch):
+    stale = tmp_path / "operations.json"
+    stale.write_text('{"count": 1}\n')
+    monkeypatch.setattr(budget, "TABLE", stale)
+    assert budget.publish(check=True) == 1
+
+
+def test_the_check_fails_when_there_is_no_committed_table(tmp_path, monkeypatch):
+    monkeypatch.setattr(budget, "TABLE", tmp_path / "missing.json")
+    assert budget.publish(check=True) == 1
+
+
+# ---------------------------------------------------------------------------
 # The matrix
 # ---------------------------------------------------------------------------
 

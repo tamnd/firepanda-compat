@@ -91,6 +91,12 @@ budget = "python -m fpcompat.budget"
 # manifest is what makes a change to the inputs show up as a diff.
 budget-corpus = "python -m fpcompat.budget --corpus"
 
+# Writes operations.json, which is the operation table with no numbers in it. It is
+# committed because firepanda-bench reads it to say which operations a query is made of,
+# and it cannot import this package: a bench environment carries Polars, DuckDB and cuDF
+# and this one deliberately carries none of them.
+operations = "python -m fpcompat.budget --operations"
+
 # The table, from the result files. With pandas alone it prints the pandas column,
 # which is deliberate: a baseline measured after the subject is a baseline measured to
 # make the subject look a particular way.
