@@ -55,6 +55,31 @@ for name in (
         "the answer is smaller than the number of distinct keys in the column",
     )
 
+for name in (
+    "sum",
+    "mean",
+    "min",
+    "max",
+    "count",
+    "first",
+    "last",
+    "median",
+    "nunique",
+):
+    case(
+        f"groupby/flat-{name}",
+        f"GroupBy.{name}",
+        frames=KEYED,
+        expr=(lambda method: lambda pd, df: getattr(df.groupby("key", as_index=False), method)())(
+            name
+        ),
+        note="the same reduction as the case above with the keys left as a column, "
+        "which is a different shape and the same arithmetic. It is here because the "
+        "two are worth failing separately: an engine that has no index fails every "
+        "indexed form of this on the shape and the comparison stops there, so without "
+        "these the section can say nothing at all about whether the numbers are right",
+    )
+
 for name in ("std", "var", "sem", "skew"):
     case(
         f"groupby/{name}",
@@ -64,6 +89,17 @@ for name in ("std", "var", "sem", "skew"):
         rules=SPREAD,
         note="a group of one gives a null and not a zero, which the thousand key frame "
         "would make into sixty four nulls and no information",
+    )
+    case(
+        f"groupby/flat-{name}",
+        f"GroupBy.{name}",
+        frames=("keys_10", "keys_awkward"),
+        expr=(lambda method: lambda pd, df: getattr(df.groupby("key", as_index=False), method)())(
+            name
+        ),
+        rules=SPREAD,
+        note="the dispersion with the keys left as a column, so that the arithmetic "
+        "can fail separately from the shape",
     )
 
 case(
@@ -98,6 +134,40 @@ case(
     expr=lambda pd, df: df.groupby("key", as_index=False).sum(),
     note="the key comes back as a column rather than as the index, which is a "
     "different shape and not a different computation",
+)
+case(
+    "groupby/flat-dropna-false",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("by", "dropna", "as_index"),
+    frames=("keys_awkward",),
+    expr=lambda pd, df: df.groupby("key", dropna=False, as_index=False).sum(),
+    note="keeping the null key and keeping the key as a column at the same time, so "
+    "that an engine with no index can still be asked whether it puts the null group "
+    "in and where it puts it",
+)
+case(
+    "groupby/flat-sort-false",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("by", "sort", "as_index"),
+    frames=SMALL,
+    expr=lambda pd, df: df.groupby("key", sort=False, as_index=False).sum(),
+    rules=Rules(
+        relaxations=frozenset({"grouped_order"}),
+        reason="sort off means first seen order, which pandas documents as not "
+        "guaranteed, so the groups are compared as a set",
+    ),
+)
+case(
+    "groupby/flat-two-keys",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("by", "as_index"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.groupby(["left", "right"], as_index=False).sum(),
+    note="two keys as columns rather than as a MultiIndex, which is the only form of "
+    "a two key grouping an engine without a MultiIndex can be measured on",
 )
 case(
     "groupby/two-keys",

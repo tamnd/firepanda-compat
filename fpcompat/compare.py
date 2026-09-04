@@ -793,6 +793,58 @@ def _is_identity(order: np.ndarray) -> bool:
     return bool(np.array_equal(order, np.arange(len(order), dtype=np.int64)))
 
 
+def _widen_views(kind: pa.DataType) -> pa.DataType:
+    """Returns the non-view type a view type holds the same values as.
+
+    Arrow's `take` has no kernel for the view layouts. That is a gap in pyarrow 25 and
+    not a fact about either engine, but it lands here rather than there, because
+    firepanda's strings are views and an order relaxation on a string key is the
+    ordinary case rather than an exotic one. A grouped comparison on a text key
+    reported "the comparison itself raised ArrowNotImplementedError", which is the
+    harness admitting it has a bug and is exactly what should not sit in a result
+    file.
+
+    Widening rather than narrowing, because a view holds 64 bit offsets internally and
+    `string` does not, so a long column would overflow on the way in. Nothing is lost
+    to the comparison either way: `canonical_type` already folds all three string
+    widths to one name, on the grounds that pandas has one string dtype and the
+    difference between a 32 bit offset, a 64 bit offset and an inline prefix is not
+    something a user can observe.
+
+    Args:
+        kind: An Arrow type.
+
+    Returns:
+        The same type with any view layout replaced, recursing through lists and
+        structs, since a view can be nested inside either.
+    """
+    if kind == pa.string_view():
+        return pa.large_string()
+    if kind == pa.binary_view():
+        return pa.large_binary()
+    if pa.types.is_list(kind) or pa.types.is_large_list(kind) or pa.types.is_list_view(kind):
+        return pa.large_list(_widen_views(kind.value_type))
+    if pa.types.is_struct(kind):
+        return pa.struct([f.with_type(_widen_views(f.type)) for f in kind])
+    return kind
+
+
+def _take(table: pa.Table, order: np.ndarray) -> pa.Table:
+    """Reorders a table's rows, widening any view column first so that Arrow can.
+
+    Args:
+        table: The table.
+        order: Row indices, in output order.
+
+    Returns:
+        The reordered table.
+    """
+    widened = pa.schema([field.with_type(_widen_views(field.type)) for field in table.schema])
+    if widened != table.schema:
+        table = table.cast(widened)
+    return table.take(pa.array(order))
+
+
 def _apply_ordering(
     left: Answer, right: Answer, rules: Rules, verdict: Verdict
 ) -> tuple[pa.Table, pa.Table]:
@@ -836,8 +888,8 @@ def _apply_ordering(
             right_order = _sort_key(right_table, right_columns)
         if not _is_identity(left_order) or not _is_identity(right_order):
             used.add(name)
-        left_table = left_table.take(pa.array(left_order))
-        right_table = right_table.take(pa.array(right_order))
+        left_table = _take(left_table, left_order)
+        right_table = _take(right_table, right_order)
 
     verdict.relaxations_used = frozenset(used)
     return left_table, right_table
