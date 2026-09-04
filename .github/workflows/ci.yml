@@ -169,7 +169,7 @@ jobs:
             python -m fpcompat.budget --check --rows 10000
 
       # Runs the whole cost matrix at ten thousand rows, where every timing is noise
-      # and the point is that all fifty three operations are spelled correctly in
+      # and the point is that all sixty five operations are spelled correctly in
       # whatever pandas is pinned. The numbers are thrown away and no gate reads them,
       # because a timing gate on a shared runner fails on a noisy neighbour and passes
       # on a real regression that happened to land on a quiet one. The gate lives in

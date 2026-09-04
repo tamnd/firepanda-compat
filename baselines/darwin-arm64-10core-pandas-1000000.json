@@ -9,217 +9,265 @@
   "repeats": 7,
   "rows": 1000000,
   "rows_measured": {
+    "assign two columns": {
+      "median_s": 0.001671,
+      "peak_rss_bytes": 166674432
+    },
     "astype int64 to int32": {
-      "median_s": 0.000295,
-      "peak_rss_bytes": 165560320
+      "median_s": 0.000272,
+      "peak_rss_bytes": 166723584
     },
     "astype to category": {
-      "median_s": 0.007826,
-      "peak_rss_bytes": 233570304
+      "median_s": 0.009312,
+      "peak_rss_bytes": 233734144
     },
     "boolean mask": {
-      "median_s": 0.000161,
-      "peak_rss_bytes": 165937152
+      "median_s": 0.000169,
+      "peak_rss_bytes": 165609472
     },
     "cast then groupby.agg": {
-      "median_s": 0.007073,
-      "peak_rss_bytes": 255819776
+      "median_s": 0.008311,
+      "peak_rss_bytes": 257163264
     },
     "cast then sort then head": {
-      "median_s": 0.090823,
-      "peak_rss_bytes": 346521600
+      "median_s": 0.089353,
+      "peak_rss_bytes": 298352640
     },
     "category then groupby.sum": {
-      "median_s": 0.013792,
-      "peak_rss_bytes": 233684992
+      "median_s": 0.014014,
+      "peak_rss_bytes": 224395264
     },
     "concat then sort then drop_duplicates": {
-      "median_s": 0.231749,
-      "peak_rss_bytes": 485654528
+      "median_s": 0.242907,
+      "peak_rss_bytes": 454868992
     },
     "concat two frames": {
-      "median_s": 0.002022,
-      "peak_rss_bytes": 192610304
+      "median_s": 0.002243,
+      "peak_rss_bytes": 189874176
     },
     "cumsum": {
-      "median_s": 0.002036,
-      "peak_rss_bytes": 166690816
+      "median_s": 0.002185,
+      "peak_rss_bytes": 165871616
     },
     "describe": {
-      "median_s": 0.045078,
-      "peak_rss_bytes": 167641088
+      "median_s": 0.046957,
+      "peak_rss_bytes": 176209920
     },
     "drop_duplicates": {
-      "median_s": 0.019388,
-      "peak_rss_bytes": 289685504
+      "median_s": 0.021073,
+      "peak_rss_bytes": 317620224
     },
     "drop_duplicates then merge": {
-      "median_s": 0.003725,
-      "peak_rss_bytes": 230686720
+      "median_s": 0.004487,
+      "peak_rss_bytes": 237486080
     },
     "dt.floor to the hour": {
-      "median_s": 0.001417,
-      "peak_rss_bytes": 149340160
+      "median_s": 0.001489,
+      "peak_rss_bytes": 150503424
     },
     "dt.year": {
-      "median_s": 0.008784,
-      "peak_rss_bytes": 151175168
+      "median_s": 0.009768,
+      "peak_rss_bytes": 151322624
     },
     "dt.year then groupby.mean": {
-      "median_s": 0.017514,
-      "peak_rss_bytes": 168099840
+      "median_s": 0.015948,
+      "peak_rss_bytes": 167362560
+    },
+    "filter then groupby.median": {
+      "median_s": 0.011952,
+      "peak_rss_bytes": 245547008
     },
     "filter then groupby.sum": {
-      "median_s": 0.007761,
-      "peak_rss_bytes": 243679232
+      "median_s": 0.009111,
+      "peak_rss_bytes": 246300672
     },
     "filter then sort then groupby": {
-      "median_s": 0.045494,
-      "peak_rss_bytes": 295862272
+      "median_s": 0.04679,
+      "peak_rss_bytes": 300826624
     },
     "floor then resample then cumsum": {
-      "median_s": 0.006104,
-      "peak_rss_bytes": 150781952
+      "median_s": 0.007181,
+      "peak_rss_bytes": 154648576
     },
     "groupby then sort then head": {
-      "median_s": 0.006148,
-      "peak_rss_bytes": 245628928
+      "median_s": 0.008891,
+      "peak_rss_bytes": 282116096
     },
     "groupby.agg then merge": {
-      "median_s": 0.006654,
-      "peak_rss_bytes": 262373376
+      "median_s": 0.006276,
+      "peak_rss_bytes": 246775808
     },
     "groupby.agg two functions": {
-      "median_s": 0.009042,
-      "peak_rss_bytes": 245612544
+      "median_s": 0.008562,
+      "peak_rss_bytes": 245907456
     },
     "groupby.apply lambda": {
-      "median_s": 0.018918,
-      "peak_rss_bytes": 293289984
+      "median_s": 0.019807,
+      "peak_rss_bytes": 256901120
+    },
+    "groupby.count": {
+      "median_s": 0.004591,
+      "peak_rss_bytes": 246562816
+    },
+    "groupby.head 2 per group": {
+      "median_s": 0.016684,
+      "peak_rss_bytes": 288358400
     },
     "groupby.mean string key": {
-      "median_s": 0.010396,
-      "peak_rss_bytes": 246071296
+      "median_s": 0.010474,
+      "peak_rss_bytes": 225394688
+    },
+    "groupby.median": {
+      "median_s": 0.014783,
+      "peak_rss_bytes": 259866624
+    },
+    "groupby.min": {
+      "median_s": 0.006381,
+      "peak_rss_bytes": 264896512
     },
     "groupby.nunique high cardinality": {
-      "median_s": 0.030161,
-      "peak_rss_bytes": 279248896
+      "median_s": 0.031935,
+      "peak_rss_bytes": 323272704
+    },
+    "groupby.std": {
+      "median_s": 0.007207,
+      "peak_rss_bytes": 247398400
     },
     "groupby.sum 1e3 groups": {
-      "median_s": 0.006266,
-      "peak_rss_bytes": 252395520
+      "median_s": 0.00583,
+      "peak_rss_bytes": 243990528
     },
     "isin against 50 values": {
-      "median_s": 0.00511,
-      "peak_rss_bytes": 197345280
+      "median_s": 0.005115,
+      "peak_rss_bytes": 196182016
     },
     "isin then groupby.nunique": {
-      "median_s": 0.028603,
-      "peak_rss_bytes": 328597504
+      "median_s": 0.025242,
+      "peak_rss_bytes": 304889856
+    },
+    "map through a dict": {
+      "median_s": 0.002707,
+      "peak_rss_bytes": 212172800
+    },
+    "mean": {
+      "median_s": 0.000402,
+      "peak_rss_bytes": 167526400
     },
     "merge on int64 key": {
-      "median_s": 0.018413,
-      "peak_rss_bytes": 284672000
+      "median_s": 0.018829,
+      "peak_rss_bytes": 342392832
     },
     "merge then filter then sort": {
-      "median_s": 0.088885,
-      "peak_rss_bytes": 545669120
+      "median_s": 0.077647,
+      "peak_rss_bytes": 482115584
     },
     "merge then groupby.mean": {
-      "median_s": 0.028881,
-      "peak_rss_bytes": 420298752
+      "median_s": 0.029944,
+      "peak_rss_bytes": 303316992
     },
     "pivot_table": {
-      "median_s": 0.026361,
-      "peak_rss_bytes": 283803648
+      "median_s": 0.02759,
+      "peak_rss_bytes": 285130752
     },
     "quantile": {
-      "median_s": 0.01356,
-      "peak_rss_bytes": 166936576
+      "median_s": 0.015093,
+      "peak_rss_bytes": 167657472
     },
     "rank": {
-      "median_s": 0.088546,
-      "peak_rss_bytes": 259325952
+      "median_s": 0.097581,
+      "peak_rss_bytes": 258637824
     },
     "rank then filter then groupby.max": {
-      "median_s": 0.106171,
-      "peak_rss_bytes": 364986368
+      "median_s": 0.095992,
+      "peak_rss_bytes": 297385984
     },
     "resample.sum hourly": {
-      "median_s": 0.003968,
-      "peak_rss_bytes": 149356544
+      "median_s": 0.004335,
+      "peak_rss_bytes": 149471232
     },
     "rolling then dropna then max": {
-      "median_s": 0.011385,
-      "peak_rss_bytes": 183107584
+      "median_s": 0.01035,
+      "peak_rss_bytes": 183009280
     },
     "rolling.mean window 100": {
-      "median_s": 0.006915,
-      "peak_rss_bytes": 167936000
+      "median_s": 0.006878,
+      "peak_rss_bytes": 167706624
     },
     "set_index then loc": {
-      "median_s": 0.085225,
-      "peak_rss_bytes": 305987584
+      "median_s": 0.086412,
+      "peak_rss_bytes": 358793216
     },
     "sort_values int64": {
-      "median_s": 0.071,
-      "peak_rss_bytes": 210059264
+      "median_s": 0.072413,
+      "peak_rss_bytes": 265617408
     },
     "sort_values two columns": {
-      "median_s": 0.043021,
-      "peak_rss_bytes": 357990400
+      "median_s": 0.041663,
+      "peak_rss_bytes": 331431936
     },
     "str.contains literal": {
-      "median_s": 0.019738,
-      "peak_rss_bytes": 160481280
+      "median_s": 0.020935,
+      "peak_rss_bytes": 162594816
     },
     "str.contains regex": {
-      "median_s": 0.028919,
-      "peak_rss_bytes": 159793152
+      "median_s": 0.032216,
+      "peak_rss_bytes": 161759232
     },
     "str.contains then groupby.size": {
-      "median_s": 0.020683,
-      "peak_rss_bytes": 193609728
+      "median_s": 0.020854,
+      "peak_rss_bytes": 217382912
+    },
+    "str.endswith": {
+      "median_s": 0.003506,
+      "peak_rss_bytes": 161775616
     },
     "str.len": {
-      "median_s": 0.010146,
-      "peak_rss_bytes": 174030848
+      "median_s": 0.010371,
+      "peak_rss_bytes": 173719552
     },
     "str.len then filter then mean": {
-      "median_s": 0.024156,
-      "peak_rss_bytes": 234586112
+      "median_s": 0.023811,
+      "peak_rss_bytes": 246005760
     },
     "str.replace literal": {
-      "median_s": 0.019955,
-      "peak_rss_bytes": 202014720
+      "median_s": 0.020514,
+      "peak_rss_bytes": 200327168
+    },
+    "str.slice": {
+      "median_s": 0.00505,
+      "peak_rss_bytes": 172163072
     },
     "str.split then get": {
-      "median_s": 0.345871,
-      "peak_rss_bytes": 525008896
+      "median_s": 0.364339,
+      "peak_rss_bytes": 525221888
+    },
+    "str.startswith": {
+      "median_s": 0.003455,
+      "peak_rss_bytes": 162054144
     },
     "str.upper": {
-      "median_s": 0.017831,
-      "peak_rss_bytes": 181387264
+      "median_s": 0.020251,
+      "peak_rss_bytes": 183451648
     },
     "str.upper then drop_duplicates": {
-      "median_s": 0.08772,
-      "peak_rss_bytes": 395264000
+      "median_s": 0.088063,
+      "peak_rss_bytes": 417267712
     },
     "sum": {
-      "median_s": 0.000103,
-      "peak_rss_bytes": 166019072
+      "median_s": 0.000113,
+      "peak_rss_bytes": 165920768
     },
     "value_counts": {
-      "median_s": 0.005334,
-      "peak_rss_bytes": 196427776
+      "median_s": 0.005743,
+      "peak_rss_bytes": 197672960
     },
     "value_counts then head": {
-      "median_s": 0.033899,
-      "peak_rss_bytes": 260341760
+      "median_s": 0.058996,
+      "peak_rss_bytes": 401981440
     },
     "where": {
-      "median_s": 0.001374,
-      "peak_rss_bytes": 167870464
+      "median_s": 0.001366,
+      "peak_rss_bytes": 166330368
     }
   }
 }

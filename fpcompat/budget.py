@@ -604,6 +604,90 @@ def _categorical(pd: Any, f: Frames) -> Any:
     return f["keyed"]["id1"].astype("category")
 
 
+# The eleven below come from firepanda-bench rather than from the parity sections. Every
+# one of them is an operation a published benchmark query actually runs and this matrix
+# had no row for, which is a better filter than picking operations that look important.
+# The list came out of linking each bench query to its operations, and it produced work
+# rather than opinions.
+
+
+@operation("groupby.median", "groupby", "keyed", "DataFrame.groupby GroupBy.median")
+def _groupby_median(pd: Any, f: Frames) -> Any:
+    # db-benchmark q6, and the most interesting row added here. A median cannot be
+    # computed with a running accumulator, so the values have to be kept per group,
+    # and until this row existed the matrix measured no reduction that needs per group
+    # memory at all. That is the thing the memory half of the table exists to expose.
+    return f["keyed"].groupby("id2")["v2"].median()
+
+
+@operation("groupby.std", "groupby", "keyed", "GroupBy.std")
+def _groupby_std(pd: Any, f: Frames) -> Any:
+    return f["keyed"].groupby("id2")["v2"].std()
+
+
+@operation("groupby.min", "groupby", "keyed", "GroupBy.min")
+def _groupby_min(pd: Any, f: Frames) -> Any:
+    # `GroupBy.max` had a row and its opposite did not, which was an accident rather
+    # than a decision. They are not always the same code path.
+    return f["keyed"].groupby("id2")["v1"].min()
+
+
+@operation("groupby.count", "groupby", "keyed", "GroupBy.count")
+def _groupby_count(pd: Any, f: Frames) -> Any:
+    # Counting non null values, which is not the same as `size` and is the one TPC-H
+    # q13 calls.
+    return f["keyed"].groupby("id2")["v1"].count()
+
+
+@operation("groupby.head 2 per group", "groupby", "keyed", "GroupBy.head")
+def _groupby_head(pd: Any, f: Frames) -> Any:
+    # db-benchmark q8, which is the query that separates an engine with a real group by
+    # from one faking it with a sort. An order statistic per group rather than a
+    # reduction, and the answer is large where every other grouped row here is small.
+    return f["keyed"].groupby("id2").head(2)
+
+
+@operation("str.startswith", "strings", "strings", "str.startswith")
+def _startswith(pd: Any, f: Frames) -> Any:
+    return f["strings"]["s"].str.startswith("ab")
+
+
+@operation("str.endswith", "strings", "strings", "str.endswith")
+def _endswith(pd: Any, f: Frames) -> Any:
+    # Anchored at the other end, which is a different kernel in an engine that stores
+    # offsets, because the length has to be read before the comparison can start.
+    return f["strings"]["s"].str.endswith("z")
+
+
+@operation("str.slice", "strings", "strings", "str.slice")
+def _slice(pd: Any, f: Frames) -> Any:
+    # TPC-H q22 takes the first two characters of a key column. Positional rather than
+    # searching, so an engine that has to decode UTF-8 to find character two pays for
+    # it here and an engine that does not, does not.
+    return f["strings"]["s"].str.slice(0, 2)
+
+
+@operation("map through a dict", "basics", "keyed", "Series.map")
+def _map(pd: Any, f: Frames) -> Any:
+    # TPC-H q2 and q17 both map a key to a per key aggregate through a dict, which is
+    # what is measured here rather than `map` with a lambda. The lambda form is the
+    # interpreter and would be the largest ratio in the table by a wide margin, and it
+    # is also not what the queries do.
+    table = {value: float(value) for value in range(GROUPS)}
+    return f["keyed"]["id2"].map(table)
+
+
+@operation("mean", "stats", "numeric", "Series.mean")
+def _mean(pd: Any, f: Frames) -> Any:
+    return f["numeric"]["c"].mean()
+
+
+@operation("assign two columns", "basics", "numeric", "DataFrame.assign")
+def _assign(pd: Any, f: Frames) -> Any:
+    frame = f["numeric"]
+    return frame.assign(d=frame["a"] * 2, e=frame["c"] + 1.0)
+
+
 # The chained cases. These are the rows where a tenth of the memory is actually
 # available, because peak memory in pandas is dominated by intermediates and a chain is
 # where the intermediates are. A single reduction cannot use much less memory than its
@@ -846,6 +930,23 @@ def _year_group(pd: Any, f: Frames) -> Any:
 def _isin_group_nunique(pd: Any, f: Frames) -> Any:
     frame = f["keyed"]
     return frame[frame["v1"].isin(list(range(50)))].groupby("id1")["id3"].nunique()
+
+
+@operation(
+    "filter then groupby.median",
+    "groupby",
+    "keyed",
+    "DataFrame.loc DataFrame.groupby GroupBy.median",
+    chained=True,
+)
+def _filter_group_median(pd: Any, f: Frames) -> Any:
+    # The chained twin of `groupby.median`, and the reason it is here rather than the
+    # plain row being enough. A median keeps the values per group, a filter in front of
+    # it changes how many values that is, and the peak of the pair is where an engine
+    # that streams the filter into the aggregation separates from one that materializes
+    # the filtered frame first. Neither of those shows up in the single row.
+    frame = f["keyed"]
+    return frame[frame["v1"] > 50].groupby("id2")["v2"].median()
 
 
 def registry() -> dict[str, Operation]:

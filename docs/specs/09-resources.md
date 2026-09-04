@@ -45,7 +45,7 @@ The goal is right as an ambition and it is wrong as a uniform expectation, and s
 
 **Where ten times is not available.** A single pass over one column that does nothing but copy bytes is bandwidth bound in both libraries, and the ceiling is the memory controller, not the language. `astype` between two fixed width types, `abs`, a comparison against a scalar, and anything else that reads n bytes and writes n bytes lands between 1 and 3 times, and no amount of work moves it, because pandas 3.0 dispatches those to Arrow compute which is already vectorized C++. Publishing 1.2 times on those rows is the honest thing to do and it is also the useful thing, because it tells a user that a program dominated by casts will not get faster and they should stop reading.
 
-**Where a tenth of the memory is available.** Peak memory in pandas is dominated by intermediates, so a chunked engine that never materializes a whole intermediate column wins by a large factor on any chain of more than two operations, and by very little on a single operation whose output is the same size as its input. The interesting rows are therefore the multi step ones, and the matrix includes 20 chained cases for exactly that reason: filter then group, join then aggregate, read then cast then sort. Those are where the tenth is real.
+**Where a tenth of the memory is available.** Peak memory in pandas is dominated by intermediates, so a chunked engine that never materializes a whole intermediate column wins by a large factor on any chain of more than two operations, and by very little on a single operation whose output is the same size as its input. The interesting rows are therefore the multi step ones, and the matrix includes 21 chained cases for exactly that reason: filter then group, join then aggregate, read then cast then sort. Those are where the tenth is real.
 
 **Where a tenth of the memory is not available.** An operation whose output is as large as its input cannot use much less than two columns of memory in any implementation. Sorting needs a permutation and a destination. A join output larger than either input is larger than either input in every engine. Those rows will read between 1.5 and 3 times and the number is the truth.
 
@@ -59,9 +59,19 @@ Like the conformance ratchet: no row may regress by more than 10 percent against
 
 The matrix runs nightly rather than per pull request. It takes 20 minutes at 1 million rows across the whole registry and that is too slow for a merge gate, and a per pull request subset of 40 operations chosen for coverage runs in 2 minutes and is the gate.
 
-Two things about the gate that the first implementation settled and this document should say. It does not run in CI. A timing gate on a shared runner fails on a noisy neighbour and passes on a real regression that happened to land on a quiet one, and after the third false alarm somebody adds a retry and it stops being a gate. So `pixi run budget-gate` belongs on a machine that is always the same one, and what CI runs is the whole matrix at ten thousand rows with one repeat, where every timing is noise and the only thing being checked is that all 53 operations are still spelled correctly against the pinned pandas.
+Two things about the gate that the first implementation settled and this document should say. It does not run in CI. A timing gate on a shared runner fails on a noisy neighbour and passes on a real regression that happened to land on a quiet one, and after the third false alarm somebody adds a retry and it stops being a gate. So `pixi run budget-gate` belongs on a machine that is always the same one, and what CI runs is the whole matrix at ten thousand rows with one repeat, where every timing is noise and the only thing being checked is that all 65 operations are still spelled correctly against the pinned pandas.
 
 And a row that stopped running counts as a regression. An operation that used to work and now raises is the largest regression available, and a gate that only compares the rows both sides have would score it as a clean pass.
+
+## Where the operations come from
+
+The first 53 were chosen from the parity sections, which is a reasonable way to pick them and it is not the only one. The other way is to take the operations that queries people publish results for are actually made of, and firepanda-bench now declares that for each of its 37 queries, which makes the two lists comparable.
+
+Running one against the other found 11 operations that a published benchmark query runs and this matrix had no row for. `GroupBy.median` and `GroupBy.std`, which are the whole point of db-benchmark q6 and mean the matrix had measured no reduction that keeps its values per group, which is the one shape where the memory half of the table has anything to say. `GroupBy.min`, where the opposite had a row and this did not. `GroupBy.count`, `GroupBy.head`, `str.startswith`, `str.endswith`, `str.slice`, `Series.map`, `Series.mean` and `DataFrame.assign`. They are all in now, `GroupBy.median` twice because the chained form is where the per group memory shows.
+
+The one operation on that list that is deliberately not here is `read_csv`. Reading a CSV is what the whole bench ingestion suite measures, on five file shapes against four engines, and this corpus is Arrow on disk rather than text, so a row here would be a worse version of a table that already exists.
+
+The rule that comes out of this: an operation a published benchmark query runs belongs in the matrix. That is a filter that produces work rather than opinions, and it is checked by a test rather than remembered.
 
 ## The table other repositories read
 
