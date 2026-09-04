@@ -145,6 +145,40 @@ jobs:
             --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
             python -m fpcompat.report --ratchet --results results/firepanda.json
 
+      # The budget frames are not committed either, and this proves they still
+      # generate and still generate the same thing. Ten thousand rows and not a
+      # million, because the digest is sampled from both ends and a change to the
+      # generator shows up in the first row.
+      - name: Budget corpus is current
+        run: |
+          [ -f fpcompat/budget.py ] || { echo "::notice::no budget yet"; exit 0; }
+          uvx --python "${{ steps.pins.outputs.python }}" \
+            --with "pandas==${{ steps.pins.outputs.pandas }}" \
+            --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
+            python -m fpcompat.budget --check --rows 10000
+
+      # Runs the whole cost matrix at ten thousand rows, where every timing is noise
+      # and the point is that all fifty three operations are spelled correctly in
+      # whatever pandas is pinned. The numbers are thrown away and no gate reads them,
+      # because a timing gate on a shared runner fails on a noisy neighbour and passes
+      # on a real regression that happened to land on a quiet one. The gate lives in
+      # `pixi run budget-gate` and belongs on a machine that is always the same one.
+      - name: Cost matrix runs
+        run: |
+          [ -f fpcompat/budget.py ] || { echo "::notice::no budget yet"; exit 0; }
+          uvx --python "${{ steps.pins.outputs.python }}" \
+            --with "pandas==${{ steps.pins.outputs.pandas }}" \
+            --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
+            python -m fpcompat.budget --rows 10000 --repeats 1
+          {
+            echo '### Cost matrix, pandas at 10k rows, one repeat, timings meaningless'
+            echo
+            uvx --python "${{ steps.pins.outputs.python }}" \
+              --with "pandas==${{ steps.pins.outputs.pandas }}" \
+              --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
+              python -m fpcompat.budget --matrix --rows 10000
+          } >> "$GITHUB_STEP_SUMMARY"
+
   links:
     name: Link check
     runs-on: ubuntu-latest

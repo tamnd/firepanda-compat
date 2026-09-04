@@ -82,8 +82,29 @@ ratchet = "python -m fpcompat.report --ratchet --results results/firepanda.json"
 coverage = "python -m fpcompat.report --coverage"
 
 # The operation level cost matrix: wall clock and peak resident set per operation
-# against pandas, on the budget corpus. docs/specs/09-resources.md.
+# against pandas, on the budget corpus. docs/specs/09-resources.md. One process per
+# engine per operation, because a peak resident set is a property of a process.
 budget = "python -m fpcompat.budget"
+
+# Regenerates the budget corpus at a size and reconciles it with the committed
+# manifest. The frames are not committed, one million rows of them is 116 MB, and the
+# manifest is what makes a change to the inputs show up as a diff.
+budget-corpus = "python -m fpcompat.budget --corpus"
+
+# The table, from the result files. With pandas alone it prints the pandas column,
+# which is deliberate: a baseline measured after the subject is a baseline measured to
+# make the subject look a particular way.
+budget-matrix = "python -m fpcompat.budget --matrix"
+
+# Records this machine's baseline from the last sweep, into baselines/. Commit it and
+# say in the pull request which machine it is.
+budget-baseline = "python -m fpcompat.budget --baseline"
+
+# Fails when a row is more than ten percent slower or heavier than the committed
+# baseline for this machine. Meant for a fixed machine and not for a shared CI runner,
+# where it would fail on a noisy neighbour and pass on a real regression that landed on
+# a quiet one, and after the third false alarm somebody adds a retry.
+budget-gate = "python -m fpcompat.budget --gate"
 
 test = "pytest -q"
 lint = "ruff check . && ruff format --check ."

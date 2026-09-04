@@ -62,6 +62,7 @@ C0, the instrument. The specification is 12 documents in [`docs/specs/`](docs/sp
 | `fpcompat/` | the harness: surface, corpus, comparison, cases, runner, report |
 | `surface/` | the committed inventory of the pandas surface, one file per pandas version |
 | `corpus/` | the manifest describing the frames, digested; the frames themselves are generated |
+| `baselines/` | one committed cost matrix baseline per machine, which the budget gate reads |
 | `drivers/firepanda/` | the Mojo side, until firepanda is importable from Python at M3 |
 | `results/` | one JSON per run, not committed |
 | `docs/specs/` | the specification, mirrored from the author's notes |
@@ -78,9 +79,28 @@ pixi run report        # the scoreboard
 pixi run coverage      # which pandas names and parameters no case touches
 pixi run site          # the three pages, into a gitignored directory
 pixi run ratchet       # fail if a section went backwards since the recorded floor
-pixi run budget        # the operation level cost matrix
 pixi run test          # pytest over the harness itself
 ```
+
+The cost matrix is its own set of commands, because it runs on its own corpus:
+
+```
+pixi run budget-corpus   # build the budget frames and reconcile the manifest
+pixi run budget          # measure every operation, one process each
+pixi run budget-matrix   # the table
+pixi run budget-baseline # record this machine's floor from the last sweep
+pixi run budget-gate     # fail if a row got 10% slower or heavier than that floor
+```
+
+## What the cost matrix is for
+
+The goal is ten times the speed on a tenth of the resources. firepanda-bench checks that on 37 queries, which means it is not checked on `str.extract`, on `reindex`, or on any of the other thousand callables a real program calls. This suite already calls every operation on known inputs with the answers already verified, so `pixi run budget` puts a timer and a memory high water mark on the same operations and produces a row per operation instead of a row per query. Bench answers whether a query is fast. This answers which operation is slow, which is the question you need answered before you can fix anything.
+
+53 operations, 20 of them chains like filter then group or merge then aggregate, because peak memory in pandas is dominated by intermediates and a single reduction cannot use much less memory than its input however good the engine is. One process per engine per operation, since a peak resident set is a property of a process. Seven repeats with the median published and the interquartile range beside it. The answer is consumed before the timer stops, which matters here because firepanda is lazy underneath after M4 and every row would otherwise read as instant.
+
+The budget corpus is not the correctness corpus. That one is 64 rows and mean by design, and timing a call on 64 rows measures interpreter overhead. This one is the same generator, the same constants and the same seed at one million rows, with no edge value placement. It is generated rather than committed and `corpus/budget-manifest.json` is what makes a change to the inputs show up as a diff.
+
+The rows we lose go in the same table as the rows we win, with no separate section and no footnote. A matrix where firepanda wins every row has either been curated or is measuring the wrong thing, and the first person to notice will be somebody deciding whether to trust the project. A row below one is a performance bug with a name and an input size, and the table is where it gets its name.
 
 ## What the scoreboard prints
 

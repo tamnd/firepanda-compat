@@ -12,6 +12,10 @@ corpus/*.arrow
 corpus/*.parquet
 corpus/*.csv
 
+# The budget corpus, for the same reason and more so. One million rows is 116 MB and
+# ten million is over a gigabyte. corpus/budget-manifest.json is the committed part.
+corpus/budget/
+
 # Result files stay on the machine that produced them. CI uploads them as run
 # artifacts and draws the site from them, and nothing commits them back here.
 results/*.json
