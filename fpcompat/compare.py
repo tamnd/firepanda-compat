@@ -503,6 +503,16 @@ def normalize(answer: Any) -> Answer:
             table=pa.Table.from_arrays([answer.combine_chunks()], names=[VALUE]),
             columns=(VALUE,),
         )
+    if isinstance(answer, pd.api.extensions.ExtensionArray):
+        # A Categorical, an ArrowStringArray, a DatetimeArray and everything else
+        # pandas returns from `unique` and from `Series.array`. These have to be an
+        # array and not a scalar, and going through `_array` keeps a Categorical's
+        # categories and its ordered flag, which the dictionary comparison then reads.
+        return Answer(
+            kind="array",
+            table=pa.Table.from_arrays([_array(answer)], names=[VALUE]),
+            columns=(VALUE,),
+        )
     if isinstance(answer, np.ndarray):
         if answer.ndim == 1:
             return Answer(
@@ -946,8 +956,11 @@ def resolve_error(name: str) -> type[BaseException]:
     """
     short = name.rsplit(".", 1)[-1]
     # pandas first, because `pandas.errors` shadows nothing in builtins and the cases
-    # that matter here are the 46 pandas types rather than `ValueError`.
-    for namespace in (pd.errors, builtins):
+    # that matter here are the 46 pandas types rather than `ValueError`. pyarrow is
+    # last and it is there because the Arrow backed accessors let Arrow's own errors
+    # through unchanged, so `ArrowInvalid` is part of what a caller sees and there is
+    # no honest way to describe those cases without naming it.
+    for namespace in (pd.errors, builtins, pa.lib):
         found = getattr(namespace, short, None)
         if isinstance(found, type) and issubclass(found, BaseException):
             return found
