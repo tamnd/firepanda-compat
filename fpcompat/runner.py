@@ -43,6 +43,8 @@ from typing import Any
 from fpcompat import corpus
 from fpcompat.cases import NO_WARNING, Case, registry, select
 from fpcompat.compare import check_error, check_warnings, compare
+from fpcompat.divergences import Divergence
+from fpcompat.divergences import match as divergence_for
 from fpcompat.engines import load
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -55,23 +57,76 @@ UNIMPLEMENTED = "unimplemented"
 OUTCOMES = (PASS, FAIL, DIVERGENT, UNIMPLEMENTED)
 
 
-def divergent_ids() -> frozenset[str]:
-    """The case ids registered as divergences.
+def _check_divergence(
+    entry: Divergence,
+    case: Case,
+    expected: Any,
+    actual: Any,
+    actual_error: BaseException | None,
+    record: dict[str, Any],
+) -> dict[str, Any]:
+    """Requires the outcome the registry declares, rather than excusing the case.
 
-    The registry itself lands with issue #7. Until it does this is empty, which is the
-    correct behaviour rather than a placeholder: with no registered divergences, a
-    case that diverges is a failure, which is the strict reading and the one that
-    cannot flatter anybody.
+    This is the whole point of the registry. A registered divergence is not skipped
+    and it is not removed from the denominator, it is run and it has to be true. An
+    entry saying the operation raises fails the day it stops raising, and the message
+    says the registry is out of date rather than blaming the library, because on that
+    day the library got better and the file got stale.
+
+    Args:
+        entry: The registry entry covering this case.
+        case: The case.
+        expected: The pandas answer.
+        actual: The subject answer.
+        actual_error: What the subject raised, if anything.
+        record: The result record, filled in.
 
     Returns:
-        The registered ids.
+        The record.
     """
+    record["divergence"] = entry.id
+
+    if entry.expect == "raises":
+        if actual_error is not None:
+            record["outcome"] = DIVERGENT
+            record["detail"] = f"{entry.id}: {type(actual_error).__name__}: {actual_error}"
+            return record
+        record["outcome"] = FAIL
+        record["detail"] = (
+            f"{entry.id} says this raises and it returned an answer. That is the "
+            "registry being out of date rather than a bug, and the fix is to delete "
+            "the entry rather than to change the case"
+        )
+        return record
+
+    if actual_error is not None:
+        record["outcome"] = FAIL
+        record["detail"] = (
+            f"{entry.id} says the answer differs and the operation raised "
+            f"{type(actual_error).__name__} instead. Refusing is a different promise "
+            "from answering differently, so the entry needs to say expect = raises"
+        )
+        return record
+
     try:
-        # Imported here rather than at the top because the module does not exist yet.
-        from fpcompat.divergences import case_ids
-    except ImportError:
-        return frozenset()
-    return case_ids()
+        verdict = compare(expected, actual, case.rules)
+    except Exception as error:  # noqa: BLE001  a broken comparison is reported, not raised
+        record["outcome"] = FAIL
+        record["detail"] = f"the comparison itself raised {type(error).__name__}: {error}"
+        return record
+
+    if verdict:
+        record["outcome"] = FAIL
+        record["detail"] = (
+            f"{entry.id} says the answer differs and it matched pandas exactly. Either "
+            "the divergence was fixed, in which case delete the entry, or the case "
+            "stopped exercising it, which is worse because nothing was measuring it"
+        )
+        return record
+
+    record["outcome"] = DIVERGENT
+    record["detail"] = f"{entry.id}: {verdict.summary()}"
+    return record
 
 
 def _unimplemented(error: BaseException) -> bool:
@@ -124,7 +179,9 @@ def _run_expression(
             return None, error, list(caught)
 
 
-def run_case(case: Case, oracle: Any, subject: Any, frame_name: str) -> dict[str, Any]:
+def run_case(
+    case: Case, oracle: Any, subject: Any, frame_name: str, oracle_mode: bool = False
+) -> dict[str, Any]:
     """Runs one case on one frame against both engines.
 
     Args:
@@ -132,6 +189,10 @@ def run_case(case: Case, oracle: Any, subject: Any, frame_name: str) -> dict[str
         oracle: The pandas engine.
         subject: The engine under test, which is pandas again in oracle mode.
         frame_name: The corpus frame.
+        oracle_mode: Whether the subject is pandas as well, in which case the
+            divergence registry does not apply. Both engines are pandas then, so there
+            is nothing for a statement about firepanda to be true of, and the
+            divergence cases have to pass as ordinary cases like everything else.
 
     Returns:
         The result record.
@@ -145,6 +206,7 @@ def run_case(case: Case, oracle: Any, subject: Any, frame_name: str) -> dict[str
         "level": case.level,
         "outcome": PASS,
         "detail": "",
+        "divergence": "",
         "relaxations_used": [],
     }
 
@@ -152,10 +214,9 @@ def run_case(case: Case, oracle: Any, subject: Any, frame_name: str) -> dict[str
     actual, actual_error, actual_warnings = _run_expression(case, subject, frame_name)
     record["seconds"] = round(time.perf_counter() - started, 6)
 
-    if case.id in divergent_ids():
-        record["outcome"] = DIVERGENT
-        record["detail"] = "registered as a divergence"
-        return record
+    entry = None if oracle_mode else divergence_for(case.id)
+    if entry is not None:
+        return _check_divergence(entry, case, expected, actual, actual_error, record)
 
     if actual_error is not None and _unimplemented(actual_error):
         record["outcome"] = UNIMPLEMENTED
@@ -277,7 +338,7 @@ def worker(engine_name: str, oracle: bool) -> int:
             continue
         case_id, frame_name = key.split("\t")
         print(json.dumps({"event": "start", "id": case_id, "frame": frame_name}), flush=True)
-        record = run_case(cases[case_id], reference, subject, frame_name)
+        record = run_case(cases[case_id], reference, subject, frame_name, oracle)
         print(json.dumps({"event": "result", "record": record}), flush=True)
     return 0
 

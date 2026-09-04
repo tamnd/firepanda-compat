@@ -177,12 +177,9 @@ def test_a_deep_attribute_error_is_a_failure_and_not_unimplemented():
     assert record["outcome"] == runner.FAIL
 
 
-def test_a_registered_divergence_is_divergent(monkeypatch):
-    """Registered means known and accepted, which is neither a pass nor a failure."""
-    monkeypatch.setattr(runner, "divergent_ids", lambda: frozenset({"basics/scratch"}))
-    record = run_one(build())
-    assert record["outcome"] == runner.DIVERGENT
-    assert record["detail"] == "registered as a divergence"
+# The divergent outcome is produced by the registry in fpcompat/divergences.py and it
+# is tested in tests/test_divergences.py, next to the rule that a registered divergence
+# has to actually diverge. There is nothing left to assert about it from here.
 
 
 def test_the_four_outcomes_are_the_only_ones():

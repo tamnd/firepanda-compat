@@ -1,0 +1,80 @@
+# The divergence registry. Edited by people, read by the runner, and printed to users
+# as docs/divergences.md, which is generated from this file and never written by hand.
+#
+# Every entry is an assertion and not an excuse. The runner does not skip a case listed
+# here, it runs it and requires the outcome the entry declares, so an entry that stopped
+# being true fails the build with a message saying the registry is out of date rather
+# than a message blaming the library.
+#
+# Adding an entry here is done in its own pull request, reviewed on its own, and merged
+# before the change that needs it. That is slower on purpose. A registry entry is a
+# promise to users about what firepanda does not do, and it should never be possible to
+# add one while trying to get a build green.
+#
+# These seven are the founding entries. They are the seven genuine omissions from the
+# firepanda parity document, restated as things a suite can check.
+
+[[divergence]]
+id = "engine/plotting"
+cases = ["divergences/plotting/*"]
+kind = "engine"
+reason = "Plotting and styling are a different library's job. pandas ships a matplotlib front end and an HTML styler, and both of them are presentation layers built on top of a dataframe rather than parts of one. firepanda raises on every plotting and styling name with a message pointing at to_pandas(), which is a one line change for a user who wants a chart and several thousand lines the library would otherwise have to carry forever."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "raises"
+since = "2026-09-04"
+
+[[divergence]]
+id = "engine/pickle"
+cases = ["divergences/pickle/*"]
+kind = "engine"
+reason = "Reading a pickle executes whatever code is in it, so read_pickle on an untrusted file is arbitrary code execution with a friendly name. It also pins the file format to the exact class layout of the version that wrote it, which means a pickle is unreadable by any other tool and often by a later pandas. firepanda raises with a pointer to Parquet and Arrow IPC, both of which another program can read and neither of which runs anything on load."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "raises"
+since = "2026-09-04"
+
+[[divergence]]
+id = "engine/object-dtype"
+cases = ["divergences/object-dtype/*"]
+kind = "engine"
+reason = "A column of arbitrary Python objects is a column with no type, no memory layout and no vectorized operation available to it. Every operation on one becomes a loop that reaches into the interpreter once per element, which is where the ten to one performance difference this project exists for disappears. firepanda raises at construction, naming the column and the offending Python type, so the user finds out at the point they can still fix it rather than after their program is written."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "raises"
+since = "2026-09-04"
+
+[[divergence]]
+id = "engine/inplace"
+cases = ["divergences/inplace/*"]
+kind = "engine"
+reason = "The inplace parameter does not save a copy in pandas either, it only hides the assignment, and it makes every call site ambiguous about whether it returns a frame or None. It also makes a chained call silently do nothing. firepanda raises TypeError with the reassignment form in the message, so the fix is visible in the error itself. This affects 42 pandas callables and every one of them has the same one line fix."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "raises"
+since = "2026-09-04"
+
+[[divergence]]
+id = "engine/index-alignment"
+cases = ["divergences/alignment/*"]
+kind = "engine"
+reason = "Automatic alignment on the index is the largest behavioural difference in this project and the only one that changes a user's answer instead of raising. When two operands do not share labels, pandas produces the union of the labels filled with nulls, so adding two halves of one column gives an answer twice as long and entirely null, with no error anywhere. firepanda operates positionally and raises on a length mismatch. This is the entry to read twice before porting anything."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "differs"
+instead = "the operation is positional. Operands of equal length are combined elementwise and operands of different lengths raise a ValueError naming both lengths, so the case that silently produces an all null answer in pandas either produces the elementwise answer or refuses."
+since = "2026-09-04"
+
+[[divergence]]
+id = "engine/implicit-index"
+cases = ["divergences/implicit-index/*"]
+kind = "engine"
+reason = "The other half of alignment. pandas gives every frame an index whether or not anybody asked for one, and then performs operations against it, so loc reads as a label lookup on numbers that are actually positions and reindex against a label nobody declared returns a row of nulls. firepanda has no implicit index, so the operations that need one either take an explicit key or work positionally, and the places where that is visible are fewer than the size of this decision suggests."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "differs"
+instead = "there is no index unless one was declared. loc takes a declared key or raises, reindex against undeclared labels raises rather than manufacturing null rows, and reset_index has nothing to move into a column."
+since = "2026-09-04"
+
+[[divergence]]
+id = "engine/regex-lookaround"
+cases = ["divergences/regex/*"]
+kind = "engine"
+reason = "firepanda's regex engine has RE2 semantics, which give a linear time guarantee in exchange for dropping backreferences and lookaround. Both of those constructs need backtracking, and backtracking is what lets one adversarial pattern take exponential time. On a hundred million rows that is not a slow query, it is a hung process. A pattern using either raises with the offending construct named, because the pattern is unsupported rather than invalid and those are different words to the person reading the message."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "raises"
+since = "2026-09-04"

@@ -58,6 +58,11 @@ oracle = "python -m fpcompat.runner --engine pandas --oracle"
 # M3, or a built driver in drivers/firepanda.
 conformance = "python -m fpcompat.runner --engine firepanda"
 
+# Regenerates docs/divergences.md from fpcompat/divergences.toml. The page is the
+# public list of everything firepanda deliberately does differently, and it is
+# generated rather than written so it cannot fall behind the registry.
+divergences = "python -m fpcompat.divergences --page"
+
 report = "python -m fpcompat.report"
 
 # Which pandas names and which parameters no case has ever touched. An uncovered
