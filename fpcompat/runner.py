@@ -158,10 +158,16 @@ def _unimplemented(error: BaseException) -> bool:
     return False
 
 
-def _run_expression(
+def run_expression(
     case: Case, engine: Any, frame_name: str
 ) -> tuple[Any, BaseException | None, list[Any]]:
     """Evaluates one case expression, capturing what it raised and what it warned.
+
+    Public because the relaxation sweep evaluates cases too, and it has to evaluate
+    them exactly the way a scored run does. A second copy of this that caught
+    warnings slightly differently would eventually disagree with the runner about
+    what a case even returns, and then the sweep would be making claims about a case
+    nobody else runs.
 
     Args:
         case: The case.
@@ -211,8 +217,8 @@ def run_case(
         "relaxations_used": [],
     }
 
-    expected, expected_error, expected_warnings = _run_expression(case, oracle, frame_name)
-    actual, actual_error, actual_warnings = _run_expression(case, subject, frame_name)
+    expected, expected_error, expected_warnings = run_expression(case, oracle, frame_name)
+    actual, actual_error, actual_warnings = run_expression(case, subject, frame_name)
     record["seconds"] = round(time.perf_counter() - started, 6)
 
     entry = None if oracle_mode else divergence_for(case.id)
