@@ -136,6 +136,42 @@ def test_there_are_at_least_twenty_chained_operations():
     assert len(budget.OPERATIONS) >= 40
 
 
+def test_every_operation_a_benchmark_query_runs_has_a_row():
+    # The list firepanda-bench found by declaring what each of its 37 queries is made
+    # of and checking it against this registry. Every one of these is an operation a
+    # published benchmark query actually runs, which is a better filter than picking
+    # operations that look important. `pandas.read_csv` is deliberately not here: the
+    # bench ingestion suite measures reading a CSV on five file shapes against four
+    # engines, and this corpus is Arrow on disk rather than text.
+    from_bench = {
+        "GroupBy.median",
+        "GroupBy.std",
+        "GroupBy.min",
+        "GroupBy.count",
+        "GroupBy.head",
+        "str.startswith",
+        "str.endswith",
+        "str.slice",
+        "Series.map",
+        "Series.mean",
+        "DataFrame.assign",
+    }
+    covered = {name for item in budget.OPERATIONS for name in item.covers}
+    assert not from_bench - covered, f"no row for {sorted(from_bench - covered)}"
+
+
+def test_the_reduction_that_needs_per_group_memory_is_measured_both_ways():
+    # A median cannot use a running accumulator, so it keeps the values per group, and
+    # that is the only reduction shape where the memory half of this table has anything
+    # to say. The plain row alone would not show it, because the peak of a filter
+    # feeding a median is where an engine that streams separates from one that
+    # materializes first.
+    median = [item for item in budget.OPERATIONS if "GroupBy.median" in item.covers]
+    assert len(median) >= 2
+    assert any(item.chained for item in median)
+    assert any(not item.chained for item in median)
+
+
 def test_every_section_with_a_conformance_score_has_at_least_one_row():
     # Otherwise a section can be fully conformant and completely unmeasured, and the
     # first anybody hears about it is a user whose program is sixty percent that
@@ -266,10 +302,13 @@ def test_the_committed_operation_table_matches_the_registry():
 
 
 def test_the_published_table_carries_no_timings():
+    # Checked by shape rather than by looking for the word "median", which is now an
+    # operation id. A timing belongs to a machine and this file belongs to a commit, so
+    # a number in here is a number somebody quotes with the machine detached from it.
     document = json.loads(budget.TABLE.read_text())
-    text = json.dumps(document)
-    for word in ("median", "seconds", "rss", "machine", "iqr"):
-        assert word not in text
+    for entry in document["operations"].values():
+        assert set(entry) == {"section", "covers", "chained", "needs"}
+    assert set(document) == {"generator", "count", "chained", "operations"}
 
 
 def test_every_published_row_names_at_least_one_pandas_callable():
