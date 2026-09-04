@@ -229,6 +229,58 @@ def test_a_series_data_column_is_named_the_way_the_comparison_wants(tmp_path):
     assert answer.name == "a"
 
 
+def test_an_index_is_carried_as_an_index_and_not_flattened_to_an_array(tmp_path):
+    # `columns` and every index accessor give an Index in pandas, and a library that
+    # hands back a Series of the same values has returned the wrong thing. The kind is
+    # what carries that, so it has to survive the trip through the protocol.
+    driver = fake(
+        tmp_path,
+        {"status": "ok", "kind": "index", "name": None},
+        {"schema": [["__value__", "string"]], "columns": [["a", "b"]]},
+    )
+    answer = driver.run("basics/scratch", "two")
+    assert answer.kind == "index"
+    assert answer.table.column_names == ["__value__"]
+    assert answer.table.column(0).to_pylist() == ["a", "b"]
+    assert answer.name is None
+
+
+def test_an_index_answer_of_more_than_one_column_is_broken(tmp_path):
+    driver = fake(
+        tmp_path,
+        {"status": "ok", "kind": "index"},
+        {"schema": [["a", "int64"], ["b", "int64"]], "columns": [[1], [2]]},
+    )
+    with pytest.raises(DriverBroken, match="an index answer has one column"):
+        driver.run("basics/scratch", "two")
+
+
+def test_a_tuple_keeps_a_part_per_column_with_its_own_type(tmp_path):
+    # This is what `shape` comes back as. The widths are the point: a pair of ints
+    # through JSON has no width at all, and an int32 where pandas gives int64 is a
+    # result somebody should see rather than something the transport rounds off.
+    driver = fake(
+        tmp_path,
+        {"status": "ok", "kind": "tuple"},
+        {"schema": [["a", "int64"], ["b", "int32"]], "columns": [[10000], [3]]},
+    )
+    answer = driver.run("basics/scratch", "two")
+    assert answer.kind == "tuple"
+    assert len(answer.parts) == 2
+    assert [p.value for p in answer.parts] == [10000, 3]
+    assert [p.type_name for p in answer.parts] == ["int64", "int32"]
+
+
+def test_a_tuple_answer_of_more_than_one_row_is_broken(tmp_path):
+    driver = fake(
+        tmp_path,
+        {"status": "ok", "kind": "tuple"},
+        {"schema": [["a", "int64"]], "columns": [[1, 2]]},
+    )
+    with pytest.raises(DriverBroken, match="a tuple answer is one row"):
+        driver.run("basics/scratch", "two")
+
+
 def test_a_frame_whose_header_and_file_disagree_is_broken(tmp_path):
     # Not a failure. A driver that says three columns and writes two has a bug in it,
     # and reporting that as firepanda getting the answer wrong sends somebody looking
@@ -258,7 +310,7 @@ def test_a_kind_the_protocol_does_not_have_is_broken(tmp_path):
         {"status": "ok", "kind": "panel"},
         {"schema": [["value", "int64"]], "columns": [[1]]},
     )
-    with pytest.raises(DriverBroken, match="not one of scalar, frame or series"):
+    with pytest.raises(DriverBroken, match="not one of scalar, frame, series, index or tuple"):
         driver.run("basics/scratch", "two")
 
 

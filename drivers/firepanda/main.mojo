@@ -26,12 +26,18 @@ The protocol is one line of JSON on stdout and nothing else. stderr is free.
     {"status": "ok", "kind": "frame", "index": 0, "columns": ["a", "b"]}
     {"status": "ok", "kind": "series", "index": 0, "name": "a"}
     {"status": "ok", "kind": "scalar"}
+    {"status": "ok", "kind": "index", "name": null}
+    {"status": "ok", "kind": "tuple"}
     {"status": "absent"}
     {"status": "raised", "type": "KeyError", "message": "no column named q"}
 
 `kind` is the vocabulary of `fpcompat.compare.Answer`, because the answer's shape is
 part of the answer: a Series and a one column DataFrame are different results and a
 suite that folded them together would pass a library that returned the wrong one.
+`index` is the kind `DataFrame.columns` returns, an ordered set of labels that is not
+a Series. `tuple` is what `shape` returns, and it travels as one row of as many
+columns as the tuple has parts, each part read back as a scalar with its Arrow type,
+for the same reason a scalar does not travel through JSON.
 `index` is how many leading columns of the written table came from an index, which is
 always zero today and is in the protocol because it will not always be. A scalar is
 written as a table of one row and one column, so that its type travels as an Arrow
@@ -47,6 +53,7 @@ from std.os.path import exists
 from std.sys import argv, exit
 
 from firepanda.array.array import Array
+from firepanda.array.strings import StringBuilder
 from firepanda.dtype import Field, LogicalType, Schema
 from firepanda.frame.frame import DataFrame
 from firepanda.frame.series import Series
@@ -187,6 +194,139 @@ def reduce(frame: DataFrame, column: String, kind: AggKind) raises -> DataFrame:
     return frame.agg(specs)
 
 
+def string_scalar_frame(name: String, value: String) raises -> DataFrame:
+    """Wraps one string as a frame of one row and one column.
+
+    The typed `scalar_frame` cannot do this, because text has no dtype in firepanda
+    and a `StringArray` is not an `Array[dt]`. Two answers need it, the spelling of a
+    dtype and the name of a column, and both of those are strings in pandas.
+
+    Args:
+        name: The column name.
+        value: The value.
+
+    Returns:
+        The frame.
+
+    Raises:
+        Error: If the one column frame cannot be built, which would be a bug here.
+    """
+    var builder = StringBuilder(capacity=1)
+    builder.append(value.as_bytes())
+    var series = List[Series]()
+    series.append(Series(name, builder^.finish()))
+    return DataFrame.from_series(series^)
+
+
+def tuple_frame(values: List[Int64]) raises -> DataFrame:
+    """Wraps a tuple of integers as one row of as many columns as it has parts.
+
+    `shape` is a tuple in pandas and a tuple is not a one row frame, so this is a
+    transport shape rather than an answer shape. The harness turns each column back
+    into a scalar part. Every part firepanda has to send today is an integer, which
+    is why this takes a list rather than something more general: a tuple of mixed
+    types would need a column per type and there is nothing to put in one.
+
+    Args:
+        values: The parts, in order.
+
+    Returns:
+        A frame of one row and `len(values)` columns.
+
+    Raises:
+        Error: If the frame cannot be built, which would be a bug here.
+    """
+    var series = List[Series]()
+    for i in range(len(values)):
+        var column = Array[DType.int64](1)
+        column[0] = values[i]
+        series.append(Series("part" + String(i), column^))
+    return DataFrame.from_series(series^)
+
+
+def emit_frame(frame: DataFrame, path: String) raises:
+    """Writes a frame answer and prints its line.
+
+    Args:
+        frame: The answer.
+        path: Where to write it.
+
+    Raises:
+        Error: If the frame cannot be written, which for an empty frame used to be
+            most of them.
+    """
+    write_arrow(frame, path)
+    print(
+        '{"status":"ok","kind":"frame","index":0,"columns":'
+        + names_json(frame)
+        + "}"
+    )
+
+
+def emit_series(name: String, var column: Series, path: String) raises:
+    """Writes a series answer under its pandas name and prints its line.
+
+    The written column is renamed, because the harness looks for one data column and
+    not for a particular label, and the label travels in the line where it is compared
+    as a label. A series whose name is right and whose values are wrong and one whose
+    values are right and whose name is wrong are both failures and they are different
+    failures.
+
+    Args:
+        name: The pandas name of the series, which is what gets compared.
+        column: The values. Consumed.
+        path: Where to write them.
+
+    Raises:
+        Error: If the series cannot be written.
+    """
+    var series = List[Series]()
+    series.append(column^.rename("__value__"))
+    write_arrow(DataFrame.from_series(series^), path)
+    print('{"status":"ok","kind":"series","index":0,"name":' + quote(name) + "}")
+
+
+def emit_index(var column: Series, path: String) raises:
+    """Writes an index answer, which is what `DataFrame.columns` is.
+
+    An index is not a series and not an array. pandas returns one from `columns`, from
+    `unique` on some dtypes and from every index accessor, and a library that returned
+    a Series where pandas returns an Index has returned the wrong thing even when the
+    values match. The name is null on every index firepanda can produce today, since
+    the only one is a column label list, which pandas leaves unnamed.
+
+    Args:
+        column: The labels. Consumed.
+        path: Where to write them.
+
+    Raises:
+        Error: If it cannot be written.
+    """
+    var series = List[Series]()
+    series.append(column^.rename("__value__"))
+    write_arrow(DataFrame.from_series(series^), path)
+    print('{"status":"ok","kind":"index","name":null}')
+
+
+def labels_of(frame: DataFrame) raises -> Series:
+    """Builds the column labels of a frame as a column of text.
+
+    Args:
+        frame: The frame.
+
+    Returns:
+        A one column series holding the names, in order.
+
+    Raises:
+        Error: If the string column cannot be built.
+    """
+    var names = frame.names()
+    var builder = StringBuilder(capacity=len(names))
+    for i in range(len(names)):
+        builder.append(names[i].as_bytes())
+    return Series("__value__", builder^.finish())
+
+
 def main() raises:
     var args = argv()
     var arguments = List[String]()
@@ -258,55 +398,18 @@ def main() raises:
             )
             print('{"status":"ok","kind":"scalar"}')
         elif case_id == "basics/head":
-            var answer = frame.head()
-            write_arrow(answer, out)
-            print(
-                '{"status":"ok","kind":"frame","index":0,"columns":'
-                + names_json(answer)
-                + "}"
-            )
+            emit_frame(frame.head(), out)
         elif case_id == "basics/head-n":
-            var answer = frame.head(3)
-            write_arrow(answer, out)
-            print(
-                '{"status":"ok","kind":"frame","index":0,"columns":'
-                + names_json(answer)
-                + "}"
-            )
+            emit_frame(frame.head(3), out)
         elif case_id == "basics/tail":
-            var answer = frame.tail()
-            write_arrow(answer, out)
-            print(
-                '{"status":"ok","kind":"frame","index":0,"columns":'
-                + names_json(answer)
-                + "}"
-            )
+            emit_frame(frame.tail(), out)
         elif case_id == "basics/tail-n":
-            var answer = frame.tail(3)
-            write_arrow(answer, out)
-            print(
-                '{"status":"ok","kind":"frame","index":0,"columns":'
-                + names_json(answer)
-                + "}"
-            )
+            emit_frame(frame.tail(3), out)
         elif case_id == "basics/copy":
-            var answer = DataFrame(copy=frame)
-            write_arrow(answer, out)
-            print(
-                '{"status":"ok","kind":"frame","index":0,"columns":'
-                + names_json(answer)
-                + "}"
-            )
+            emit_frame(DataFrame(copy=frame), out)
         elif case_id == "basics/column-select":
             var first = frame.names()[0]
-            var series = List[Series]()
-            series.append(frame.column(first).rename("__value__"))
-            write_arrow(DataFrame.from_series(series^), out)
-            print(
-                '{"status":"ok","kind":"series","index":0,"name":'
-                + quote(first)
-                + "}"
-            )
+            emit_series(first, frame.column(first), out)
         elif case_id == "basics/sum":
             write_arrow(reduce(frame, "value", AggKind.SUM), out)
             print('{"status":"ok","kind":"scalar"}')
@@ -322,6 +425,109 @@ def main() raises:
         elif case_id == "basics/count":
             write_arrow(reduce(frame, "value", AggKind.COUNT), out)
             print('{"status":"ok","kind":"scalar"}')
+        elif case_id == "basics/median":
+            write_arrow(reduce(frame, "value", AggKind.MEDIAN), out)
+            print('{"status":"ok","kind":"scalar"}')
+        elif case_id == "basics/std":
+            write_arrow(reduce(frame, "value", AggKind.STD), out)
+            print('{"status":"ok","kind":"scalar"}')
+        elif case_id == "basics/var":
+            write_arrow(reduce(frame, "value", AggKind.VAR), out)
+            print('{"status":"ok","kind":"scalar"}')
+        elif case_id == "basics/nunique":
+            # The first column and not "value", because the case reduces
+            # `df.iloc[:, 0]` and the frames it runs on are the key frames.
+            write_arrow(reduce(frame, frame.names()[0], AggKind.NUNIQUE), out)
+            print('{"status":"ok","kind":"scalar"}')
+
+        # Shape and labels. `shape` is a tuple in pandas rather than a frame, and
+        # `columns` is an Index rather than a Series, and both of those distinctions
+        # are answers rather than packaging.
+        elif case_id == "basics/shape":
+            write_arrow(
+                tuple_frame([Int64(len(frame)), Int64(frame.width())]), out
+            )
+            print('{"status":"ok","kind":"tuple"}')
+        elif case_id == "basics/series-shape":
+            write_arrow(tuple_frame([Int64(len(frame))]), out)
+            print('{"status":"ok","kind":"tuple"}')
+        elif case_id == "basics/columns":
+            emit_index(labels_of(frame), out)
+        elif case_id == "basics/series-name":
+            write_arrow(string_scalar_frame("value", frame.names()[0]), out)
+            print('{"status":"ok","kind":"scalar"}')
+        elif case_id == "basics/series-dtype":
+            # firepanda's spelling of its own dtype, not a translation into
+            # pandas'. Where the two differ that is the answer and not a bug here.
+            write_arrow(
+                string_scalar_frame(
+                    "value", String(frame.column("value").dtype())
+                ),
+                out,
+            )
+            print('{"status":"ok","kind":"scalar"}')
+
+        # Selecting and reshaping columns.
+        elif case_id == "basics/column-list":
+            var names = frame.names()
+            emit_frame(frame.select([names[1], names[0]]), out)
+        elif case_id == "basics/drop-column":
+            emit_frame(frame.drop([frame.names()[0]]), out)
+        elif case_id == "basics/rename":
+            emit_frame(frame.rename(frame.names()[0], "renamed"), out)
+        elif case_id == "basics/boolean-mask":
+            emit_frame(
+                frame.filter(
+                    frame.column("flag").as_typed[DType.bool]()
+                ),
+                out,
+            )
+        elif case_id == "basics/head-negative":
+            emit_frame(frame.head(-2), out)
+
+        # Nulls.
+        elif case_id == "basics/isna":
+            emit_series("value", Series("value", frame.column("value").is_null()), out)
+        elif case_id == "basics/notna":
+            emit_series(
+                "value", Series("value", frame.column("value").is_not_null()), out
+            )
+        elif case_id == "basics/dropna":
+            emit_series("value", frame.column("value").drop_nulls(), out)
+        elif case_id == "basics/frame-dropna":
+            emit_frame(frame.drop_nulls(), out)
+        elif case_id == "basics/ffill":
+            emit_series("value", frame.column("value").fill_forward(), out)
+        elif case_id == "basics/bfill":
+            emit_series("value", frame.column("value").fill_backward(), out)
+
+        # Ordering. firepanda has no default for the null position and pandas'
+        # default is last, so that default is written out here rather than left to
+        # be guessed. Where firepanda puts a null when it is asked to put it last is
+        # the thing being measured.
+        elif case_id == "basics/sort-values":
+            emit_frame(frame.sort_values(["key"], [False], [False]), out)
+        elif case_id == "basics/sort-values-descending":
+            emit_frame(frame.sort_values(["key"], [True], [False]), out)
+        elif case_id == "basics/sort-two-columns":
+            emit_frame(
+                frame.sort_values(
+                    ["left", "right"], [False, True], [False, False]
+                ),
+                out,
+            )
+
+        # Casts.
+        elif case_id == "basics/astype-float":
+            emit_series(
+                "value", frame.column("value").cast(DType.float64), out
+            )
+        elif case_id == "basics/astype-narrow":
+            emit_series("value", frame.column("value").cast(DType.int8), out)
+        elif case_id == "basics/astype-string":
+            emit_series(
+                "value", frame.column("value").cast(LogicalType.STRING), out
+            )
         else:
             print('{"status":"absent"}')
     except error:
