@@ -184,9 +184,49 @@ def _answer(header: dict[str, Any], table: pa.Table) -> Answer:
             name=None if name is None else str(name),
         )
 
+    if kind == "index":
+        # An Index is not a Series and not an array. pandas returns one from
+        # `columns` and from every index accessor, and a library that hands back a
+        # Series where pandas hands back an Index has returned the wrong thing even
+        # when every value matches, so the kind is carried rather than folded in.
+        if table.num_columns != 1:
+            raise DriverBroken(
+                f"an index answer has one column and the driver wrote {table.num_columns}"
+            )
+        name = header.get("name")
+        return Answer(
+            kind="index",
+            table=table.rename_columns([VALUE]),
+            columns=(VALUE,),
+            name=None if name is None else str(name),
+        )
+
+    if kind == "tuple":
+        # One row of as many columns as the tuple has parts. Each part comes back as
+        # a scalar with its Arrow type, for the reason a scalar does not travel
+        # through JSON: `shape` is a pair of integers and an integer through JSON has
+        # no width, while an int32 where pandas gives int64 is a conformance result.
+        if table.num_rows != 1:
+            raise DriverBroken(
+                f"a tuple answer is one row of one column per part and the driver "
+                f"wrote {table.num_rows} rows"
+            )
+        parts = []
+        for i in range(table.num_columns):
+            column = table.column(i)
+            parts.append(
+                Answer(
+                    kind="scalar",
+                    value=column[0].as_py(),
+                    type_name=canonical_type(column.type),
+                )
+            )
+        return Answer(kind="tuple", parts=tuple(parts))
+
     raise DriverBroken(
-        f"the driver reported kind {kind!r}, which is not one of scalar, frame or "
-        "series. Either the driver is newer than this file or the line is corrupt"
+        f"the driver reported kind {kind!r}, which is not one of scalar, frame, "
+        "series, index or tuple. Either the driver is newer than this file or the "
+        "line is corrupt"
     )
 
 
