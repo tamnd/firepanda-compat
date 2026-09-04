@@ -109,12 +109,15 @@ def _check_divergence(
         )
         return record
 
+    comparison_started = time.perf_counter()
     try:
         verdict = compare(expected, actual, case.rules)
     except Exception as error:  # noqa: BLE001  a broken comparison is reported, not raised
         record["outcome"] = FAIL
         record["detail"] = f"the comparison itself raised {type(error).__name__}: {error}"
         return record
+    finally:
+        record["compare_seconds"] = round(time.perf_counter() - comparison_started, 6)
 
     if verdict:
         record["outcome"] = FAIL
@@ -215,6 +218,12 @@ def run_case(
         "detail": "",
         "divergence": "",
         "relaxations_used": [],
+        # Two clocks rather than one, because a case that is slow to evaluate and a
+        # case that is slow to compare are different problems with different owners.
+        # For a long time there was one clock, it stopped before the comparison, and
+        # the result of that was a file whose per case seconds summed to 5.1 while the
+        # run took 195, with the missing 190 going into a sort nobody could see.
+        "compare_seconds": 0.0,
     }
 
     expected, expected_error, expected_warnings = run_expression(case, oracle, frame_name)
@@ -260,6 +269,7 @@ def run_case(
         record["detail"] = f"raised {type(actual_error).__name__}: {actual_error}"
         return record
 
+    comparison_started = time.perf_counter()
     try:
         verdict = compare(expected, actual, case.rules)
     except Exception as error:  # noqa: BLE001  a broken comparison is reported, not raised
@@ -273,6 +283,8 @@ def run_case(
             "bug in fpcompat.compare and not a fact about either engine"
         )
         return record
+    finally:
+        record["compare_seconds"] = round(time.perf_counter() - comparison_started, 6)
     record["relaxations_used"] = sorted(verdict.relaxations_used)
     if not verdict:
         record["outcome"] = FAIL
@@ -451,6 +463,7 @@ def drive(work: list[tuple[str, str]], engine_name: str, oracle: bool) -> list[d
                     ),
                     "relaxations_used": [],
                     "seconds": 0.0,
+                    "compare_seconds": 0.0,
                 }
             )
             remaining = remaining[done + 1 :]
@@ -513,6 +526,11 @@ def run(engine_name: str, oracle: bool, pattern: str | None) -> dict[str, Any]:
         "oracle": oracle,
         "when": datetime.now(UTC).isoformat(timespec="seconds"),
         "seconds": round(time.perf_counter() - started, 3),
+        # Wall clock across the workers, so it does not add up to the line above and is
+        # not meant to. It is here to answer one question, which is whether the run is
+        # slow because the expressions are slow or because the comparison is, and the
+        # first time it was asked the answer was 160 seconds out of 195.
+        "compare_seconds": round(sum(r.get("compare_seconds", 0.0) for r in records), 3),
         "versions": versions,
         "cases": len(cases),
         "runs": len(records),
@@ -535,7 +553,8 @@ def report(document: dict[str, Any]) -> None:
     """
     totals = document["totals"]
     print(
-        f"{document['cases']} cases, {document['runs']} runs in {document['seconds']}s: "
+        f"{document['cases']} cases, {document['runs']} runs in {document['seconds']}s "
+        f"({document.get('compare_seconds', 0.0)}s of it comparing, across the workers): "
         + ", ".join(f"{totals[name]} {name}" for name in OUTCOMES)
     )
     for record in document["records"]:

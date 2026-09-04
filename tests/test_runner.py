@@ -281,6 +281,34 @@ def test_a_comparison_that_raises_is_a_loud_failure_and_not_a_crash(monkeypatch)
     assert "bug in fpcompat.compare" in record["detail"]
 
 
+def test_the_comparison_is_on_its_own_clock():
+    """One clock stopped before the comparison started, and the file it wrote had per
+    case timings summing to 5.1 seconds for a run that took 195. The missing 190 were
+    in a sort inside the comparison layer, and no field in the result file could have
+    pointed at it."""
+    record = run_one(build())
+    assert record["compare_seconds"] > 0
+    assert "compare_seconds" in record
+
+
+def test_a_comparison_that_raises_is_still_timed(monkeypatch):
+    """Because the pathological case is the one that hangs, and a field that only
+    appears when the comparison succeeded cannot say that."""
+
+    def slow_explosion(expected, actual, rules):
+        raise RuntimeError("the normalizer is broken")
+
+    monkeypatch.setattr(runner, "compare", slow_explosion)
+    assert "compare_seconds" in run_one(build())
+
+
+def test_the_document_totals_the_comparison_time():
+    document = runner.run("pandas", True, "basics/shape")
+    assert document["compare_seconds"] == pytest.approx(
+        sum(r["compare_seconds"] for r in document["records"]), abs=0.01
+    )
+
+
 def test_a_worker_that_dies_is_attributed_to_the_case_that_killed_it():
     """End to end, with a real subprocess that really exits in the middle.
 

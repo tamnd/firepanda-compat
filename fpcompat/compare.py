@@ -50,6 +50,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import pyarrow as pa
+import pyarrow.compute as pc
 
 # How many differences a verdict carries before it stops collecting. A failing case
 # with 10000 wrong rows is one bug, and a report that prints all of them buries the
@@ -721,14 +722,20 @@ def _compare_column(
                 return
 
 
-def _sort_key(table: pa.Table, columns: list[str]) -> list[int]:
+def _sort_key(table: pa.Table, columns: list[str]) -> np.ndarray:
     """Returns the permutation that sorts a table by some of its columns.
 
-    Sorted on the rendered values rather than through `sort_by`, because the key
-    columns of a grouped answer can be dictionary encoded or nested and `sort_by`
-    handles neither. Nulls sort first and consistently on both sides, which is all
-    this needs: the permutation only has to be the same permutation for equal data,
-    not any particular one.
+    Sorted on the rendered values rather than through `sort_indices`, because the key
+    columns of a grouped answer can be dictionary encoded or nested and Arrow sorts
+    neither. Nulls sort first and consistently on both sides, which is all this
+    needs: the permutation only has to be the same permutation for equal data, not
+    any particular one.
+
+    This is the slow path and it is slow in the way an interpreter is slow, a Python
+    tuple and several strings per row. `_arrow_sort_key` is tried first and this runs
+    when Arrow refuses the key columns. Both sides of a comparison always take the
+    same path, which is the property that matters: two permutations produced by two
+    different rules would disagree about equal data and fail the case.
 
     Args:
         table: The table.
@@ -739,7 +746,51 @@ def _sort_key(table: pa.Table, columns: list[str]) -> list[int]:
     """
     keys = [table.column(name).to_pylist() for name in columns]
     rows = range(table.num_rows)
-    return sorted(rows, key=lambda row: tuple(_render(key[row]) for key in keys))
+    return np.fromiter(
+        sorted(rows, key=lambda row: tuple(_render(key[row]) for key in keys)),
+        dtype=np.int64,
+        count=table.num_rows,
+    )
+
+
+def _arrow_sort_key(table: pa.Table, columns: list[str]) -> np.ndarray | None:
+    """The same permutation, computed by Arrow, or nothing when Arrow will not.
+
+    Arrow declines dictionary encoded, list and struct columns, which is why the
+    rendered sort exists at all. It takes everything else, and everything else is
+    almost every answer in the registry, including the merge answers with ten
+    million rows in them that the rendered sort spends minutes on.
+
+    Args:
+        table: The table.
+        columns: The column names to sort on.
+
+    Returns:
+        Row indices, or None when a key column is a type Arrow cannot sort.
+    """
+    # Null placement per key rather than as an option, which is what pyarrow 25
+    # wants and what earlier versions deprecated their way towards.
+    keys = [(name, "ascending", "at_start") for name in columns]
+    try:
+        indices = pc.sort_indices(table, sort_keys=keys)
+    except (pa.ArrowNotImplementedError, pa.ArrowInvalid, pa.ArrowTypeError):
+        return None
+    return indices.to_numpy(zero_copy_only=False).astype(np.int64, copy=False)
+
+
+def _is_identity(order: np.ndarray) -> bool:
+    """Whether a permutation leaves every row where it was.
+
+    Which is how a relaxation gets recorded as used or not: an order relaxation that
+    reordered nothing did nothing.
+
+    Args:
+        order: Row indices.
+
+    Returns:
+        True when the permutation is 0, 1, 2 and so on.
+    """
+    return bool(np.array_equal(order, np.arange(len(order), dtype=np.int64)))
 
 
 def _apply_ordering(
@@ -773,14 +824,20 @@ def _apply_ordering(
         name = "row_order"
 
     if columns and left_table.num_rows == right_table.num_rows:
-        left_order = _sort_key(left_table, columns)
-        right_order = _sort_key(right_table, [c for c in columns if c in right_table.column_names])
-        if left_order != list(range(left_table.num_rows)) or right_order != list(
-            range(right_table.num_rows)
-        ):
+        right_columns = [c for c in columns if c in right_table.column_names]
+        # One decision for both sides. If Arrow will not sort one of them, neither of
+        # them goes through Arrow, because the two rules do not agree on where a null
+        # sits or on whether 9 comes before 10, and a case whose sides were ordered by
+        # two different rules fails on data that is equal.
+        left_order = _arrow_sort_key(left_table, columns)
+        right_order = None if left_order is None else _arrow_sort_key(right_table, right_columns)
+        if left_order is None or right_order is None:
+            left_order = _sort_key(left_table, columns)
+            right_order = _sort_key(right_table, right_columns)
+        if not _is_identity(left_order) or not _is_identity(right_order):
             used.add(name)
-        left_table = left_table.take(left_order)
-        right_table = right_table.take(right_order)
+        left_table = left_table.take(pa.array(left_order))
+        right_table = right_table.take(pa.array(right_order))
 
     verdict.relaxations_used = frozenset(used)
     return left_table, right_table
