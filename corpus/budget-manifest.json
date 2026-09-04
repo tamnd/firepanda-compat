@@ -1,0 +1,106 @@
+{
+  "generator": "splitmix64 counter stream, the same one fpcompat/corpus.py uses",
+  "seed": "0x243F6A8885A308D3",
+  "sizes": {
+    "10000": {
+      "frames": {
+        "keyed": {
+          "columns": [
+            "id1:large_string",
+            "id2:int64",
+            "id3:int64",
+            "v1:int64",
+            "v2:double"
+          ],
+          "digest": "84d78d2bafd77067b7b8ee9540e02445789b9e1d361630441b09ebcb9c903d46",
+          "rows": 10000
+        },
+        "lookup": {
+          "columns": [
+            "id2:int64",
+            "w:int64"
+          ],
+          "digest": "0082d96196ca94a539bef52361d1604bbb49c4b9eb34d4625d0b9b9614ce0513",
+          "rows": 1000
+        },
+        "numeric": {
+          "columns": [
+            "a:int64",
+            "b:int64",
+            "c:double"
+          ],
+          "digest": "98093fdfe1546e2612430cb1368d0c1f5ae997a7a9137ee7a0997f9055010402",
+          "rows": 10000
+        },
+        "strings": {
+          "columns": [
+            "s:large_string",
+            "key:int64"
+          ],
+          "digest": "52c021a58f9f32010672ec6b7b75dc7d621020640e644d6f2093e417e3525b15",
+          "rows": 10000
+        },
+        "temporal": {
+          "columns": [
+            "t:timestamp[ns]",
+            "v:int64"
+          ],
+          "digest": "8b05024e1a2bec075edcff67e56c6f06b8f1519c65150081aa24b06b40660d78",
+          "rows": 10000
+        }
+      },
+      "rows": 10000,
+      "sample": 500
+    },
+    "1000000": {
+      "frames": {
+        "keyed": {
+          "columns": [
+            "id1:large_string",
+            "id2:int64",
+            "id3:int64",
+            "v1:int64",
+            "v2:double"
+          ],
+          "digest": "c375c4687e9ecba67127210c2496a6f369b0a4d55eb865cc5ef16178642ab5a8",
+          "rows": 1000000
+        },
+        "lookup": {
+          "columns": [
+            "id2:int64",
+            "w:int64"
+          ],
+          "digest": "0082d96196ca94a539bef52361d1604bbb49c4b9eb34d4625d0b9b9614ce0513",
+          "rows": 1000
+        },
+        "numeric": {
+          "columns": [
+            "a:int64",
+            "b:int64",
+            "c:double"
+          ],
+          "digest": "8d80b0fdd3a6259a3d0b86aa0b0d114d99becb17e6fa1060c9c5663355de0165",
+          "rows": 1000000
+        },
+        "strings": {
+          "columns": [
+            "s:large_string",
+            "key:int64"
+          ],
+          "digest": "f3c2928a875eb4cc4ebd1cfa07eeb774d109a1ae411f0e908aadc4498ffa58bc",
+          "rows": 1000000
+        },
+        "temporal": {
+          "columns": [
+            "t:timestamp[ns]",
+            "v:int64"
+          ],
+          "digest": "474ced2b2766dcdd566c4415629f2b4552a9dc024fd0a4777d6d7ec7760a5b10",
+          "rows": 1000000
+        }
+      },
+      "rows": 1000000,
+      "sample": 500
+    }
+  }
+}

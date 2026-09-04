@@ -1,0 +1,225 @@
+{
+  "engine": "pandas",
+  "machine": {
+    "cores": 10,
+    "platform": "macOS-15.8-arm64-arm-64bit-Mach-O",
+    "processor": "arm",
+    "python": "3.14.7"
+  },
+  "repeats": 7,
+  "rows": 1000000,
+  "rows_measured": {
+    "astype int64 to int32": {
+      "median_s": 0.000295,
+      "peak_rss_bytes": 165560320
+    },
+    "astype to category": {
+      "median_s": 0.007826,
+      "peak_rss_bytes": 233570304
+    },
+    "boolean mask": {
+      "median_s": 0.000161,
+      "peak_rss_bytes": 165937152
+    },
+    "cast then groupby.agg": {
+      "median_s": 0.007073,
+      "peak_rss_bytes": 255819776
+    },
+    "cast then sort then head": {
+      "median_s": 0.090823,
+      "peak_rss_bytes": 346521600
+    },
+    "category then groupby.sum": {
+      "median_s": 0.013792,
+      "peak_rss_bytes": 233684992
+    },
+    "concat then sort then drop_duplicates": {
+      "median_s": 0.231749,
+      "peak_rss_bytes": 485654528
+    },
+    "concat two frames": {
+      "median_s": 0.002022,
+      "peak_rss_bytes": 192610304
+    },
+    "cumsum": {
+      "median_s": 0.002036,
+      "peak_rss_bytes": 166690816
+    },
+    "describe": {
+      "median_s": 0.045078,
+      "peak_rss_bytes": 167641088
+    },
+    "drop_duplicates": {
+      "median_s": 0.019388,
+      "peak_rss_bytes": 289685504
+    },
+    "drop_duplicates then merge": {
+      "median_s": 0.003725,
+      "peak_rss_bytes": 230686720
+    },
+    "dt.floor to the hour": {
+      "median_s": 0.001417,
+      "peak_rss_bytes": 149340160
+    },
+    "dt.year": {
+      "median_s": 0.008784,
+      "peak_rss_bytes": 151175168
+    },
+    "dt.year then groupby.mean": {
+      "median_s": 0.017514,
+      "peak_rss_bytes": 168099840
+    },
+    "filter then groupby.sum": {
+      "median_s": 0.007761,
+      "peak_rss_bytes": 243679232
+    },
+    "filter then sort then groupby": {
+      "median_s": 0.045494,
+      "peak_rss_bytes": 295862272
+    },
+    "floor then resample then cumsum": {
+      "median_s": 0.006104,
+      "peak_rss_bytes": 150781952
+    },
+    "groupby then sort then head": {
+      "median_s": 0.006148,
+      "peak_rss_bytes": 245628928
+    },
+    "groupby.agg then merge": {
+      "median_s": 0.006654,
+      "peak_rss_bytes": 262373376
+    },
+    "groupby.agg two functions": {
+      "median_s": 0.009042,
+      "peak_rss_bytes": 245612544
+    },
+    "groupby.apply lambda": {
+      "median_s": 0.018918,
+      "peak_rss_bytes": 293289984
+    },
+    "groupby.mean string key": {
+      "median_s": 0.010396,
+      "peak_rss_bytes": 246071296
+    },
+    "groupby.nunique high cardinality": {
+      "median_s": 0.030161,
+      "peak_rss_bytes": 279248896
+    },
+    "groupby.sum 1e3 groups": {
+      "median_s": 0.006266,
+      "peak_rss_bytes": 252395520
+    },
+    "isin against 50 values": {
+      "median_s": 0.00511,
+      "peak_rss_bytes": 197345280
+    },
+    "isin then groupby.nunique": {
+      "median_s": 0.028603,
+      "peak_rss_bytes": 328597504
+    },
+    "merge on int64 key": {
+      "median_s": 0.018413,
+      "peak_rss_bytes": 284672000
+    },
+    "merge then filter then sort": {
+      "median_s": 0.088885,
+      "peak_rss_bytes": 545669120
+    },
+    "merge then groupby.mean": {
+      "median_s": 0.028881,
+      "peak_rss_bytes": 420298752
+    },
+    "pivot_table": {
+      "median_s": 0.026361,
+      "peak_rss_bytes": 283803648
+    },
+    "quantile": {
+      "median_s": 0.01356,
+      "peak_rss_bytes": 166936576
+    },
+    "rank": {
+      "median_s": 0.088546,
+      "peak_rss_bytes": 259325952
+    },
+    "rank then filter then groupby.max": {
+      "median_s": 0.106171,
+      "peak_rss_bytes": 364986368
+    },
+    "resample.sum hourly": {
+      "median_s": 0.003968,
+      "peak_rss_bytes": 149356544
+    },
+    "rolling then dropna then max": {
+      "median_s": 0.011385,
+      "peak_rss_bytes": 183107584
+    },
+    "rolling.mean window 100": {
+      "median_s": 0.006915,
+      "peak_rss_bytes": 167936000
+    },
+    "set_index then loc": {
+      "median_s": 0.085225,
+      "peak_rss_bytes": 305987584
+    },
+    "sort_values int64": {
+      "median_s": 0.071,
+      "peak_rss_bytes": 210059264
+    },
+    "sort_values two columns": {
+      "median_s": 0.043021,
+      "peak_rss_bytes": 357990400
+    },
+    "str.contains literal": {
+      "median_s": 0.019738,
+      "peak_rss_bytes": 160481280
+    },
+    "str.contains regex": {
+      "median_s": 0.028919,
+      "peak_rss_bytes": 159793152
+    },
+    "str.contains then groupby.size": {
+      "median_s": 0.020683,
+      "peak_rss_bytes": 193609728
+    },
+    "str.len": {
+      "median_s": 0.010146,
+      "peak_rss_bytes": 174030848
+    },
+    "str.len then filter then mean": {
+      "median_s": 0.024156,
+      "peak_rss_bytes": 234586112
+    },
+    "str.replace literal": {
+      "median_s": 0.019955,
+      "peak_rss_bytes": 202014720
+    },
+    "str.split then get": {
+      "median_s": 0.345871,
+      "peak_rss_bytes": 525008896
+    },
+    "str.upper": {
+      "median_s": 0.017831,
+      "peak_rss_bytes": 181387264
+    },
+    "str.upper then drop_duplicates": {
+      "median_s": 0.08772,
+      "peak_rss_bytes": 395264000
+    },
+    "sum": {
+      "median_s": 0.000103,
+      "peak_rss_bytes": 166019072
+    },
+    "value_counts": {
+      "median_s": 0.005334,
+      "peak_rss_bytes": 196427776
+    },
+    "value_counts then head": {
+      "median_s": 0.033899,
+      "peak_rss_bytes": 260341760
+    },
+    "where": {
+      "median_s": 0.001374,
+      "peak_rss_bytes": 167870464
+    }
+  }
+}
