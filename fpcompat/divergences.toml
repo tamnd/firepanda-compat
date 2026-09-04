@@ -78,3 +78,20 @@ reason = "firepanda's regex engine has RE2 semantics, which give a linear time g
 spec = "06-pandas-parity.md#the-genuine-omissions"
 expect = "raises"
 since = "2026-09-04"
+
+# The eighth entry, and the only one where firepanda is closer to the truth than pandas
+# is rather than deliberately doing less. It is also the only one added after the change
+# it covers rather than before it, which the rule at the top of this file says should
+# not happen. Recorded rather than tidied away: the change was a precision fix that
+# looked like it could only move firepanda towards pandas, and the frames where it moves
+# firepanda past pandas were found by measuring afterwards.
+
+[[divergence]]
+id = "engine/moment-precision"
+cases = ["divergences/moment-precision/*"]
+kind = "engine"
+reason = "The variance, the standard deviation, the standard error and the skewness are computed from deviations around each group's mean, and the mean is a sum divided by a count, so it is near the true mean and is not it. pandas leaves that error in. firepanda sums the plain deviations alongside the squared ones and subtracts the residual, which costs one addition per row and makes the answer independent of how accurate the centre was. On ordinary columns the two agree to the last bit and the correction is worth nothing. On a column of large values with a small spread it is worth a great deal, and the two engines part company: on five values at two to the fifty second pandas gives a variance of 37.25 where the true value is 37.2, and a skewness of 1.4863469519931585 where the true value is 1.3253147098134046, which is twelve percent. On the suite's own int64 corpus frames, where the groups are large enough that numpy's pairwise summation gives pandas a better centre than firepanda's plain accumulation does, the correction moves firepanda towards pandas rather than away: pandas is 5.9e-6 from the true skewness of int64_half_null and firepanda is now 1.2e-16. This entry exists because on the shape of column above, and only on that shape, firepanda answers something pandas does not."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "differs"
+instead = "the moments are corrected for the centre they were measured around, so the answer does not change when a constant is added to the column. Where the two disagree, firepanda is the one nearer the value exact arithmetic gives."
+since = "2026-09-05"

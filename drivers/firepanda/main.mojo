@@ -782,6 +782,27 @@ def main() raises:
         # `interpolation` settings on `quantile` have none because firepanda's
         # quantile has no such parameter. Those are absences and the suite should
         # say so rather than have this file guess an answer.
+        # The two divergence cases that assert the corrected moments. Both sides
+        # ignore the frame they were handed and build the same five values, because
+        # the divergence needs a column whose mean cannot be represented exactly and
+        # no corpus frame is shaped that way. Two to the fifty second is where the
+        # gap between neighbouring float64 values is exactly one, so every input is
+        # exact and the rounded centre is the only thing either engine can get wrong.
+        elif case_id.startswith("divergences/moment-precision/"):
+            var base = 4503599627370496.0
+            var shifted = Array[DType.float64](5)
+            shifted[0] = base + 1.0
+            shifted[1] = base + 2.0
+            shifted[2] = base + 4.0
+            shifted[3] = base + 8.0
+            shifted[4] = base + 16.0
+            var wide = List[Series]()
+            wide.append(Series("value", shifted^))
+            var built = DataFrame.from_series(wide^)
+            var moment = (
+                AggKind.SKEW if case_id.endswith("/skew") else AggKind.VAR
+            )
+            emit_scalar(reduce(built, "value", moment), out)
         elif case_id == "stats/std":
             emit_scalar(reduce(frame, "value", AggKind.STD), out)
         elif case_id == "stats/var":

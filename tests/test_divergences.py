@@ -298,7 +298,7 @@ def test_an_entry_with_no_expiry_never_expires():
 
 def test_the_committed_registry_loads():
     entries = divergences.registry()
-    assert len(entries) == 7
+    assert len(entries) == 8
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

@@ -544,3 +544,37 @@ case(
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.extract(r"(?<=a)(b+)", expand=True),
 )
+
+# ---------------------------------------------------------------------------
+# The two pass moments
+# ---------------------------------------------------------------------------
+
+# The only entry in this registry where firepanda is closer to the truth than pandas
+# is, which is why it takes a column of its own rather than riding on a corpus frame.
+# Both sides ignore the frame they are handed and build the same five values, because
+# the divergence needs a column where the mean cannot be represented exactly and no
+# corpus frame is shaped that way. Two to the fifty second is where the gap between
+# neighbouring float64 values is exactly one, so every input here is exact and the
+# rounded centre is the only thing either engine can get wrong.
+
+SHIFTED = [2.0**52 + 1, 2.0**52 + 2, 2.0**52 + 4, 2.0**52 + 8, 2.0**52 + 16]
+
+case(
+    "divergences/moment-precision/skew",
+    "Series.skew",
+    level="L2",
+    frames=("two",),
+    expr=lambda pd, df: float(pd.Series(SHIFTED).skew()),
+    note="pandas answers 1.4863469519931585 and the true value is 1.3253147098134046, "
+    "so this is twelve percent rather than a rounding difference. firepanda answers "
+    "the true value",
+)
+case(
+    "divergences/moment-precision/var",
+    "Series.var",
+    level="L2",
+    frames=("two",),
+    expr=lambda pd, df: float(pd.Series(SHIFTED).var()),
+    note="the same column and the same cause, smaller because the second moment is "
+    "squared rather than cubed. pandas answers 37.25 and the true value is 37.2",
+)
