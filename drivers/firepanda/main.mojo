@@ -194,6 +194,47 @@ def reduce(frame: DataFrame, column: String, kind: AggKind) raises -> DataFrame:
     return frame.agg(specs)
 
 
+def reduce_pair(
+    frame: DataFrame, left: String, right: String, kind: AggKind
+) raises -> DataFrame:
+    """Runs one two column reduction, the firepanda spelling.
+
+    `Series.corr` and `Series.cov` in pandas are a method on one series taking
+    another, and in firepanda they are an `AggSpec` naming two columns of the same
+    frame handed to `agg`. Both cases in the suite take their two columns out of one
+    frame, so nothing is lost in the translation.
+
+    Args:
+        frame: The frame.
+        left: The first column.
+        right: The second column.
+        kind: Which pair reduction.
+
+    Returns:
+        A frame of one row and one column.
+
+    Raises:
+        Error: Whatever `agg` raises.
+    """
+    var specs = List[AggSpec]()
+    specs.append(AggSpec(left, right, kind, "value"))
+    return frame.agg(specs^)
+
+
+def emit_scalar(frame: DataFrame, path: String) raises:
+    """Writes a one row one column frame as a scalar answer and prints its line.
+
+    Args:
+        frame: The one row frame carrying the value.
+        path: Where to write it.
+
+    Raises:
+        Error: If it cannot be written.
+    """
+    write_arrow(frame, path)
+    print('{"status":"ok","kind":"scalar"}')
+
+
 def string_scalar_frame(name: String, value: String) raises -> DataFrame:
     """Wraps one string as a frame of one row and one column.
 
@@ -732,6 +773,79 @@ def main() raises:
                 out,
             )
             print('{"status":"ok","kind":"scalar"}')
+        # The stats section. Almost every case here answers with a scalar, which is
+        # the one answer shape that does not go through an index, so this is the
+        # section where firepanda's arithmetic can be compared to pandas without
+        # #154 standing in front of every result. `kurt`, `mode`, `prod`, `rank`,
+        # `nlargest`, `interpolate`, `searchsorted`, `cumsum` and `describe` have no
+        # entry because firepanda has no such operation, and the four non linear
+        # `interpolation` settings on `quantile` have none because firepanda's
+        # quantile has no such parameter. Those are absences and the suite should
+        # say so rather than have this file guess an answer.
+        elif case_id == "stats/std":
+            emit_scalar(reduce(frame, "value", AggKind.STD), out)
+        elif case_id == "stats/var":
+            emit_scalar(reduce(frame, "value", AggKind.VAR), out)
+        elif case_id == "stats/sem":
+            emit_scalar(reduce(frame, "value", AggKind.SEM), out)
+        elif case_id == "stats/skew":
+            emit_scalar(reduce(frame, "value", AggKind.SKEW), out)
+        elif case_id == "stats/std-ddof-zero":
+            emit_scalar(reduce(frame, "value", AggKind.std_with(0)), out)
+        elif case_id == "stats/var-ddof-zero":
+            emit_scalar(reduce(frame, "value", AggKind.var_with(0)), out)
+        elif case_id == "stats/std-single-row":
+            # The `single` frame has no column called `value`, and the case asks for
+            # `b`, which is its float one.
+            emit_scalar(reduce(frame, "b", AggKind.STD), out)
+        elif case_id == "stats/median":
+            emit_scalar(reduce(frame, "value", AggKind.MEDIAN), out)
+        elif case_id == "stats/quantile-linear":
+            emit_scalar(reduce(frame, "value", AggKind.quantile_at(0.25)), out)
+        elif case_id == "stats/quantile-nulls":
+            emit_scalar(reduce(frame, "value", AggKind.quantile_at(0.5)), out)
+        elif case_id == "stats/corr-pearson" or case_id == "stats/cov":
+            # The case takes the last two columns of the frame by position, and
+            # names them in that order: the last one is the series the method is
+            # called on and the one before it is the argument.
+            var labels = frame.names()
+            var kind = (
+                AggKind.CORR if case_id == "stats/corr-pearson" else AggKind.COV
+            )
+            emit_scalar(
+                reduce_pair(
+                    frame, labels[len(labels) - 1], labels[len(labels) - 2], kind
+                ),
+                out,
+            )
+        elif case_id == "stats/corr-with-nulls":
+            emit_scalar(reduce_pair(frame, "value", "row", AggKind.CORR), out)
+        elif case_id == "stats/monotonic":
+            # The case reads the first column by position rather than by name,
+            # because the three frames it runs on do not agree on one.
+            emit_scalar(
+                scalar_frame[DType.bool](
+                    "value",
+                    Scalar[DType.bool](
+                        frame.column(frame.names()[0]).is_monotonic_increasing()
+                    ),
+                ),
+                out,
+            )
+        elif case_id == "stats/hasnans":
+            emit_scalar(
+                scalar_frame[DType.bool](
+                    "value",
+                    Scalar[DType.bool](frame.column("value").null_count() > 0),
+                ),
+                out,
+            )
+        elif case_id == "stats/argsort":
+            emit_series(
+                "value",
+                Series("value", frame.column("value").argsort()),
+                out,
+            )
         else:
             print('{"status":"absent"}')
     except error:
