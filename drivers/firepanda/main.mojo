@@ -625,6 +625,10 @@ def main() raises:
             emit_frame(grouped(frame, one_key("key"), AggKind.STD), out)
         elif case_id == "groupby/var":
             emit_frame(grouped(frame, one_key("key"), AggKind.VAR), out)
+        elif case_id == "groupby/sem":
+            emit_frame(grouped(frame, one_key("key"), AggKind.SEM), out)
+        elif case_id == "groupby/skew":
+            emit_frame(grouped(frame, one_key("key"), AggKind.SKEW), out)
         elif case_id == "groupby/size":
             # pandas returns an unnamed Series here, one row per group, so the size
             # column travels alone rather than beside the key.
@@ -658,6 +662,10 @@ def main() raises:
             emit_frame(grouped(frame, one_key("key"), AggKind.STD), out)
         elif case_id == "groupby/flat-var":
             emit_frame(grouped(frame, one_key("key"), AggKind.VAR), out)
+        elif case_id == "groupby/flat-sem":
+            emit_frame(grouped(frame, one_key("key"), AggKind.SEM), out)
+        elif case_id == "groupby/flat-skew":
+            emit_frame(grouped(frame, one_key("key"), AggKind.SKEW), out)
         elif case_id == "groupby/flat-dropna-false":
             emit_frame(
                 grouped(frame, one_key("key"), AggKind.SUM, False, True), out
