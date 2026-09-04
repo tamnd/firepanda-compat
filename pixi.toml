@@ -63,7 +63,19 @@ conformance = "python -m fpcompat.runner --engine firepanda"
 # generated rather than written so it cannot fall behind the registry.
 divergences = "python -m fpcompat.divergences --page"
 
+# The scoreboard: the summary line and the per section table, read out of the last
+# result file. It prints whatever it read. There is no threshold below which it
+# declines to print, because the run that lost is the run worth publishing.
 report = "python -m fpcompat.report"
+
+# The three pages, into the gitignored site directory. Generated on every run and
+# never committed, so a stale number cannot sit in the repository looking current.
+site = "python -m fpcompat.report --site site"
+
+# Fails when a section's L3 count is below the committed floor in ratchet.json, or
+# when the failure count went up. A ratchet and not a threshold: what it refuses is
+# going backwards, and raising the floor is part of the pull request that earns it.
+ratchet = "python -m fpcompat.report --ratchet --results results/firepanda.json"
 
 # Which pandas names and which parameters no case has ever touched. An uncovered
 # parameter is not a pass and it is not a failure, it is a hole in the measurement.

@@ -511,6 +511,12 @@ def run(engine_name: str, oracle: bool, pattern: str | None) -> dict[str, Any]:
         "cases": len(cases),
         "runs": len(records),
         "totals": totals,
+        # The declarations travel with the results. The report needs to know which
+        # parameters a case claimed to cover and what level it claimed, and it has to
+        # be able to render a run somebody else produced on a machine with no pandas
+        # and no case registry on it. A result file that needs this repository at the
+        # matching commit to be readable is not a result file, it is a cache.
+        "declarations": {item.id: item.describe() for item in cases},
         "records": records,
     }
 
