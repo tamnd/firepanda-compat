@@ -15,6 +15,9 @@ which of four thousand numbers moved.
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
+import textwrap
 
 import pandas as pd
 import pytest
@@ -313,6 +316,52 @@ def test_more_unimplemented_names_is_not_a_regression():
 def test_the_floor_covers_every_section():
     computed = report.score(document([]))
     assert set(report.floors(computed)["l3"]) == set(sections.SECTIONS)
+
+
+# ---------------------------------------------------------------------------
+# Rendering somebody else's run
+# ---------------------------------------------------------------------------
+
+
+def test_the_report_renders_with_no_pandas_installed(tmp_path):
+    """The point of the declarations block and of passing the version around.
+
+    A result file names the pandas it ran against, the inventory for that pandas is
+    committed, and the declarations travel in the file, so nothing about rendering a
+    run needs the library or the case registry. This runs in a subprocess with pandas
+    made unimportable, because the only way to test an absent import from inside a
+    test session that has already imported pandas is not to be in it.
+    """
+    doc = document(
+        [record("a/one", "DataFrame.sort_values", "L3", "pass")], {"a/one": {"covers": ["by"]}}
+    )
+    path = tmp_path / "run.json"
+    path.write_text(json.dumps(doc))
+
+    program = textwrap.dedent(
+        """
+        import sys
+
+        class Refuse:
+            def find_spec(self, name, path=None, target=None):
+                if name.split(".")[0] in ("pandas", "pyarrow"):
+                    raise AssertionError(f"the report imported {name}")
+                return None
+
+        sys.meta_path.insert(0, Refuse())
+        from fpcompat import report
+
+        sys.exit(report.main(["--results", sys.argv[1], "--site", sys.argv[2]]))
+        """
+    )
+    finished = subprocess.run(
+        [sys.executable, "-c", program, str(path), str(tmp_path / "site")],
+        capture_output=True,
+        text=True,
+        cwd=report.ROOT,
+    )
+    assert finished.returncode == 0, finished.stderr
+    assert (tmp_path / "site" / "index.md").read_text().count("| basics |") == 1
 
 
 # ---------------------------------------------------------------------------
