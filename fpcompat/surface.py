@@ -26,6 +26,16 @@ going stale is not a cosmetic problem: every coverage number is computed against
 it, so a pandas upgrade that adds twelve methods has to show up as a diff in this
 repository before it shows up as a coverage number that is quietly too high.
 
+The inventory is a function of the interpreter and of pyarrow as well as of
+pandas, which CI found rather than this comment predicting it. pandas 3.0.3 walked
+on Python 3.12 has 3266 parameters and on 3.14 it has 3267, because
+`Timestamp.fromisoformat` is a C level callable whose `object` parameter only
+became visible to `inspect.signature` in 3.14. One parameter in three thousand is
+exactly the size of drift that would otherwise be waved through, so the document
+records all three versions, `--check` compares them before it compares the body
+and says which one moved, and CI pins every one of them to what the committed file
+names.
+
 Usage:
     python -m fpcompat.surface                 # rewrite the committed inventory
     python -m fpcompat.surface --check         # fail if the committed file is stale
@@ -233,10 +243,16 @@ def inventory() -> dict[str, Any]:
         for key in totals:
             totals[key] += record["counts"][key]
 
+    # pandas is recorded exactly because it is the subject. The other two are
+    # recorded to the minor version, because they are pins for the environment
+    # rather than the thing being measured, and a patch release of either that
+    # genuinely moved a signature would still fail the comparison of the body.
+    # Recording their patch versions instead would mean a diff every time a
+    # contributor's lockfile picked up pyarrow 25.0.1 over 25.0.0.
     return {
         "pandas": pd.__version__,
-        "pyarrow": pa.__version__,
-        "python": sys.version.split()[0],
+        "pyarrow": ".".join(pa.__version__.split(".")[:2]),
+        "python": f"{sys.version_info.major}.{sys.version_info.minor}",
         "totals": totals,
         "namespaces": spaces,
     }
@@ -358,6 +374,25 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f"no committed inventory for pandas {doc['pandas']}: "
                 f"run `pixi run surface` and commit {target.relative_to(ROOT)}",
+                file=sys.stderr,
+            )
+            return 1
+        committed = json.loads(target.read_text())
+        if committed.get("python") != doc["python"]:
+            print(
+                f"{target.relative_to(ROOT)} was generated on Python "
+                f"{committed.get('python')} and this is Python {doc['python']}. The "
+                "inventory is a function of the interpreter as well as of pandas, so "
+                "regenerate it on the pinned interpreter or pin this environment to "
+                "the one it names.",
+                file=sys.stderr,
+            )
+            return 1
+        if committed.get("pyarrow") != doc["pyarrow"]:
+            print(
+                f"{target.relative_to(ROOT)} was generated against pyarrow "
+                f"{committed.get('pyarrow')} and this is {doc['pyarrow']}. The nested "
+                "accessors are built on Arrow dtypes, so this moves the surface.",
                 file=sys.stderr,
             )
             return 1

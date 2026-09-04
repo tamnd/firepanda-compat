@@ -33,25 +33,35 @@ jobs:
             echo "::notice::no harness yet"; exit 0; }
           uvx ruff check . && uvx ruff format --check .
 
-      # pytest over the harness itself. This is not the conformance run; it is the
-      # tests that stop the thing doing the measuring from being wrong.
-      # The pandas version is not written here. It is the version the committed
-      # inventory was generated against, read out of the filename, so that the
-      # denominator and the environment that checks it can never drift apart.
-      - name: Pin pandas to the committed inventory
+      # No version is written here. All three are read out of the committed
+      # inventory, so the denominator and the environment that checks it cannot
+      # drift apart. Python is in the list because it belongs there: pandas 3.0.3
+      # reports 3266 parameters on Python 3.12 and 3267 on 3.14, since
+      # Timestamp.fromisoformat only shows its parameter to inspect.signature on
+      # the newer one. Upgrading any of the three is a commit that regenerates the
+      # file, which is the point.
+      - name: Pin the environment to the committed inventory
         id: pins
         run: |
-          version=$(ls surface/pandas-*.json 2>/dev/null | sed 's|.*pandas-||; s|\.json$||' \
-            | sort -V | tail -1)
-          [ -n "$version" ] || version="3.0.*"
-          echo "pandas=$version" >> "$GITHUB_OUTPUT"
-          echo "::notice::pandas $version"
+          file=$(ls surface/pandas-*.json 2>/dev/null | sort -V | tail -1)
+          if [ -z "$file" ]; then
+            echo "::notice::no committed inventory yet"
+            { echo "pandas=3.0.3"; echo "pyarrow=25.0"; echo "python=3.14"; } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          for key in pandas pyarrow python; do
+            value=$(jq -r --arg k "$key" '.[$k]' "$file")
+            echo "$key=$value" >> "$GITHUB_OUTPUT"
+          done
+          echo "::notice::$(jq -r '"pandas \(.pandas), pyarrow \(.pyarrow), python \(.python)"' "$file")"
 
       - name: Tests
         run: |
           [ -n "$(find tests -name 'test_*.py' -print -quit)" ] || {
             echo "::notice::no tests yet"; exit 0; }
-          uvx --with "pandas==${{ steps.pins.outputs.pandas }}" --with 'pyarrow>=25,<26' \
+          uvx --python "${{ steps.pins.outputs.python }}" \
+            --with "pandas==${{ steps.pins.outputs.pandas }}" \
+            --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
             --with pytest pytest -q
 
       # pandas against pandas, through the full pipeline. A perfect score or the
@@ -60,7 +70,9 @@ jobs:
       - name: Oracle
         run: |
           [ -f fpcompat/runner.py ] || { echo "::notice::no runner yet"; exit 0; }
-          uvx --with "pandas==${{ steps.pins.outputs.pandas }}" --with 'pyarrow>=25,<26' \
+          uvx --python "${{ steps.pins.outputs.python }}" \
+            --with "pandas==${{ steps.pins.outputs.pandas }}" \
+            --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
             python -m fpcompat.runner --engine pandas --oracle
 
       # The committed inventory has to match the pandas in the environment, or every
@@ -69,7 +81,9 @@ jobs:
       - name: Inventory is current
         run: |
           [ -f fpcompat/surface.py ] || { echo "::notice::no surface tool yet"; exit 0; }
-          uvx --with "pandas==${{ steps.pins.outputs.pandas }}" --with 'pyarrow>=25,<26' \
+          uvx --python "${{ steps.pins.outputs.python }}" \
+            --with "pandas==${{ steps.pins.outputs.pandas }}" \
+            --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
             python -m fpcompat.surface --check
 
   links:

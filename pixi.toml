@@ -12,14 +12,21 @@ platforms = ["linux-64", "linux-aarch64", "osx-arm64", "osx-64"]
 # here is a package that has to solve on four platforms before a case can run.
 # Polars, DuckDB and cuDF belong to firepanda-bench and are not welcome in this
 # environment, because the oracle is pandas and there is one oracle.
+#
+# The three version pins below are the ones named in surface/pandas-3.0.3.json and
+# they are pins rather than ranges. The inventory is a function of all three:
+# pandas 3.0.3 reports 3266 parameters on Python 3.12 and 3267 on 3.14, because
+# Timestamp.fromisoformat only shows its parameter to inspect.signature on the
+# newer one. Loosening any of these means a contributor regenerates the inventory
+# and gets a diff that is about their laptop rather than about pandas.
 [dependencies]
-python = ">=3.13"
+python = "3.14.*"
 # 3.0 and not 2.x. The target is one major version of pandas and a suite that
 # straddles two spends its life on the differences between them rather than on the
 # differences that matter. The exact version is recorded in every result file,
 # because a conformance claim without the pandas version attached is not a claim.
-pandas = ">=3.0,<4"
-pyarrow = ">=25.0,<26"
+pandas = "3.0.*"
+pyarrow = "25.0.*"
 pytest = "*"
 
 # The Mojo toolchain is not here. It lives in the firepanda checkout, pinned by
