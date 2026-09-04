@@ -87,6 +87,20 @@ jobs:
             --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
             python -m fpcompat.runner --engine pandas --oracle
 
+      # The oracle above cannot see a relaxation that nothing depends on, because
+      # pandas against pandas returns both sides in the same order and there is
+      # nothing for an order relaxation to absorb. This reorders the oracle's own
+      # answer and requires each declaration to be what makes the case pass against
+      # it. A couple of minutes, most of it on one ten million row self join.
+      # docs/specs/05-comparison.md.
+      - name: Relaxation sweep
+        run: |
+          [ -f fpcompat/sweep.py ] || { echo "::notice::no sweep yet"; exit 0; }
+          uvx --python "${{ steps.pins.outputs.python }}" \
+            --with "pandas==${{ steps.pins.outputs.pandas }}" \
+            --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
+            python -m fpcompat.sweep
+
       # A generated page that drifts is worse than no page at all, because a user
       # reads it and believes it. docs/specs/06-divergences.md.
       - name: Divergence page is current

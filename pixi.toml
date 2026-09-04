@@ -54,6 +54,12 @@ corpus = "python -m fpcompat.corpus"
 # it is fixed. This runs on every commit here.
 oracle = "python -m fpcompat.runner --engine pandas --oracle"
 
+# Every relaxation a case declares, tested against a reordering of the answer pandas
+# itself produced. Exits non zero when a declaration passes with the relaxation
+# disabled, which means nothing depends on it. Not the same as running the oracle
+# with a relaxation off, which proves nothing at all. docs/specs/05-comparison.md.
+sweep = "python -m fpcompat.sweep"
+
 # pandas against firepanda. Needs either an importable firepanda, which arrives at
 # M3, or a built driver in drivers/firepanda.
 conformance = "python -m fpcompat.runner --engine firepanda"

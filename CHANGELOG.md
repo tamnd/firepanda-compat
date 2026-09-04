@@ -10,6 +10,7 @@ divergence registry format.
 
 ### Added
 
+- The relaxation sweep, `pixi run sweep`, and the correction to the specification that came with it. `05-comparison.md` said the oracle would be run a second time with each relaxation individually disabled and the cases that then failed would be the ones needing it. Measured: 18 case and relaxation pairs, run with their relaxation off, zero failures, because pandas against pandas returns both sides in the same order and an order relaxation has nothing to absorb. Under the specified rule every declaration in the repository was unnecessary and would have been deleted. The sweep reorders the oracle's own answer instead and requires each declaration to be what makes the case pass against it. All 18 declarations are load bearing.
 - The specification, 12 documents in `docs/specs/`, mirrored from the author's notes.
 - The scaffold: pixi environment pinned to pandas 3.0 and pyarrow 25, CI, licence.
 - The surface tool, which counts the pandas API rather than remembering it, and the committed inventory of pandas 3.0.3 that every coverage number is computed against.

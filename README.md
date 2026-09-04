@@ -51,6 +51,8 @@ The published number is the fraction of the 1125 callables at L3 or better, per 
 
 **The harness is checked against itself first.** `pixi run oracle` runs the whole registry with pandas on both sides and must be a perfect score. Anything else means the harness is wrong, and no result from it is publishable until it is fixed. The first version of any normalizer has a bug in the index handling, and without this every one of those bugs is published as a firepanda failure.
 
+**And every relaxation has to earn its line.** `pixi run sweep` takes the answer pandas produced, reorders it, and requires each declared relaxation to be the thing that makes the case pass against that reordering. A declaration that passes with the relaxation switched off is reported and the build fails. Running the oracle a second time with a relaxation disabled would be easier and would prove nothing, because pandas against pandas returns both sides in the same order and there is nothing for an order relaxation to absorb.
+
 ## Status
 
 C0, the instrument. The specification is 12 documents in [`docs/specs/`](docs/specs) and the tools land one pull request at a time behind it. There is no conformance number yet, and the first one published will be a low number, because a project that waits until its score is respectable before publishing one has learned to hide the number.
@@ -74,6 +76,7 @@ C0, the instrument. The specification is 12 documents in [`docs/specs/`](docs/sp
 pixi run surface       # rewrite the inventory from the installed pandas
 pixi run corpus        # regenerate the frames and verify the manifest
 pixi run oracle        # pandas against pandas, must be perfect
+pixi run sweep         # every relaxation, against a reordering of pandas' own answer
 pixi run conformance   # pandas against firepanda
 pixi run report        # the scoreboard
 pixi run coverage      # which pandas names and parameters no case touches
