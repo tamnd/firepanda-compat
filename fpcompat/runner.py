@@ -46,6 +46,7 @@ from fpcompat.cases import NO_WARNING, Case, registry, select
 from fpcompat.compare import check_error, check_warnings, compare
 from fpcompat.divergences import Divergence
 from fpcompat.divergences import match as divergence_for
+from fpcompat.driver import Absent
 from fpcompat.engines import load
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -147,12 +148,20 @@ def _unimplemented(error: BaseException) -> bool:
     body whose whole content is `raise NotImplementedError` has two. Anything deeper
     got somewhere before it gave up.
 
+    The out of process form is recognised by type instead. `Absent` comes from the
+    driver saying it has no entry for a case, it is raised from inside this package
+    rather than from inside the subject, and its depth is a fact about how many
+    functions `fpcompat.driver` happens to have. Counting frames there would be
+    counting the wrong thing.
+
     Args:
         error: What was raised.
 
     Returns:
         Whether this counts as unimplemented rather than as a failure.
     """
+    if isinstance(error, Absent):
+        return True
     depth = len(traceback.extract_tb(error.__traceback__))
     if isinstance(error, AttributeError):
         return depth <= 2
@@ -172,6 +181,13 @@ def run_expression(
     what a case even returns, and then the sweep would be making claims about a case
     nobody else runs.
 
+    An engine that says it is out of process gets asked to run the case instead of
+    being handed to the case expression, because there is no module for the expression
+    to be evaluated against. It comes back with an `Answer` rather than a DataFrame,
+    which `compare` takes as it is. The warnings list is empty on that path and there
+    is no way for it not to be, so a case declaring a warning fails on that side. That
+    is the honest reading of a subject with no channel to report one through.
+
     Args:
         case: The case.
         engine: The engine.
@@ -183,6 +199,8 @@ def run_expression(
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         try:
+            if getattr(engine, "out_of_process", False):
+                return engine.run(case, frame_name), None, list(caught)
             frame = engine.frame(frame_name)
             return case.expr(engine.module(), frame), None, list(caught)
         except BaseException as error:  # noqa: BLE001  a crash in the subject is a result
