@@ -3,3 +3,14 @@ target-version = "py313"
 
 [lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+# RUF001 and its two siblings warn that a string contains a character which looks
+# like another character. In the corpus that is the requirement rather than a
+# mistake: the dotless i, the sharp s and the two spellings of an accented e are in
+# there precisely because they look like something they are not, and that is what a
+# case comparing an upper case or a normalization against pandas is testing. A noqa
+# per string would mean the next person adding an interesting character has to argue
+# with the linter, which is how the interesting characters stop getting added.
+[lint.per-file-ignores]
+"fpcompat/corpus.py" = ["RUF001", "RUF002", "RUF003"]
+"tests/test_corpus.py" = ["RUF001", "RUF002", "RUF003"]
