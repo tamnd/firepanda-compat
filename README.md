@@ -76,9 +76,24 @@ pixi run oracle        # pandas against pandas, must be perfect
 pixi run conformance   # pandas against firepanda
 pixi run report        # the scoreboard
 pixi run coverage      # which pandas names and parameters no case touches
+pixi run site          # the three pages, into a gitignored directory
+pixi run ratchet       # fail if a section went backwards since the recorded floor
 pixi run budget        # the operation level cost matrix
 pixi run test          # pytest over the harness itself
 ```
+
+## What the scoreboard prints
+
+Two lines and a table. The first line is the level counts, the second is everything that keeps the first one honest, and the table is the same thing per section, worst first.
+
+```
+firepanda 0.1.0 vs pandas 3.0.3   L3 179/1125 (15.9%)   L2 326   L1 1034   L0 1125
+divergent 0   unimplemented 0   fail 0   untested 0   parameters 9.1%   cases 3138 in 167.6s
+```
+
+The last two numbers on the second line are there because a pass rate on its own is easy to make look good. `untested` counts the pandas callables no case in the suite has ever named, and `parameters` is the share of the 3267 pandas parameters that any case has exercised. A high L3 over a low parameter coverage is a suite that is not finished, so neither number is quotable without the other, and `pixi run coverage` prints the individual parameters nobody has touched as a work list.
+
+Three rules the report will not bend. The denominator is the pandas surface and not our case list, because a suite that reports a pass rate over its own cases is reporting how good it is at writing cases it passes. A divergence gets its own column and is never folded into either the passing or the failing count. And the run that lost still gets printed, since the only thing that fails a build here is the ratchet and an imperfect oracle.
 
 ## The three repositories
 

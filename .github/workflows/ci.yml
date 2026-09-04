@@ -108,6 +108,43 @@ jobs:
             --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
             python -m fpcompat.surface --check
 
+      # Renders the oracle run the previous step just wrote, into the job summary so
+      # that the numbers are visible without downloading anything, and into the site
+      # so that a page which fails to render is a red build rather than a discovery
+      # made on publication day. This step is not a gate on the score. It prints
+      # whatever it read. docs/specs/07-scoreboard.md.
+      - name: Scoreboard
+        run: |
+          [ -f fpcompat/report.py ] || { echo "::notice::no report yet"; exit 0; }
+          uvx --python "${{ steps.pins.outputs.python }}" \
+            --with "pandas==${{ steps.pins.outputs.pandas }}" \
+            --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
+            python -m fpcompat.report --site site
+          {
+            echo '### Oracle scoreboard'
+            echo
+            uvx --python "${{ steps.pins.outputs.python }}" \
+              --with "pandas==${{ steps.pins.outputs.pandas }}" \
+              --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
+              python -m fpcompat.report
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The one gate on a number. It applies to the conformance run against
+      # firepanda and not to the oracle, so it stays quiet until there is a driver
+      # to produce one. A ratchet and not a threshold: a threshold on a young
+      # project is either so low it means nothing or so high it blocks the work
+      # that would raise it, and people learn to route around both. What this
+      # refuses is going backwards.
+      - name: Conformance ratchet
+        run: |
+          [ -f results/firepanda.json ] || {
+            echo "::notice::no conformance run yet, the ratchet starts when the driver does"
+            exit 0; }
+          uvx --python "${{ steps.pins.outputs.python }}" \
+            --with "pandas==${{ steps.pins.outputs.pandas }}" \
+            --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
+            python -m fpcompat.report --ratchet --results results/firepanda.json
+
   links:
     name: Link check
     runs-on: ubuntu-latest
