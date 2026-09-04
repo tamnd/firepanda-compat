@@ -60,6 +60,12 @@ oracle = "python -m fpcompat.runner --engine pandas --oracle"
 # with a relaxation off, which proves nothing at all. docs/specs/05-comparison.md.
 sweep = "python -m fpcompat.sweep"
 
+# Builds the out of process form of the subject, against a sibling firepanda checkout
+# by default. The Mojo toolchain comes from that checkout and not from this one, and
+# the script stamps the version and commit it built against next to the binary, which
+# is what puts a firepanda version in the result file. docs/specs/03-harness.md.
+driver = "drivers/firepanda/build.sh"
+
 # pandas against firepanda. Needs either an importable firepanda, which arrives at
 # M3, or a built driver in drivers/firepanda.
 conformance = "python -m fpcompat.runner --engine firepanda"

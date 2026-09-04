@@ -77,6 +77,7 @@ pixi run surface       # rewrite the inventory from the installed pandas
 pixi run corpus        # regenerate the frames and verify the manifest
 pixi run oracle        # pandas against pandas, must be perfect
 pixi run sweep         # every relaxation, against a reordering of pandas' own answer
+pixi run driver        # build the Mojo driver against a sibling firepanda checkout
 pixi run conformance   # pandas against firepanda
 pixi run report        # the scoreboard
 pixi run coverage      # which pandas names and parameters no case touches

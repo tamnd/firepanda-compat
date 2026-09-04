@@ -71,6 +71,26 @@ That second implementation is a real cost and it is worth paying for one reason:
 
 When the in process form lands, the driver stays for one release as a cross check and is then deleted. Two implementations of a test suite is a state to pass through and not to live in.
 
+## The driver protocol
+
+Written down because it is a contract between a Mojo program and a Python one, with no type checker spanning the two of them, and the only thing that keeps them agreeing is that both sides were written against this section.
+
+One invocation is one case on one frame. The driver takes `--case`, `--frame`, `--corpus` and `--out`, prints one line of JSON on stdout, and writes the answer itself to `--out` as an Arrow IPC file. stdout before that line is ignored, which is so that a `print` left in during a debugging session costs that person an afternoon rather than costing the project a run. stderr is free. The exit status is not the protocol: zero means a line was printed, whatever that line said.
+
+The line has a `status` and there are four of them.
+
+`ok` carries a `kind`, which is `scalar`, `frame` or `series`, and that is the vocabulary of the normalized answer in document 05. The shape is part of the answer, so a driver that returns a one column frame where pandas returns a Series has failed the case and has not almost passed it. A frame carries `columns`, the labels in order. A series carries `name`. Every kind carries `index`, the number of leading columns of the written table that came from an index, which is zero on every answer today and is in the protocol because it will not always be. A scalar is written as a table of one row and one column rather than as a number in the JSON line, so that its type travels as an Arrow type: a float through JSON is a decimal string that loses its last bits, and an integer through JSON has no width at all, while an int32 answer where pandas gives int64 is a conformance failure.
+
+`absent` means the driver has no entry for the case id, and the harness scores it `unimplemented`. That is the one status a suite is tempted to make cheap and it is not cheap here, because unimplemented counts against the score exactly as hard as a failure does. A driver that quietly skipped what it did not know would produce a suite whose score goes up when you delete cases.
+
+`raised` means firepanda raised, and it carries a `type` and a `message`. The type is `Error` for everything today, because Mojo has one exception type carrying a string, so every L4 case naming a pandas exception type fails against the driver. Guessing a pandas type name out of the message text would be inventing a result, and it would be an invisible invention, since nothing downstream could tell a guessed type from a real one.
+
+`broken` means the driver failed at its own job, which is a bug in this repository or in the build rather than a fact about anything. A missing corpus file is broken. A corpus file that is there and that firepanda refuses to read is not broken, it is `raised`, because firepanda having no reader for a dictionary encoded column is a real gap and hiding it behind a message about the driver would lose it. That distinction is one line in the driver, a check that the file exists before trying to read it, and it is the difference between a suite that reports firepanda's limits and one that reports its own.
+
+Three things the protocol deliberately cannot express, all for the same reason, which is that a harness papering over the subject's limits is measuring the harness. There is no index, so a pandas answer whose index is a plain zero to n-1 range compares equal to a firepanda answer with no index, per the global rule in document 05, and a pandas answer whose index is anything else fails. `DataFrame.tail` is the first case that fails that way and it is supposed to. There is no exception type, as above. There are no warnings, because a separate process has no way to hand a warning object back, so a case declaring a warning fails on the subject side until firepanda has somewhere to report one from.
+
+The driver is built by `drivers/firepanda/build.sh`, which uses the Mojo toolchain pinned by the firepanda checkout it is pointed at rather than one pinned here. Two pins for one toolchain is how a driver ends up compiled against a library it does not match. The script also writes `stamp.json` next to the binary, recording the firepanda version, the commit, whether the checkout was dirty, and the Mojo version, and the harness reads that into the result file. firepanda has no version constant in Mojo, so the checkout it was compiled against is the only place that answer exists, and a conformance number that cannot say which firepanda produced it is not a number anybody can act on.
+
 ## Process isolation
 
 One engine per process, always, even when both could import. pandas leaves global state behind, options are process wide, and a firepanda extension module and pandas in one interpreter share an allocator and a set of Arrow symbols. Isolation also means a segfault in the subject is a failed case with a captured signal rather than a lost run, which matters more than it should while the subject is a young library in a systems language.
@@ -101,5 +121,6 @@ Case selection order does not affect outcomes. Cases share nothing, no case muta
 | `pixi run budget` | the cost matrix from document 09 |
 | `pixi run coverage` | which pandas names and parameters no case touches |
 | `pixi run test` | pytest over the harness, which is not the same thing as running the harness |
+| `pixi run driver` | builds `drivers/firepanda` against a sibling firepanda checkout and stamps it |
 
 `pixi run oracle` is the one people forget to build. It runs pandas against pandas through the entire pipeline, and any result other than a perfect score is a bug in the harness rather than in anything it measures. It is what stops a normalization mistake from being published as a firepanda failure, and it runs on every commit to this repository.

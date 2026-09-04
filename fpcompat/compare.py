@@ -875,6 +875,25 @@ def _compare_tabular(left: Answer, right: Answer, rules: Rules, verdict: Verdict
     elif left.index_names != right.index_names:
         verdict.note(f"index names {right.index_names}, expected {left.index_names}")
 
+    if left.n_index != right.n_index:
+        # Different numbers of index levels, and the two tables therefore have
+        # different numbers of columns, so there is nothing further to compare. This
+        # has to return rather than fall through: the column loop below is indexed by
+        # the left side's shape, and running it against a narrower right side is an
+        # IndexError out of pyarrow rather than a difference, which the runner then
+        # reports as a bug in this file. It was one, and this is it.
+        #
+        # The message is worth reading twice, because this is the shape of every
+        # failure a library with no index produces against pandas. An answer with no
+        # index is only comparable to a pandas answer whose index is a plain range,
+        # and `DataFrame.tail` does not produce one of those.
+        verdict.note(
+            f"{right.n_index} index levels, expected {left.n_index}. A pandas answer "
+            "whose index is a plain 0 to n-1 range compares equal to one with no "
+            "index, and this index is not that, so the index is part of the answer"
+        )
+        return
+
     left_columns, right_columns = list(left.columns), list(right.columns)
     if left_columns != right_columns:
         missing = [c for c in left_columns if c not in right_columns]
