@@ -87,6 +87,16 @@ jobs:
             --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
             python -m fpcompat.runner --engine pandas --oracle
 
+      # A generated page that drifts is worse than no page at all, because a user
+      # reads it and believes it. docs/specs/06-divergences.md.
+      - name: Divergence page is current
+        run: |
+          [ -f fpcompat/divergences.py ] || { echo "::notice::no registry yet"; exit 0; }
+          uvx --python "${{ steps.pins.outputs.python }}" \
+            --with "pandas==${{ steps.pins.outputs.pandas }}" \
+            --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
+            python -m fpcompat.divergences --check
+
       # The committed inventory has to match the pandas in the environment, or every
       # coverage number computed from it is stale. Regenerating it is one task and
       # the diff is the work list, so a mismatch is a failure with a fix attached.

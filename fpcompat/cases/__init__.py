@@ -56,6 +56,7 @@ SECTIONS = (
     "temporal",
     "nested",
     "errors",
+    "divergences",
 )
 
 LEVELS = ("L0", "L1", "L2", "L3", "L4")
