@@ -63,6 +63,12 @@ Two things about the gate that the first implementation settled and this documen
 
 And a row that stopped running counts as a regression. An operation that used to work and now raises is the largest regression available, and a gate that only compares the rows both sides have would score it as a clean pass.
 
+## The table other repositories read
+
+The matrix is measured here and it is read elsewhere. firepanda-bench wants to say which operations a benchmark query is made of, so that a reader who sees a query where firepanda loses can find out which operation inside it lost, and it cannot import this package: a bench environment carries Polars, DuckDB and cuDF and this one deliberately carries none of them.
+
+So the operation table is committed as `operations.json`, the same way the pandas inventory is committed, and the other repository vendors a copy. It is the id, the section, the pandas names the operation covers and whether it is a chain, and it has no numbers in it at all. A timing belongs to a machine and this file belongs to a commit, so a median published here would be a number people quote with the machine detached from it. CI checks the file against the registry, because a row added or renamed without a diff is a link in the other repository that quietly points at nothing.
+
 ## The rule
 
 Same one as everywhere else in these two repositories. **Publish the rows we lose.** A cost matrix where firepanda wins every row has either been curated or is measuring the wrong thing, and the first person to notice will be somebody deciding whether to trust the project.

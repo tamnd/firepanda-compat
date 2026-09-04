@@ -145,6 +145,17 @@ jobs:
             --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
             python -m fpcompat.report --ratchet --results results/firepanda.json
 
+      # operations.json is read by firepanda-bench to say which operations a query is
+      # made of, so a row added or renamed here has to show up as a diff rather than as
+      # a link that quietly points at nothing.
+      - name: Operation table is current
+        run: |
+          [ -f fpcompat/budget.py ] || { echo "::notice::no budget yet"; exit 0; }
+          uvx --python "${{ steps.pins.outputs.python }}" \
+            --with "pandas==${{ steps.pins.outputs.pandas }}" \
+            --with "pyarrow==${{ steps.pins.outputs.pyarrow }}.*" \
+            python -m fpcompat.budget --operations --check
+
       # The budget frames are not committed either, and this proves they still
       # generate and still generate the same thing. Ten thousand rows and not a
       # million, because the digest is sampled from both ends and a change to the

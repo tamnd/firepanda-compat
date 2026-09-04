@@ -51,6 +51,7 @@ Usage:
     python -m fpcompat.budget --engine firepanda       # measure the subject
     python -m fpcompat.budget --matrix                 # the table, from the results
     python -m fpcompat.budget --check --rows 10000     # the corpus digests, in CI
+    python -m fpcompat.budget --operations             # the table other repos read
 """
 
 from __future__ import annotations
@@ -65,7 +66,7 @@ import statistics
 import subprocess
 import sys
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -80,6 +81,7 @@ ROOT = corpus.ROOT
 RESULTS = ROOT / "results"
 BUDGET = corpus.CORPUS / "budget"
 MANIFEST = ROOT / "corpus" / "budget-manifest.json"
+TABLE = ROOT / "operations.json"
 
 # `ru_maxrss` is kilobytes on Linux and bytes on macOS. Getting this wrong makes a
 # memory column wrong by a factor of 1024 on one platform, which is large enough that
@@ -864,6 +866,74 @@ def registry() -> dict[str, Operation]:
     return found
 
 
+def described(items: Iterable[Operation]) -> dict[str, Any]:
+    """The part of an operation that is worth reading without running anything.
+
+    Args:
+        items: The operations to describe.
+
+    Returns:
+        Operation id to its section, the pandas names it covers, whether it is a
+        chain, and which frames it needs.
+    """
+    return {
+        item.id: {
+            "section": item.section,
+            "covers": list(item.covers),
+            "chained": item.chained,
+            "needs": list(item.needs),
+        }
+        for item in items
+    }
+
+
+def publish(check: bool) -> int:
+    """Writes the operation table, or checks that the committed one is current.
+
+    The matrix is measured here and read elsewhere. firepanda-bench wants to say which
+    operations a benchmark query is made of, and it cannot import this package, because
+    a bench environment carries Polars, DuckDB and cuDF and a conformance environment
+    deliberately carries none of them. So the table is committed as a file, the same way
+    the pandas inventory is, and the other repository vendors a copy of it. A committed
+    file that CI checks is the difference between a link that goes stale quietly and one
+    that fails a build.
+
+    What is deliberately not in here is any number. Timings belong to a machine and this
+    file belongs to a commit, so publishing a median here would produce a number people
+    quote without the machine attached.
+
+    Args:
+        check: Verify rather than write.
+
+    Returns:
+        A process exit status.
+    """
+    registry()
+    document = {
+        "generator": "fpcompat.budget",
+        "count": len(OPERATIONS),
+        "chained": sum(1 for item in OPERATIONS if item.chained),
+        "operations": described(OPERATIONS),
+    }
+    rendered = json.dumps(document, indent=2, sort_keys=True) + "\n"
+    if not check:
+        TABLE.write_text(rendered)
+        print(f"wrote {TABLE.name}, {len(OPERATIONS)} operations")
+        return 0
+    if not TABLE.exists():
+        print(f"no {TABLE.name}. Run `pixi run operations`", file=sys.stderr)
+        return 1
+    if TABLE.read_text() != rendered:
+        print(
+            f"{TABLE.name} is not what the registry says. "
+            f"Run `pixi run operations` and commit the diff",
+            file=sys.stderr,
+        )
+        return 1
+    print(f"{TABLE.name} is current, {len(OPERATIONS)} operations")
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # The measurement, which happens in the child
 # ---------------------------------------------------------------------------
@@ -1147,15 +1217,7 @@ def sweep(engine: str, rows: int, repeats: int, only: list[str] | None = None) -
         # conformance results carry their declarations. A result file that needs this
         # repository at the matching commit to be readable is not a result file, it is
         # a cache.
-        "operations": {
-            item.id: {
-                "section": item.section,
-                "covers": list(item.covers),
-                "chained": item.chained,
-                "needs": list(item.needs),
-            }
-            for item in items
-        },
+        "operations": described(items),
         "records": records,
     }
 
@@ -1653,6 +1715,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--against", default="pandas", help="the baseline engine")
     parser.add_argument("--out", type=Path, help="write the matrix here")
     parser.add_argument("--list", action="store_true", help="print the operation ids")
+    parser.add_argument(
+        "--operations", action="store_true", help="write the committed operation table"
+    )
     parser.add_argument("--baseline", action="store_true", help="record this machine's baseline")
     parser.add_argument("--gate", action="store_true", help="fail on a regression past the slack")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
@@ -1666,6 +1731,9 @@ def main(argv: list[str] | None = None) -> int:
         for item in OPERATIONS:
             print(item.id)
         return 0
+
+    if args.operations:
+        return publish(args.check)
 
     if args.corpus or args.check:
         return build_corpus(rows, args.check)
