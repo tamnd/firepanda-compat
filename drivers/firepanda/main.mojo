@@ -486,16 +486,21 @@ def grouped(
     kind: AggKind,
     dropna: Bool = True,
     sort: Bool = True,
+    as_index: Bool = False,
 ) raises -> DataFrame:
     """Runs one reduction per group over every column that is not a key.
 
-    This is `df.groupby(keys).sum()` and its family, in the firepanda spelling. The
-    shape it produces is not the pandas one and cannot be made into it here: pandas
-    puts the keys in the index and firepanda has no index, so the keys come back as
-    ordinary leading columns. The driver reports what firepanda produced and lets the
-    comparison say the two answers differ, which is the truthful thing to do. Moving
-    the keys into the protocol's index slot would launder a real difference into a
-    pass, and the difference is the largest single conformance item in the tree.
+    This is `df.groupby(keys).sum()` and its family, in the firepanda spelling.
+    `as_index` asks for the pandas shape, where the key is the row labels rather
+    than a leading column, and firepanda has that now.
+
+    It is still a parameter rather than the only behaviour, for two reasons. The
+    `flat-` cases beside every one of these ask pandas for `as_index=False` and
+    exist to compare the arithmetic without the shape in the way, so they want the
+    other form. And a two key grouping is a MultiIndex in pandas, which firepanda
+    does not have, so asking for it there raises rather than handing back one of
+    the two levels. Those cases stay flat and keep failing on the level count,
+    which is the honest report: the answer really does have the wrong shape.
 
     Args:
         frame: The frame.
@@ -503,14 +508,15 @@ def grouped(
         kind: The reduction to apply to everything else.
         dropna: Whether a group whose key is null is dropped.
         sort: Whether the result comes back sorted by key.
+        as_index: Whether the key comes back as the row labels.
 
     Returns:
-        The aggregated frame, keys first.
+        The aggregated frame.
 
     Raises:
         Error: Whatever `group_agg` raises.
     """
-    return frame.group_agg(keys, kind, dropna, sort)
+    return frame.group_agg(keys, kind, dropna, sort, as_index)
 
 
 def main() raises:
@@ -714,44 +720,87 @@ def main() raises:
             emit_series(
                 "value", frame.column("value").cast(LogicalType.STRING), out
             )
-        # Grouped aggregations. Every one of these except `as-index-false` and
-        # `ngroups` produces a frame whose keys are columns where the pandas answer
-        # has them in the index, so every one of them fails on that and would fail
-        # even if every number in it were right. That is the point of running them:
-        # the comparison lists the value differences next to the shape difference, so
-        # a wrong group sum is still visible underneath a missing index, and there is
-        # no other way to find one before the index lands.
+        # Grouped aggregations. These used to produce a frame whose keys were
+        # columns where the pandas answer has them in the index, so every one of them
+        # failed on the shape and would have failed even if every number in it were
+        # right. firepanda has the indexed shape now, so they ask for it and are
+        # compared on their values like anything else. The two key cases are the
+        # exception and stay flat, because two keys are a MultiIndex in pandas and
+        # firepanda has none, so those still fail on the level count, which is the
+        # truthful report rather than a gap being papered over.
         elif case_id == "groupby/sum":
-            emit_frame(grouped(frame, one_key("key"), AggKind.SUM), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.SUM, True, True, True),
+                out,
+            )
         elif case_id == "groupby/mean":
-            emit_frame(grouped(frame, one_key("key"), AggKind.MEAN), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.MEAN, True, True, True),
+                out,
+            )
         elif case_id == "groupby/min":
-            emit_frame(grouped(frame, one_key("key"), AggKind.MIN), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.MIN, True, True, True),
+                out,
+            )
         elif case_id == "groupby/max":
-            emit_frame(grouped(frame, one_key("key"), AggKind.MAX), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.MAX, True, True, True),
+                out,
+            )
         elif case_id == "groupby/count":
-            emit_frame(grouped(frame, one_key("key"), AggKind.COUNT), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.COUNT, True, True, True),
+                out,
+            )
         elif case_id == "groupby/first":
-            emit_frame(grouped(frame, one_key("key"), AggKind.FIRST), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.FIRST, True, True, True),
+                out,
+            )
         elif case_id == "groupby/last":
-            emit_frame(grouped(frame, one_key("key"), AggKind.LAST), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.LAST, True, True, True),
+                out,
+            )
         elif case_id == "groupby/median":
-            emit_frame(grouped(frame, one_key("key"), AggKind.MEDIAN), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.MEDIAN, True, True, True),
+                out,
+            )
         elif case_id == "groupby/nunique":
-            emit_frame(grouped(frame, one_key("key"), AggKind.NUNIQUE), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.NUNIQUE, True, True, True),
+                out,
+            )
         elif case_id == "groupby/std":
-            emit_frame(grouped(frame, one_key("key"), AggKind.STD), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.STD, True, True, True),
+                out,
+            )
         elif case_id == "groupby/var":
-            emit_frame(grouped(frame, one_key("key"), AggKind.VAR), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.VAR, True, True, True),
+                out,
+            )
         elif case_id == "groupby/sem":
-            emit_frame(grouped(frame, one_key("key"), AggKind.SEM), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.SEM, True, True, True),
+                out,
+            )
         elif case_id == "groupby/skew":
-            emit_frame(grouped(frame, one_key("key"), AggKind.SKEW), out)
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.SKEW, True, True, True),
+                out,
+            )
         elif case_id == "groupby/size":
-            # pandas returns an unnamed Series here, one row per group, so the size
-            # column travels alone rather than beside the key.
+            # pandas returns an unnamed Series here, one row per group, indexed by
+            # the key, so the size column travels alone and carries the labels.
             emit_series_unnamed(
-                frame.group_count(one_key("key")).column("size"), out
+                frame.group_count(one_key("key"), True, True, True).column(
+                    "size"
+                ),
+                out,
             )
         # The same reductions asked for with the keys left as columns, which is the
         # shape firepanda already produces, so these are the ones that say whether
@@ -812,27 +861,35 @@ def main() raises:
         elif case_id == "groupby/series":
             emit_series(
                 "value",
-                grouped(frame, one_key("key"), AggKind.SUM).column("value"),
+                grouped(
+                    frame, one_key("key"), AggKind.SUM, True, True, True
+                ).column("value"),
                 out,
             )
         elif case_id == "groupby/sort-false":
             emit_frame(
-                grouped(frame, one_key("key"), AggKind.SUM, True, False), out
+                grouped(frame, one_key("key"), AggKind.SUM, True, False, True),
+                out,
             )
         elif case_id == "groupby/dropna-false":
             emit_frame(
-                grouped(frame, one_key("key"), AggKind.SUM, False, True), out
+                grouped(frame, one_key("key"), AggKind.SUM, False, True, True),
+                out,
             )
         elif case_id == "groupby/on-tall":
             emit_series(
                 "value",
-                grouped(frame, one_key("key"), AggKind.MEAN).column("value"),
+                grouped(
+                    frame, one_key("key"), AggKind.MEAN, True, True, True
+                ).column("value"),
                 out,
             )
         elif case_id == "groupby/bool-key":
             emit_series(
                 "value",
-                grouped(frame, one_key("flag"), AggKind.SUM).column("value"),
+                grouped(
+                    frame, one_key("flag"), AggKind.SUM, True, True, True
+                ).column("value"),
                 out,
             )
         elif case_id == "groupby/as-index-false":
