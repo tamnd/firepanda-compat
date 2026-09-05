@@ -294,6 +294,76 @@ def test_a_frame_whose_header_and_file_disagree_is_broken(tmp_path):
         driver.run("basics/scratch", "two")
 
 
+def test_an_index_a_driver_reports_travels_into_the_answer(tmp_path):
+    """The header fields that say what the leading columns are.
+
+    A driver that carries row labels writes them in front of the data and says so.
+    Before firepanda had an index this was hardcoded to no index and a default one,
+    which was true of every answer it could produce and is not true any more.
+    """
+    driver = fake(
+        tmp_path,
+        {
+            "status": "ok",
+            "kind": "frame",
+            "index": 1,
+            "index_names": [None],
+            "default_index": False,
+            "columns": ["a"],
+        },
+        {"schema": [["__index__0", "int64"], ["a", "int64"]], "columns": [[5, 6], [1, 2]]},
+    )
+    answer = driver.run("basics/scratch", "two")
+    assert answer.n_index == 1
+    assert answer.default_index is False
+    assert answer.index_names == ("NoneType(None)",)
+
+
+def test_a_driver_that_names_its_index_level_says_so(tmp_path):
+    driver = fake(
+        tmp_path,
+        {
+            "status": "ok",
+            "kind": "frame",
+            "index": 1,
+            "index_names": ["key"],
+            "default_index": False,
+            "columns": ["a"],
+        },
+        {"schema": [["__index__0", "int64"], ["a", "int64"]], "columns": [[5, 6], [1, 2]]},
+    )
+    assert driver.run("basics/scratch", "two").index_names == ("key",)
+
+
+def test_a_driver_that_sends_no_index_names_is_taken_to_mean_unnamed(tmp_path):
+    """The common case, and the one a driver should not have to spell out."""
+    driver = fake(
+        tmp_path,
+        {"status": "ok", "kind": "frame", "index": 1, "default_index": False, "columns": ["a"]},
+        {"schema": [["__index__0", "int64"], ["a", "int64"]], "columns": [[5, 6], [1, 2]]},
+    )
+    assert driver.run("basics/scratch", "two").index_names == ("NoneType(None)",)
+
+
+def test_a_driver_that_miscounts_its_index_names_is_broken(tmp_path):
+    # A driver bug and not a wrong answer, like every other disagreement between the
+    # header and the file.
+    driver = fake(
+        tmp_path,
+        {
+            "status": "ok",
+            "kind": "frame",
+            "index": 1,
+            "index_names": ["a", "b"],
+            "default_index": False,
+            "columns": ["a"],
+        },
+        {"schema": [["__index__0", "int64"], ["a", "int64"]], "columns": [[5, 6], [1, 2]]},
+    )
+    with pytest.raises(DriverBroken, match="2 index level names and 1"):
+        driver.run("basics/scratch", "two")
+
+
 def test_a_scalar_that_is_not_one_row_is_broken(tmp_path):
     driver = fake(
         tmp_path,
