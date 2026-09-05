@@ -45,7 +45,7 @@ from typing import Any
 import pyarrow as pa
 import pyarrow.ipc as ipc
 
-from fpcompat.compare import INDEX_PREFIX, VALUE, Answer, canonical_type
+from fpcompat.compare import INDEX_PREFIX, UNNAMED_LEVEL, VALUE, Answer, canonical_type
 
 # Five minutes per case, which is two orders of magnitude above the slowest thing in
 # the corpus and is here for a driver that loops rather than for one that is slow. A
@@ -108,6 +108,39 @@ def _table(path: Path) -> pa.Table:
         ) from error
 
 
+def _index_names(header: dict[str, Any], n_index: int) -> tuple[str, ...]:
+    """Reads the index level names a driver reported, in the spelling `_label` uses.
+
+    A driver sends `null` for an unnamed level, because that is what the level is
+    called in every library that has one, and the comparison holds level names in the
+    rendering `_label` produces so that the string `"None"` and no name at all stay
+    apart. So the translation happens here rather than in the driver, which should not
+    have to know how this harness spells a label.
+
+    A driver that sends no `index_names` at all and reports index levels anyway is
+    taken to mean they are unnamed, which is the common case and keeps a driver that
+    only ever produces one unnamed level from having to send the field.
+
+    Args:
+        header: The parsed JSON line.
+        n_index: How many index levels the driver said it wrote.
+
+    Returns:
+        The level names, one per level.
+
+    Raises:
+        DriverBroken: When the driver sent a different number of names than levels.
+    """
+    if "index_names" not in header:
+        return (UNNAMED_LEVEL,) * n_index
+    names = tuple(header["index_names"])
+    if len(names) != n_index:
+        raise DriverBroken(
+            f"the driver reported {len(names)} index level names and {n_index} index levels"
+        )
+    return tuple(UNNAMED_LEVEL if name is None else str(name) for name in names)
+
+
 def _answer(header: dict[str, Any], table: pa.Table) -> Answer:
     """Builds the normalized answer from the header line and the answer file.
 
@@ -162,8 +195,8 @@ def _answer(header: dict[str, Any], table: pa.Table) -> Answer:
             table=table.rename_columns(names),
             n_index=n_index,
             columns=columns,
-            index_names=(),
-            default_index=True,
+            index_names=_index_names(header, n_index),
+            default_index=bool(header.get("default_index", True)),
         )
 
     if kind == "series":
@@ -179,8 +212,8 @@ def _answer(header: dict[str, Any], table: pa.Table) -> Answer:
             table=table.rename_columns(names),
             n_index=n_index,
             columns=(VALUE,),
-            index_names=(),
-            default_index=True,
+            index_names=_index_names(header, n_index),
+            default_index=bool(header.get("default_index", True)),
             name=None if name is None else str(name),
         )
 

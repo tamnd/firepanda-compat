@@ -356,6 +356,37 @@ def test_the_index_level_names_are_compared():
     assert not compare(frame, renamed)
 
 
+def test_an_unnamed_level_is_described_in_words_and_not_as_a_type():
+    """The note a reader gets when the level names differ.
+
+    `_label` renders `None` as `NoneType(None)` and has to keep doing so, because the
+    comparison needs it to stay apart from the string "None". Showing that to a person
+    reads as though pandas had a level named NoneType, so the note spells it out.
+    """
+    left = pd.DataFrame({"v": [1]}, index=pd.Index(["a"], name="key"))
+    right = pd.DataFrame({"v": [1]}, index=pd.Index(["a"]))
+    verdict = compare(left, right)
+    assert not verdict
+    note = "\n".join(verdict.differences)
+    assert "index names unnamed, expected 'key'" in note
+    assert "NoneType" not in note
+
+
+def test_the_level_count_is_reported_before_the_level_names():
+    """An engine with no index should be told it has no index first.
+
+    This used to report the names first, so a frame with no index at all was told its
+    index names were wrong before it was told it had no index, and the names note was
+    the one that survived truncation into the summary. The count is the difference
+    that matters and it now leads, and because that check returns, it is the only one.
+    """
+    left = pd.DataFrame({"v": [1, 2]}, index=[5, 6])
+    verdict = compare(left, pa.table({"v": [1, 2]}))
+    assert not verdict
+    assert len(verdict.differences) == 1
+    assert "0 index levels, expected 1" in verdict.differences[0]
+
+
 def test_a_series_name_is_compared():
     assert not compare(pd.Series([1], name="a"), pd.Series([1], name="b"))
 

@@ -56,6 +56,7 @@ from firepanda.array.array import Array
 from firepanda.array.strings import StringBuilder
 from firepanda.dtype import Field, LogicalType, Schema
 from firepanda.frame.frame import DataFrame
+from firepanda.frame.index import Index
 from firepanda.frame.series import Series
 from firepanda.frame.groupby import AggSpec
 from firepanda.io import read_arrow, write_arrow
@@ -221,6 +222,62 @@ def reduce_pair(
     return frame.agg(specs^)
 
 
+def index_header(index: Index) -> String:
+    """Renders the three header fields that describe a frame's row labels.
+
+    A default index is reported as no index at all, which is what this driver has
+    always sent and is why every case that passes today keeps passing. That is not a
+    dodge: a pandas index that is a plain zero to n minus one range carries no
+    information, the harness compares such a frame to one with no index, and sending
+    the labels would be sending a column of nothing. Anything else is reported as one
+    level with its labels written in front of the data.
+
+    An unnamed level goes over as `null` rather than as any particular string, because
+    the name of a level that has no name is not the driver's business to spell.
+
+    Args:
+        index: The row labels.
+
+    Returns:
+        The fields, without the surrounding braces.
+
+    """
+    if index.is_default():
+        return '"index":0,"index_names":[],"default_index":true'
+    var name = String("null")
+    if index.name:
+        name = quote(index.name.value())
+    return '"index":1,"index_names":[' + name + '],"default_index":false'
+
+
+def with_index(frame: DataFrame) raises -> DataFrame:
+    """Puts a frame's row labels in front of its data columns.
+
+    The harness reads the leading columns positionally and renames them, so the label
+    this gives the column is never compared and only has to not collide with a real
+    one. It is the name the harness uses for the same thing, which makes a file
+    written by this driver readable by hand.
+
+    Args:
+        frame: The answer.
+
+    Returns:
+        The frame with one more column at the front, or the frame unchanged when its
+        index is the default and there is nothing to say.
+
+    Raises:
+        Error: If the labels cannot be built or the columns cannot be copied.
+    """
+    if frame.index.is_default():
+        return DataFrame(copy=frame)
+    var series = List[Series]()
+    series.append(Series("__index__0", frame.index.materialize()))
+    var names = frame.names()
+    for i in range(len(names)):
+        series.append(frame.column(names[i]))
+    return DataFrame.from_series(series^)
+
+
 def emit_scalar(frame: DataFrame, path: String) raises:
     """Writes a one row one column frame as a scalar answer and prints its line.
 
@@ -296,9 +353,12 @@ def emit_frame(frame: DataFrame, path: String) raises:
         Error: If the frame cannot be written, which for an empty frame used to be
             most of them.
     """
-    write_arrow(frame, path)
+    var header = index_header(frame.index)
+    write_arrow(with_index(frame), path)
     print(
-        '{"status":"ok","kind":"frame","index":0,"columns":'
+        '{"status":"ok","kind":"frame",'
+        + header
+        + ',"columns":'
         + names_json(frame)
         + "}"
     )
@@ -321,10 +381,23 @@ def emit_series(name: String, var column: Series, path: String) raises:
     Raises:
         Error: If the series cannot be written.
     """
+    var labels = Index(copy=column.index)
     var series = List[Series]()
     series.append(column^.rename("__value__"))
-    write_arrow(DataFrame.from_series(series^), path)
-    print('{"status":"ok","kind":"series","index":0,"name":' + quote(name) + "}")
+    var out = DataFrame.from_series(series^)
+    # `from_series` gives the frame a fresh default index, since a list of columns
+    # says nothing about what its rows are called. The labels being sent are the
+    # series' own, so they are taken before the column is consumed and put back here.
+    out.index = labels^
+    var header = index_header(out.index)
+    write_arrow(with_index(out), path)
+    print(
+        '{"status":"ok","kind":"series",'
+        + header
+        + ',"name":'
+        + quote(name)
+        + "}"
+    )
 
 
 def emit_series_unnamed(var column: Series, path: String) raises:
@@ -342,10 +415,14 @@ def emit_series_unnamed(var column: Series, path: String) raises:
     Raises:
         Error: If the series cannot be written.
     """
+    var labels = Index(copy=column.index)
     var series = List[Series]()
     series.append(column^.rename("__value__"))
-    write_arrow(DataFrame.from_series(series^), path)
-    print('{"status":"ok","kind":"series","index":0,"name":null}')
+    var out = DataFrame.from_series(series^)
+    out.index = labels^
+    var header = index_header(out.index)
+    write_arrow(with_index(out), path)
+    print('{"status":"ok","kind":"series",' + header + ',"name":null}')
 
 
 def emit_index(var column: Series, path: String) raises:

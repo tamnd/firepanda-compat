@@ -335,6 +335,16 @@ class Answer:
     type_name: str | None = None
 
 
+UNNAMED_LEVEL = "NoneType(None)"
+"""What `_label` renders an unnamed index level as.
+
+Named because two other places need to produce it and neither should have to know how
+this module spells a label: the driver, which receives `null` from an engine and has
+to turn it into the same string pandas produces, and `_names_note`, which turns it
+back into something a person can read.
+"""
+
+
 def _label(value: Any) -> str:
     """Renders a pandas label so two labels compare as strings.
 
@@ -344,6 +354,13 @@ def _label(value: Any) -> str:
     `repr(1)` is the string `"1"`, which is the first version of this function and
     which a test caught.
 
+    `None` renders as `NoneType(None)` by that rule and keeps doing so, which is ugly
+    and is correct. It is the label pandas uses to mean there is no label, and it has
+    to stay distinguishable from the string `"None"` and from the empty string, both
+    of which are labels a user can really have. What was wrong was not this rendering
+    but a note that showed it to a reader without saying what it meant, and that is
+    fixed where the note is written rather than here.
+
     Args:
         value: The label.
 
@@ -351,6 +368,25 @@ def _label(value: Any) -> str:
         The rendering.
     """
     return value if isinstance(value, str) else f"{type(value).__name__}({value!r})"
+
+
+def _names_note(names: tuple[str, ...]) -> str:
+    """Renders index level names for a person reading a failure.
+
+    `_label` keeps `None` distinguishable from the string `"None"`, which is what the
+    comparison needs and is not what a reader needs, since the rendering it produces
+    reads as though the level were named NoneType. This is the reading version and it
+    is used only in notes, never in a comparison.
+
+    Args:
+        names: The rendered level names, as `_label` produced them.
+
+    Returns:
+        A description, in words, of what the levels are called.
+    """
+    if not names:
+        return "none"
+    return ", ".join("unnamed" if name == UNNAMED_LEVEL else repr(name) for name in names)
 
 
 def _is_default_index(index: pd.Index) -> bool:
@@ -956,9 +992,6 @@ def _compare_tabular(left: Answer, right: Answer, rules: Rules, verdict: Verdict
             n_index=0,
             index_names=(),
         )
-    elif left.index_names != right.index_names:
-        verdict.note(f"index names {right.index_names}, expected {left.index_names}")
-
     if left.n_index != right.n_index:
         # Different numbers of index levels, and the two tables therefore have
         # different numbers of columns, so there is nothing further to compare. This
@@ -977,6 +1010,19 @@ def _compare_tabular(left: Answer, right: Answer, rules: Rules, verdict: Verdict
             "index, and this index is not that, so the index is part of the answer"
         )
         return
+
+    # After the count agrees, and only then, the names are worth reporting. This used
+    # to be checked first, which meant an engine with no index at all was told its
+    # index names were wrong before it was told it had no index, and the note it got
+    # led with the rendering of `None` and read "index names (), expected
+    # ('NoneType(None)',)". That says pandas has a level called NoneType. What pandas
+    # has is one unnamed level, so the levels are spelled out here for a reader rather
+    # than shown as the tuple the comparison holds.
+    if left.index_names != right.index_names:
+        verdict.note(
+            f"index names {_names_note(right.index_names)}, expected "
+            f"{_names_note(left.index_names)}"
+        )
 
     left_columns, right_columns = list(left.columns), list(right.columns)
     if left_columns != right_columns:
