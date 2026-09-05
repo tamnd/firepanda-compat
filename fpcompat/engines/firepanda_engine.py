@@ -135,6 +135,14 @@ class FirepandaEngine:
     def frame(self, name: str) -> Any:
         """Loads one corpus frame as a firepanda frame.
 
+        This goes through the same `corpus.load` the pandas side uses and then hands
+        the table across by the Arrow C data interface, rather than asking firepanda to
+        open the file. Two reasons. firepanda has no reader for the Arrow IPC file
+        format and is not going to grow one just so this suite can load a corpus, and
+        more importantly a second reader would mean the two sides of every comparison
+        were reading the bytes by two different paths, so a difference in the answer
+        could be a difference in the loading. One reader and one handover removes that.
+
         Args:
             name: The corpus frame name.
 
@@ -144,7 +152,7 @@ class FirepandaEngine:
         Raises:
             EngineUnavailable: When there is no firepanda.
         """
-        return self.module().read_arrow(str(corpus.CORPUS / f"{name}.arrow"))
+        return self.module().from_arrow(corpus.load(name))
 
     def versions(self) -> dict[str, str]:
         """What goes in the result file.

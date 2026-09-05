@@ -248,14 +248,26 @@ def run_case(
     actual, actual_error, actual_warnings = run_expression(case, subject, frame_name)
     record["seconds"] = round(time.perf_counter() - started, 6)
 
-    entry = None if oracle_mode else divergence_for(case.id)
-    if entry is not None:
-        return _check_divergence(entry, case, expected, actual, actual_error, record)
-
+    # Absence is checked before the registry, and the order matters more than it
+    # looks. A registry entry is a statement about how the subject behaves, and a
+    # name the subject has never heard of has no behaviour for it to be a statement
+    # about. With the registry first, an entry saying the operation refuses is
+    # satisfied by an `AttributeError` from a method nobody has written, and the
+    # score reads that as a deliberate divergence rather than as a gap. The first
+    # module form run of this suite had 58 of its 64 divergent results ticked that
+    # way, which is precisely the excusing this repository's rules exist to refuse.
+    # The record's divergence field stays empty here on purpose. The scoreboard
+    # marks a name divergent when any record on it carries an entry id, and a name
+    # that does not exist has not diverged from anything, so writing the id would
+    # move the excusing from the outcome into the column beside it.
     if actual_error is not None and _unimplemented(actual_error):
         record["outcome"] = UNIMPLEMENTED
         record["detail"] = f"{type(actual_error).__name__}: {actual_error}"
         return record
+
+    entry = None if oracle_mode else divergence_for(case.id)
+    if entry is not None:
+        return _check_divergence(entry, case, expected, actual, actual_error, record)
 
     if case.raises is not None:
         # An L4 case. Both engines have to fail the same way, and the oracle failing

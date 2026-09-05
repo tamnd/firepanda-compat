@@ -55,7 +55,19 @@ The published number is the fraction of the 1125 callables at L3 or better, per 
 
 ## Status
 
-C0, the instrument. The specification is 12 documents in [`docs/specs/`](docs/specs) and the tools land one pull request at a time behind it. There is no conformance number yet, and the first one published will be a low number, because a project that waits until its score is respectable before publishing one has learned to hide the number.
+C0, the instrument. The specification is 12 documents in [`docs/specs/`](docs/specs) and the tools land one pull request at a time behind it.
+
+There is a conformance number now and it is a low one, which is what was promised. firepanda 0.6.45 against pandas 3.0.3, run in process against the importable module rather than through the driver:
+
+| | |
+|---|---|
+| L3 or better, of 1125 callables | 0 |
+| L2 | 0 |
+| L1, the signature is accepted | 28 |
+| L0, the name resolves | 33 |
+| Cases, over 4000 runs | 110 pass, 167 fail, 8 divergent, 3715 unimplemented |
+
+The single largest thing behind that is arithmetic on a series. `s + 1` raises, and so do the other six operators, unary minus and the six comparisons, which is 91 of the 167 failures on their own. The number is published as it is rather than after that is fixed, because a project that waits until its score is respectable before publishing one has learned to hide the number.
 
 ## Layout
 
