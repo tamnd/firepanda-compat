@@ -370,6 +370,36 @@ def _is_default_index(index: pd.Index) -> bool:
     )
 
 
+def _keeps_its_nans(values: Any) -> bool:
+    """Reports whether this is a float column whose NaNs are values and not nulls.
+
+    pyarrow converts a pandas object using pandas' own idea of missing, which for a
+    numpy backed float column means every NaN becomes an Arrow null. That is the
+    right answer for somebody moving data between the two libraries and the wrong
+    one for a conformance harness, because it throws away the distinction on the
+    oracle side of a comparison that is about to insist on it. A subject engine that
+    answered with a null where pandas answered with a NaN would be handed a pass.
+
+    So a numpy float column is converted with pandas' rules switched off and its
+    NaNs arrive as NaNs. Nothing else changes. An extension dtype carries a real
+    mask, its `pd.NA` is a null under either rule, and it keeps its NaNs already.
+
+    Args:
+        values: The sequence about to be converted.
+
+    Returns:
+        True when the conversion has to keep pandas out of it.
+    """
+    dtype = getattr(values, "dtype", None)
+    if dtype is None:
+        return False
+    # An extension dtype has no `.kind` reachable this way in every pandas version,
+    # and it is not what this is about in any of them, so it is asked directly.
+    if isinstance(dtype, pd.api.extensions.ExtensionDtype):
+        return False
+    return getattr(dtype, "kind", "") == "f"
+
+
 def _array(values: Any) -> pa.Array:
     """Converts a pandas or numpy sequence to an Arrow array.
 
@@ -386,6 +416,8 @@ def _array(values: Any) -> pa.Array:
         An Arrow array.
     """
     try:
+        if _keeps_its_nans(values):
+            return pa.array(values, from_pandas=False)
         return pa.array(values)
     except (pa.ArrowInvalid, pa.ArrowTypeError, pa.ArrowNotImplementedError, ValueError):
         rendered = [None if value is None or value is pd.NA else repr(value) for value in values]
