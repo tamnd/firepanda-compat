@@ -25,6 +25,7 @@ import pytest
 from fpcompat import corpus
 from fpcompat.compare import (
     RELAXATIONS,
+    VALUE,
     Rules,
     Tolerance,
     _arrow_sort_key,
@@ -544,6 +545,37 @@ def test_the_three_spellings_of_missing_stay_apart():
     assert not same(pd.NA, None)
     assert not same(pd.NaT, pd.NA)
     assert same(pd.NaT, pd.NaT)
+
+
+def test_a_pandas_nan_survives_the_conversion_as_a_nan():
+    """pyarrow converts a pandas object using pandas' own idea of missing, and for a
+    numpy backed float column that turns every NaN into an Arrow null. This suite
+    insists elsewhere that a null is not a NaN, so letting the conversion fold them
+    together on the oracle side would hand a pass to a subject engine that answered
+    with a null where pandas answered with a NaN."""
+    answer = normalize(pd.Series([1.0, float("nan"), 3.0]))
+    assert answer.table.column(VALUE).null_count == 0
+    assert np.isnan(answer.table.column(VALUE)[1].as_py())
+
+
+def test_a_pandas_na_is_still_a_null_after_the_conversion():
+    """The other half, and the reason the rule above is narrowed to numpy floats. An
+    extension dtype carries a real mask and its missing is a null under any rule, so
+    switching pandas' rules off for it would change nothing and it is left alone.
+
+    `Float64` folds a NaN handed to its constructor into `pd.NA`, so this holds one
+    missing value and not two, which is pandas being consistent with itself rather
+    than anything this suite decided."""
+    answer = normalize(pd.Series([1.0, None], dtype="Float64"))
+    column = answer.table.column(VALUE)
+    assert column.null_count == 1
+    assert column[1].as_py() is None
+
+
+def test_a_nan_and_a_null_in_a_float_column_do_not_compare_equal():
+    """The two tests above are only worth having if the comparison they feed still
+    tells the two apart once they arrive."""
+    assert not same(pd.Series([1.0, float("nan")]), pd.Series([1.0, None], dtype="Float64"))
 
 
 def test_a_scalar_float_uses_the_tolerance():

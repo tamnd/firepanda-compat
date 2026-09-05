@@ -8,6 +8,11 @@ divergence registry format.
 
 ## [Unreleased]
 
+### Fixed
+
+- A pandas NaN in a numpy backed float column no longer becomes an Arrow null on the way into the comparison. pyarrow converts a pandas object using pandas' own idea of missing, which for that dtype means every NaN is a null, and that is the right answer for moving data between the two libraries and the wrong one here. This suite insists elsewhere that a null is not a NaN and says so in the difference it prints, so folding the two together on the oracle side was handing a pass to a subject engine that answered with a null where pandas answered with a NaN. The rule is narrowed to numpy float dtypes. An extension dtype carries a real mask, its `pd.NA` is a null under any rule, and it is left alone. The pandas against pandas oracle is still perfect at 4000 of 4000, which is the run that would have caught this being wrong in the other direction.
+- This was found by a firepanda change rather than by inspection, which is worth recording because it is the second time the instrument has been wrong in a way only a subject could reveal. firepanda started reporting NaN from float reductions with nothing to reduce, matching pandas, and four `groupby/flat-*` cases on `keys_awkward` that had been passing started failing. They had been passing because both sides were being flattened to a null, not because the two agreed.
+
 ### Changed
 
 - `stats/argsort` names `kind="stable"` instead of taking pandas' default. The default is a quicksort, which pandas documents as not stable, so where a column holds a tie the default answer is one of several pandas is allowed to give and is not a specification anything can be measured against. `keys_10` holds exactly one duplicated value in ten thousand rows, the two kinds disagree at that tie and nowhere else, and firepanda's sort is stable, so the case was failing on a detail of numpy's introsort that could change in a patch release. It was passing on `float64_no_nulls` only because that column has no ties in it, which is the other half of the same problem: the property most worth checking here was going untested on both frames. `stats/argsort-ties` is new and runs on the key column of the same frame, ten distinct values over ten thousand rows, so nearly every position in that answer is decided by the tie break rather than by a comparison.
