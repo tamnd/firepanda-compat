@@ -368,7 +368,24 @@ case(
     "stats/argsort",
     "Series.argsort",
     frames=("keys_10", "float64_no_nulls"),
-    expr=lambda pd, df: df["value"].argsort(),
+    expr=lambda pd, df: df["value"].argsort(kind="stable"),
+    note="the kind is named rather than left at its default on purpose. pandas defaults to "
+    "quicksort and documents it as not stable, so where a column holds a tie the default "
+    "answer is one of several pandas is allowed to give and is not a specification anything "
+    "can be measured against. keys_10 holds exactly one duplicated value in ten thousand rows "
+    "and the two kinds disagree there and nowhere else, which is enough to fail a case on a "
+    "detail of numpy's introsort that could change in a patch release. stable is the form "
+    "that means something",
+)
+case(
+    "stats/argsort-ties",
+    "Series.argsort",
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].argsort(kind="stable"),
+    note="ten distinct keys over ten thousand rows, so almost every position in this answer is "
+    "decided by the tie break rather than by a comparison. the case above runs on a column "
+    "that is nearly unique and would pass against an unstable sort by luck, which leaves the "
+    "one property worth checking here untested",
 )
 case(
     "stats/searchsorted",
