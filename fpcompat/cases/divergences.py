@@ -302,7 +302,13 @@ for api, suffix, frames, call in INPLACE:
         level="L3",
         covers=("inplace",),
         frames=frames,
-        expr=(lambda made: lambda pd, df: made(pd, df))(body),
+        # `body` and not a lambda around it. `_mutating` and `_series` already
+        # return a fresh closure per iteration, so there is no late binding here
+        # for a trampoline to fix, and the trampoline was not free: it put one more
+        # frame under every case in this loop, which is enough to push an absent
+        # method past the depth `_unimplemented` allows and have it scored as a
+        # deliberate divergence instead of a gap.
+        expr=body,
     )
 
 

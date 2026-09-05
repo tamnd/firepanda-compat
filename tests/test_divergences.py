@@ -160,6 +160,68 @@ def test_a_differs_entry_that_differs_is_divergent(monkeypatch):
     assert record["outcome"] == runner.DIVERGENT
 
 
+class Absent:
+    """An engine whose module has nothing on it at all.
+
+    A real empty module, so a name that is not there raises from C at the depth a real
+    absent attribute does. `tests/test_runner.py` explains why that depth is the whole
+    signal and why a class with a `__getattr__` would spoil it.
+    """
+
+    def module(self):
+        import types
+
+        return types.ModuleType("firepanda")
+
+    def frame(self, name):
+        return ORACLE.frame(name)
+
+    def versions(self):
+        return ORACLE.versions()
+
+
+def _absent_for_the_subject(module, df):
+    """Reads a name that pandas has and the subject does not."""
+    if module is pd:
+        return type(df.plot).__name__
+    return module.plot_the_frame(df)
+
+
+def test_an_entry_over_a_name_that_does_not_exist_is_unimplemented(monkeypatch):
+    """Absence is checked before the registry, and this is why.
+
+    An entry saying the operation refuses is a statement about how firepanda behaves.
+    A name nobody has written has no behaviour for it to be a statement about, so
+    letting the entry answer for it turns a gap into a deliberate divergence and the
+    scoreboard reads it as a decision. The first module form run of this suite had 58
+    of its 64 divergent results ticked exactly that way.
+
+    `unimplemented` counts against the score as hard as a failure, per document 01, so
+    nothing is being excused here either. The entry starts being measured on the day
+    the name exists.
+    """
+    entry = load_one()[0]
+    monkeypatch.setattr(runner, "divergence_for", lambda case_id: entry)
+
+    record = runner.run_case(build(expr=_absent_for_the_subject), ORACLE, Absent(), "two")
+    assert record["outcome"] == runner.UNIMPLEMENTED
+    assert "plot_the_frame" in record["detail"]
+
+
+def test_an_unimplemented_case_does_not_carry_the_entry_id(monkeypatch):
+    """Or the excusing moves out of the outcome and into the column beside it.
+
+    The scoreboard marks a name divergent when any record on it carries an entry id,
+    so writing the id onto a case that never ran would put the name in the divergent
+    column while the outcome underneath said the opposite.
+    """
+    entry = load_one()[0]
+    monkeypatch.setattr(runner, "divergence_for", lambda case_id: entry)
+
+    record = runner.run_case(build(expr=_absent_for_the_subject), ORACLE, Absent(), "two")
+    assert record["divergence"] == ""
+
+
 def test_the_registry_does_not_apply_in_oracle_mode():
     """Both engines are pandas, so there is nothing for a claim about firepanda to be
     true of, and the divergence cases have to pass as ordinary cases."""
