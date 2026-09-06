@@ -1327,21 +1327,53 @@ def resolve_error(name: str) -> type[BaseException]:
     )
 
 
-def check_error(raised: BaseException | None, name: str, substring: str) -> Verdict:
+def check_error(
+    raised: BaseException | None, name: str, substring: str, *, exact: bool = True
+) -> Verdict:
     """Checks a raised exception against what a case declared.
 
-    The type has to match exactly, including which of the 46 `pandas.errors` types it
-    is, because `MergeError` and `ValueError` are a different experience for anyone
-    catching one. The message is only checked for a substring, and that substring is
-    the thing a user would search for, which is a column name, a dtype name or a
-    value. Everything past it is not compared, because pandas rewords its messages
-    between releases and pinning them would turn a pandas upgrade into a hundred
-    failing cases that are all the same non bug.
+    The message is only checked for a substring, and that substring is the thing a
+    user would search for, which is a column name, a dtype name or a value. Everything
+    past it is not compared, because pandas rewords its messages between releases and
+    pinning them would turn a pandas upgrade into a hundred failing cases that are all
+    the same non bug.
+
+    ### Why the type rule is not the same on both sides
+
+    The runner calls this twice per L4 case, once on pandas and once on the subject,
+    and the two calls are asking different questions.
+
+    On pandas it is asking whether the case is right about pandas, and there the type
+    has to match exactly. A case that declares `ValueError` where pandas raises
+    `MergeError` is a case that states less than it knows, and accepting it would let
+    the suite record an agreement it never checked.
+
+    On the subject it is asking whether code written against pandas still works, and
+    the answer to that is what `except` does, not what `type()` returns. A user who
+    wrote `except KeyError` around a column lookup catches a subclass of `KeyError`
+    without noticing, so an engine that raises one has not broken them. Requiring the
+    exact class would fail firepanda for `ColumnNotFoundError`, which is a `KeyError`
+    carrying the column name, and would fail it for being more informative than the
+    thing it copies. pandas makes the same call: its own 46 error types are subclasses
+    of the builtins, and `IntCastingNaNError` is a `ValueError` for exactly this
+    reason.
+
+    A superclass is still a failure in both directions, and that is the half of the
+    original rule that was doing the work. If pandas raises `MergeError` and the
+    subject raises a plain `ValueError`, every `except MergeError` in the user's code
+    stops firing, so the relation is checked in one direction rather than dropped.
+
+    This does raise firepanda's L4 count, which is a reason to be suspicious of it.
+    What makes it a fix rather than a convenience is that the rule now says what its
+    own justification always said. The message substring is untouched, so a subclass
+    still has to fail for the same reason and say so in the same words.
 
     Args:
         raised: What was raised, or None when nothing was.
         name: The expected type name.
         substring: What the message has to contain.
+        exact: Require the declared class itself rather than accepting a subclass of
+            it. True for the pandas side, False for the subject.
 
     Returns:
         The verdict.
@@ -1351,10 +1383,16 @@ def check_error(raised: BaseException | None, name: str, substring: str) -> Verd
     if raised is None:
         verdict.note(f"nothing was raised, expected {expected.__name__}")
         return verdict
-    if type(raised) is not expected:
+    if exact and type(raised) is not expected:
         verdict.note(
             f"raised {type(raised).__name__}, expected exactly {expected.__name__}. "
-            "A subclass is not a match, because the type is what a user catches"
+            "The pandas side of a case has to be declared as precisely as pandas "
+            "raises it, or the case states less than it knows"
+        )
+    elif not exact and not isinstance(raised, expected):
+        verdict.note(
+            f"raised {type(raised).__name__}, which is not a {expected.__name__}, so "
+            "an except clause written against pandas does not catch it"
         )
     if substring and substring not in str(raised):
         verdict.note(

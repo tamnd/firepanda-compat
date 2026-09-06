@@ -640,12 +640,51 @@ def test_an_error_matches_on_the_type_and_a_substring():
     assert not check_error(raised, "KeyError", "not a substring of anything")
 
 
-def test_a_subclass_is_not_a_match():
-    """`MergeError` is a `ValueError`, and a case that expects one and gets the other
-    is a difference, because the type is what a user catches."""
+def test_a_subclass_is_not_a_match_on_the_pandas_side():
+    """A case has to declare what pandas raises as precisely as pandas raises it.
+
+    `MergeError` is a `ValueError`, and a case that declares the base class states
+    less than it knows. Accepting it would let the suite record an agreement on a
+    type it never compared."""
     assert issubclass(pd.errors.MergeError, ValueError)
     assert not check_error(pd.errors.MergeError("bad merge"), "ValueError", "bad")
     assert check_error(pd.errors.MergeError("bad merge"), "MergeError", "bad")
+
+
+def test_a_subclass_is_a_match_on_the_subject_side():
+    """Because the question there is whether an except clause still fires.
+
+    Code written against pandas catches `KeyError`, and a subclass of `KeyError` is
+    caught by it, so an engine raising one has not broken anybody. This is how
+    firepanda's `ColumnNotFoundError` passes a case that declares `KeyError`, and it
+    is the same arrangement pandas has with its own 46 error types."""
+
+    class ColumnNotFound(KeyError):
+        pass
+
+    assert check_error(ColumnNotFound("no column 'z'"), "KeyError", "z", exact=False)
+    assert not check_error(ColumnNotFound("no column 'z'"), "KeyError", "z")
+
+
+def test_a_superclass_is_never_a_match_on_either_side():
+    """The half of the exact rule that was doing the real work.
+
+    If pandas raises `MergeError` and the subject raises a plain `ValueError`, every
+    `except MergeError` a user wrote stops firing, so relaxing the rule in one
+    direction must not relax it in the other."""
+    assert not check_error(ValueError("bad merge"), "MergeError", "bad", exact=False)
+    assert not check_error(Exception("bad merge"), "ValueError", "bad", exact=False)
+
+
+def test_the_message_still_has_to_match_for_a_subclass():
+    """A subclass gets no discount on the substring, which is the other half."""
+
+    class ColumnNotFound(KeyError):
+        pass
+
+    verdict = check_error(ColumnNotFound("something went wrong"), "KeyError", "z", exact=False)
+    assert not verdict
+    assert "does not contain" in verdict.differences[0]
 
 
 def test_the_pandas_error_types_resolve_by_their_short_name():

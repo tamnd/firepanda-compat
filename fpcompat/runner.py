@@ -301,12 +301,18 @@ def run_case(
         # An L4 case. Both engines have to fail the same way, and the oracle failing
         # differently from what the case declared is a broken case rather than a
         # conformance result, so it is reported as such.
+        #
+        # The two calls differ in `exact` and `check_error` says why at length. The
+        # short version is that the pandas call is checking the case and the subject
+        # call is checking whether a user's except clause still fires, so pandas has
+        # to be declared exactly and the subject is allowed to raise a subclass of
+        # what was declared.
         oracle_verdict = check_error(expected_error, *case.raises)
         if not oracle_verdict:
             record["outcome"] = FAIL
             record["detail"] = f"the case is wrong about pandas: {oracle_verdict.summary()}"
             return record
-        verdict = check_error(actual_error, *case.raises)
+        verdict = check_error(actual_error, *case.raises, exact=False)
         if not verdict:
             record["outcome"] = FAIL
             record["detail"] = verdict.summary()
