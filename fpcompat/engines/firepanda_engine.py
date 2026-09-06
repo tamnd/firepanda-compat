@@ -154,6 +154,36 @@ class FirepandaEngine:
         """
         return self.module().from_arrow(corpus.load(name))
 
+    def shape_of(self, answer: Any) -> str | None:
+        """Which of firepanda's three types an answer is, if it is one of them.
+
+        Asked by `isinstance` against the module's own classes and not by looking for
+        an attribute, because attributes are what the comparison layer already uses to
+        decide everything it can decide without an import, and this method exists for
+        the one question that cannot be answered that way. A firepanda `Series` and a
+        firepanda `Index` both cross the Arrow interface as a single array carrying a
+        name, and nothing about the bytes says which is which.
+
+        The names are looked up with `getattr` rather than imported at the top of a
+        method, so a firepanda that predates one of the three types answers None for it
+        instead of raising, and None sends the answer down the ordinary route. That is
+        the same reasoning as everywhere else here: a missing name is a gap in the
+        subject and has to read as one, not as a crash in the harness.
+
+        Args:
+            answer: What a case expression returned.
+
+        Returns:
+            `frame`, `series`, `index`, or None for anything else, including a scalar.
+        """
+        if self._module is None:
+            return None
+        for shape, attribute in (("frame", "DataFrame"), ("series", "Series"), ("index", "Index")):
+            kind = getattr(self._module, attribute, None)
+            if isinstance(kind, type) and isinstance(answer, kind):
+                return shape
+        return None
+
     def versions(self) -> dict[str, str]:
         """What goes in the result file.
 

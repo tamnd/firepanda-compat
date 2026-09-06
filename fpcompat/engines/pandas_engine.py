@@ -42,6 +42,17 @@ class PandasEngine:
         """
         return corpus.load(name).to_pandas()
 
+    def shape_of(self, answer: Any) -> str | None:
+        """Always None, because pandas has no answers the comparison layer needs told.
+
+        Args:
+            answer: What a case expression returned.
+
+        Returns:
+            None.
+        """
+        return None
+
     def versions(self) -> dict[str, str]:
         """The versions that go in the result file.
 

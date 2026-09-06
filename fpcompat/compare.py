@@ -510,6 +510,143 @@ def _from_series(series: pd.Series) -> Answer:
     )
 
 
+def is_arrow_producer(value: Any) -> bool:
+    """Whether an object can hand its data over by the Arrow C data interface.
+
+    This is the test that lets an engine's own frame type be compared without this
+    module knowing who wrote it. `fpcompat/compare.py` must not be able to name a type
+    belonging to one engine, because the moment it can, every later argument about a
+    comparison rule has a thumb on it. An object offering these dunders is an Arrow
+    producer, pyarrow already knows how to read one, and Polars, cuDF and an engine
+    nobody has thought of yet arrive without a branch carrying their name.
+
+    Args:
+        value: Anything.
+
+    Returns:
+        True when pyarrow can read it.
+    """
+    return hasattr(value, "__arrow_c_stream__") or hasattr(value, "__arrow_c_array__")
+
+
+def _producer_array(value: Any) -> pa.Array:
+    """Reads a one column Arrow producer into a single array.
+
+    Args:
+        value: The producer.
+
+    Returns:
+        The array, with any chunking flattened so the comparison sees one buffer.
+    """
+    array = pa.array(value)
+    if isinstance(array, pa.ChunkedArray):
+        return array.combine_chunks()
+    return array
+
+
+def _labels_are_default(labels: pa.Array, name: Any) -> bool:
+    """Whether a foreign engine's row labels carry no information.
+
+    The pandas version of this asks whether the index is a `RangeIndex` starting at
+    zero, which is a question about a type and cannot be asked of another library. So
+    the labels are read instead. That is a stricter test in the direction that matters:
+    an engine whose labels are 0 to n-1 where pandas' are 5 to 9 has the two sides
+    disagreeing about whether the index is data, `drop_index` needs both sides to say
+    it is not, and the difference is compared rather than dropped.
+
+    Args:
+        labels: The labels.
+        name: The index name, unrendered.
+
+    Returns:
+        True when the index is not data.
+    """
+    if name is not None:
+        return False
+    if not pa.types.is_integer(labels.type):
+        return False
+    return labels.to_pylist() == list(range(len(labels)))
+
+
+def _from_producer(answer: Any, shape: str | None) -> Answer:
+    """Normalizes an answer belonging to an engine that is not pandas.
+
+    The row labels are the trap here and they are why this does more than call
+    `pa.table`. A frame's Arrow export is its data columns, and the labels are a
+    separate object reachable through `.index`, so a conversion that read only the
+    stream would compare two frames while ignoring the one thing an index workstream
+    exists to get right. Every index bug in the subject would go quiet on the day this
+    landed and the score would go up, which is the worst pair of outcomes available.
+
+    `shape` is what the engine said this is, and it is needed for exactly one
+    distinction that the interface cannot make: a series and an index both cross as a
+    single Arrow array, and which one it is, is a fact about the subject's type system
+    rather than about its data. Everything else is decided here from the object.
+
+    Args:
+        answer: The producer.
+        shape: `frame`, `series`, `index` or None to decide from the object.
+
+    Returns:
+        The normalized answer.
+    """
+    index = getattr(answer, "index", None)
+    index_arrays: list[pa.Array] = []
+    index_names: tuple[str, ...] = ()
+    default_index = True
+    if is_arrow_producer(index):
+        labels = _producer_array(index)
+        index_arrays = [labels]
+        index_names = (_label(getattr(index, "name", None)),)
+        default_index = _labels_are_default(labels, getattr(index, "name", None))
+
+    prefix = [f"{INDEX_PREFIX}{i}" for i in range(len(index_arrays))]
+
+    if shape == "frame" or (shape is None and hasattr(answer, "__arrow_c_stream__")):
+        table = pa.table(answer)
+        arrays = [*index_arrays]
+        names = [*prefix]
+        for position in range(table.num_columns):
+            arrays.append(table.column(position).combine_chunks())
+            names.append(f"c{position}")
+        return Answer(
+            kind="frame",
+            table=pa.Table.from_arrays(arrays, names=names),
+            n_index=len(index_arrays),
+            columns=tuple(_label(label) for label in table.column_names),
+            index_names=index_names,
+            default_index=default_index,
+        )
+
+    values = _producer_array(answer)
+    name = getattr(answer, "name", None)
+
+    if shape == "index":
+        return Answer(
+            kind="index",
+            table=pa.Table.from_arrays([values], names=[VALUE]),
+            columns=(VALUE,),
+            name=None if name is None else _label(name),
+        )
+
+    if shape == "series":
+        return Answer(
+            kind="series",
+            table=pa.Table.from_arrays([*index_arrays, values], names=[*prefix, VALUE]),
+            n_index=len(index_arrays),
+            columns=(VALUE,),
+            index_names=index_names,
+            default_index=default_index,
+            name=None if name is None else _label(name),
+        )
+
+    return Answer(
+        kind="array",
+        table=pa.Table.from_arrays([values], names=[VALUE]),
+        columns=(VALUE,),
+    )
+
+
 def _scalar_type(value: Any) -> str:
     """The canonical type of a scalar answer.
 
@@ -536,11 +673,23 @@ def _scalar_type(value: Any) -> str:
         return f"python[{type(value).__name__}]"
 
 
-def normalize(answer: Any) -> Answer:
+def normalize(answer: Any, shape: str | None = None) -> Answer:
     """Normalizes any answer an engine can return.
+
+    The pandas, pyarrow and numpy branches are tried first and an Arrow producer is
+    read after them, which matters because a pandas object offers the interface too
+    and has to keep going down the branch that knows about its index and its labels.
+    Anything still unrecognised after all of that is a scalar, and for a subject that
+    produces neither pandas objects nor Arrow that is the correct answer rather than a
+    gap. It was not the correct answer for firepanda, whose frames were being compared
+    as though they were numbers, which was 41 of the 167 failures in the first run
+    against the importable module and not one of them a bug in the library.
 
     Args:
         answer: A DataFrame, Series, Index, array, scalar, tuple or anything else.
+        shape: What the engine says one of its own objects is, when it is neither a
+            pandas nor a pyarrow type. See `_from_producer` for the one distinction
+            this is needed for.
 
     Returns:
         The normalized answer.
@@ -597,6 +746,8 @@ def normalize(answer: Any) -> Answer:
             kind="mapping",
             value={_label(key): normalize(value) for key, value in answer.items()},
         )
+    if is_arrow_producer(answer):
+        return _from_producer(answer, shape)
     return Answer(kind="scalar", value=answer, type_name=_scalar_type(answer))
 
 

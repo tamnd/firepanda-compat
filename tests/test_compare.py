@@ -685,6 +685,174 @@ def test_a_warning_matches_on_the_type_and_a_substring():
 
 
 # ---------------------------------------------------------------------------
+# An engine that is not pandas
+# ---------------------------------------------------------------------------
+#
+# All of this is written against a fake built out of pyarrow rather than against
+# firepanda, and not only so the tests run on a machine with no firepanda on it. The
+# bug being fixed here was this module knowing only pandas, pyarrow and numpy, and a
+# test that reached for firepanda to prove the fix would be re-teaching it one more
+# name. The fake carries the Arrow dunders and nothing else, which is the whole of
+# what any subject is required to have.
+
+
+class OtherFrame:
+    """A frame belonging to some engine that is not pandas."""
+
+    def __init__(self, table: pa.Table, index: object = None) -> None:
+        self._table = table
+        self.index = index
+
+    def __arrow_c_stream__(self, requested_schema: object = None) -> object:
+        return self._table.__arrow_c_stream__(requested_schema)
+
+
+class OtherColumn:
+    """One column belonging to that engine, which is a series or an index or neither."""
+
+    def __init__(self, array: pa.Array, index: object = None, name: object = None) -> None:
+        self._array = array
+        self.index = index
+        self.name = name
+
+    def __arrow_c_array__(self, requested_schema: object = None) -> tuple[object, ...]:
+        return self._array.__arrow_c_array__(requested_schema)
+
+
+def other_frame(values: dict, labels: list | None = None, name: object = None) -> OtherFrame:
+    """Builds a foreign frame, with row labels when it is given some.
+
+    Args:
+        values: The data columns.
+        labels: The row labels, or None for a frame that does not have any.
+        name: The index name.
+
+    Returns:
+        The frame.
+    """
+    index = None if labels is None else OtherColumn(pa.array(labels), name=name)
+    return OtherFrame(pa.table(values), index=index)
+
+
+def test_a_frame_from_another_engine_is_a_frame_and_not_a_scalar():
+    """The regression. 41 of the 167 failures in the first run against the importable
+    firepanda were this, and not one of them was a bug in firepanda."""
+    answer = normalize(other_frame({"a": [1, 2, 3]}))
+
+    assert answer.kind == "frame"
+    assert answer.columns == ("a",)
+
+
+def test_a_frame_from_another_engine_compares_equal_to_the_pandas_answer():
+    frame = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
+
+    assert compare(frame, other_frame({"a": [1, 2, 3], "b": ["x", "y", "z"]}))
+
+
+def test_a_frame_from_another_engine_carries_its_row_labels():
+    """A frame's Arrow export is its data columns and its labels are a separate object,
+    so a conversion that read only the stream would agree with pandas about a `tail`
+    that had thrown its labels away."""
+    frame = pd.DataFrame({"a": [1, 2, 3]}, index=[5, 6, 7])
+
+    assert compare(frame, other_frame({"a": [1, 2, 3]}, labels=[5, 6, 7]))
+
+
+def test_a_frame_whose_labels_are_wrong_fails():
+    """The test that has to stay. A correct frame passes under the broken version too,
+    once it is a frame at all, so the assertion that goes quiet if somebody simplifies
+    the conversion down to the data columns is this one and not the one above."""
+    frame = pd.DataFrame({"a": [1, 2, 3]}, index=[5, 6, 7])
+
+    assert not compare(frame, other_frame({"a": [1, 2, 3]}, labels=[0, 1, 2]))
+
+
+def test_a_frame_with_no_labels_at_all_fails_against_a_pandas_answer_that_has_some():
+    """A library with no index compared against `tail` is the shape of this, and the
+    message it produces is the one every such failure has to produce."""
+    frame = pd.DataFrame({"a": [1, 2, 3]}, index=[5, 6, 7])
+    verdict = compare(frame, other_frame({"a": [1, 2, 3]}))
+
+    assert not verdict
+    assert "index levels" in verdict.summary()
+
+
+def test_a_default_range_of_labels_is_still_dropped_on_both_sides():
+    """The pandas test for this asks whether the index is a `RangeIndex`, which cannot
+    be asked of another library, so the labels are read instead."""
+    frame = pd.DataFrame({"a": [1, 2, 3]})
+
+    assert compare(frame, other_frame({"a": [1, 2, 3]}, labels=[0, 1, 2]))
+    assert compare(frame, other_frame({"a": [1, 2, 3]}))
+
+
+def test_a_named_index_of_zero_to_n_is_not_a_default_index():
+    frame = pd.DataFrame({"a": [1, 2, 3]})
+
+    assert not compare(frame, other_frame({"a": [1, 2, 3]}, labels=[0, 1, 2], name="k"))
+
+
+def test_a_column_from_another_engine_is_a_series_when_the_engine_says_so():
+    series = pd.Series([1, 2, 3], name="a")
+    column = OtherColumn(pa.array([1, 2, 3]), index=OtherColumn(pa.array([0, 1, 2])), name="a")
+
+    assert normalize(column, "series").kind == "series"
+    assert compare(series, normalize(column, "series"))
+
+
+def test_a_series_from_another_engine_with_the_wrong_name_fails():
+    series = pd.Series([1, 2, 3], name="a")
+    column = OtherColumn(pa.array([1, 2, 3]), index=OtherColumn(pa.array([0, 1, 2])), name="b")
+
+    assert not compare(series, normalize(column, "series"))
+
+
+def test_a_series_from_another_engine_carries_its_row_labels():
+    series = pd.Series([1, 2, 3], index=[5, 6, 7], name="a")
+    labels = OtherColumn(pa.array([5, 6, 7]))
+    right = OtherColumn(pa.array([1, 2, 3]), index=labels, name="a")
+    wrong = OtherColumn(pa.array([1, 2, 3]), index=OtherColumn(pa.array([0, 1, 2])), name="a")
+
+    assert compare(series, normalize(right, "series"))
+    assert not compare(series, normalize(wrong, "series"))
+
+
+def test_an_index_from_another_engine_is_an_index_when_the_engine_says_so():
+    """And this is the one distinction the Arrow interface cannot make on its own,
+    which is the entire reason `Engine.shape_of` exists."""
+    column = OtherColumn(pa.array([5, 6, 7]))
+
+    assert normalize(column, "index").kind == "index"
+    assert normalize(column).kind == "array"
+    assert compare(pd.Index([5, 6, 7]), normalize(column, "index"))
+    assert not compare(pd.Index([5, 6, 7]), normalize(column))
+
+
+def test_an_index_from_another_engine_with_the_wrong_name_fails():
+    column = OtherColumn(pa.array([5, 6, 7]), name="k")
+
+    assert not compare(pd.Index([5, 6, 7]), normalize(column, "index"))
+
+
+def test_a_pandas_object_does_not_take_the_arrow_route():
+    """pandas offers the same dunders, and it has to keep going down the branch that
+    knows about its labels, its column names and its extension dtypes."""
+    frame = pd.DataFrame({"a": [1, 2, 3]}, index=pd.Index([5, 6, 7], name="k"))
+    answer = normalize(frame)
+
+    assert answer.kind == "frame"
+    assert answer.n_index == 1
+    assert answer.index_names == ("k",)
+
+
+def test_an_answer_that_is_not_arrow_at_all_is_still_a_scalar():
+    """A subject producing neither pandas objects nor Arrow lands here, and for that
+    subject this is the right answer rather than a gap."""
+    assert normalize(7).kind == "scalar"
+    assert normalize("seven").kind == "scalar"
+
+
+# ---------------------------------------------------------------------------
 # The self test
 # ---------------------------------------------------------------------------
 

@@ -61,13 +61,17 @@ There is a conformance number now and it is a low one, which is what was promise
 
 | | |
 |---|---|
-| L3 or better, of 1125 callables | 0 |
-| L2 | 0 |
+| L3 or better, of 1125 callables | 1 |
+| L2 | 1 |
 | L1, the signature is accepted | 28 |
 | L0, the name resolves | 33 |
-| Cases, over 4000 runs | 110 pass, 167 fail, 8 divergent, 3715 unimplemented |
+| Cases, over 4000 runs | 142 pass, 135 fail, 8 divergent, 3715 unimplemented |
 
-The single largest thing behind that is arithmetic on a series. `s + 1` raises, and so do the other six operators, unary minus and the six comparisons, which is 91 of the 167 failures on their own. The number is published as it is rather than after that is fixed, because a project that waits until its score is respectable before publishing one has learned to hide the number.
+The one callable at L3 is `DataFrame.tail`, which is the first pandas name firepanda has passed every level on.
+
+The single largest thing behind the 135 is arithmetic on a series. `s + 1` raises, and so do the other six operators, unary minus and the six comparisons, which is 100 of them on their own and is [firepanda #238](https://github.com/tamnd/firepanda/issues/238). The number is published as it is rather than after that is fixed, because a project that waits until its score is respectable before publishing one has learned to hide the number.
+
+The first published version of this table read 110 pass and 167 fail, and 32 of the difference is a bug that was in here rather than in firepanda: the comparison layer knew how to normalize a pandas object, an Arrow table and a numpy array, and a firepanda frame fell off the end of that list and was compared as though it were a number. It is kept in this paragraph rather than quietly overwritten, because a suite that revises its own numbers upward without saying why is not one anybody should read.
 
 ## Layout
 

@@ -31,6 +31,26 @@ class Engine(Protocol):
             The frame.
         """
 
+    def shape_of(self, answer: Any) -> str | None:
+        """What kind of thing one of this engine's own answers is.
+
+        `frame`, `series`, `index` or None for anything the engine does not recognise
+        as one of its own types, which includes every scalar and every pandas object.
+
+        The comparison layer reads an unfamiliar answer through the Arrow C data
+        interface, and that interface can say everything about it except one thing: a
+        series and an index both cross as a single array, and which one it is, is a
+        fact about the engine's type system rather than about its data. So the engine
+        says. It is the only place in this package allowed to import its subject, and
+        this is the one question that needs the import.
+
+        Args:
+            answer: What a case expression returned.
+
+        Returns:
+            The shape, or None.
+        """
+
     def versions(self) -> dict[str, str]:
         """What goes in the result file, because a claim without a version is not one."""
 

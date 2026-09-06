@@ -143,6 +143,72 @@ def test_a_module_with_no_version_says_unknown_rather_than_guessing(module_form)
 
 
 # ---------------------------------------------------------------------------
+# Naming the subject's own types
+# ---------------------------------------------------------------------------
+#
+# `shape_of` is the one question the comparison layer cannot answer for itself. It
+# reads an unfamiliar answer through the Arrow C data interface, and a series and an
+# index both cross that interface as a single array carrying a name, so which one it
+# is has to come from the engine. This is the only place in the package allowed to
+# import firepanda, which is why the question is asked here.
+
+
+class Frame:
+    """Stands in for firepanda's DataFrame."""
+
+
+class Column:
+    """Stands in for firepanda's Series."""
+
+
+class Labels:
+    """Stands in for firepanda's Index."""
+
+
+def three_types() -> types.ModuleType:
+    """A module with the three names `shape_of` looks for.
+
+    Returns:
+        The module.
+    """
+    return fake(
+        from_arrow=lambda table: "frame",
+        DataFrame=Frame,
+        Series=Column,
+        Index=Labels,
+    )
+
+
+def test_the_engine_names_each_of_its_own_three_types(module_form):
+    engine = module_form(three_types())
+
+    assert engine.shape_of(Frame()) == "frame"
+    assert engine.shape_of(Column()) == "series"
+    assert engine.shape_of(Labels()) == "index"
+
+
+def test_the_engine_claims_nothing_that_is_not_its_own(module_form):
+    """A scalar, a string and a pandas object all go down the ordinary route, and an
+    engine that claimed one of them would be telling the comparison layer to read a
+    number as though it were a frame."""
+    engine = module_form(three_types())
+
+    assert engine.shape_of(7) is None
+    assert engine.shape_of("seven") is None
+    assert engine.shape_of(pa.table({"a": [1]})) is None
+
+
+def test_a_firepanda_without_one_of_the_types_answers_none_rather_than_raising(module_form):
+    """A missing name is a gap in the subject and has to read as one. An engine that
+    raised here would turn every case in the run into a harness crash, which is the
+    same shape of mistake as the `read_arrow` one this file was written for."""
+    engine = module_form(fake(from_arrow=lambda table: "frame", DataFrame=Frame))
+
+    assert engine.shape_of(Frame()) == "frame"
+    assert engine.shape_of(Column()) is None
+
+
+# ---------------------------------------------------------------------------
 # The real module, when there is one
 # ---------------------------------------------------------------------------
 
