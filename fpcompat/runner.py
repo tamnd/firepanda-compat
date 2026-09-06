@@ -43,7 +43,7 @@ from typing import Any
 
 from fpcompat import corpus
 from fpcompat.cases import NO_WARNING, Case, registry, select
-from fpcompat.compare import check_error, check_warnings, compare
+from fpcompat.compare import check_error, check_warnings, compare, normalize
 from fpcompat.divergences import Divergence
 from fpcompat.divergences import match as divergence_for
 from fpcompat.driver import Absent
@@ -170,6 +170,33 @@ def _unimplemented(error: BaseException) -> bool:
     return False
 
 
+def _shaped(engine: Any, value: Any) -> Any:
+    """Normalizes an answer here, while the engine that produced it is still in hand.
+
+    The comparison layer is handed one answer at a time and has no idea which engine
+    made either of them, which is deliberate and is what keeps a rule from bending
+    towards one subject. But telling a series from an index needs the engine, so the
+    normalization of an engine's own types happens at the one point where the engine
+    and the answer are both present, and `compare` receives a finished `Answer` the
+    same way it already does from the out of process form.
+
+    An engine that claims nothing, which is pandas and every scalar anything returns,
+    gets its value back untouched and normalized later exactly as before.
+
+    Args:
+        engine: The engine that produced the value.
+        value: What the case expression returned.
+
+    Returns:
+        An `Answer` when the engine recognised the value, and the value otherwise.
+    """
+    shape_of = getattr(engine, "shape_of", None)
+    shape = None if shape_of is None else shape_of(value)
+    if shape is None:
+        return value
+    return normalize(value, shape)
+
+
 def run_expression(
     case: Case, engine: Any, frame_name: str
 ) -> tuple[Any, BaseException | None, list[Any]]:
@@ -202,7 +229,8 @@ def run_expression(
             if getattr(engine, "out_of_process", False):
                 return engine.run(case, frame_name), None, list(caught)
             frame = engine.frame(frame_name)
-            return case.expr(engine.module(), frame), None, list(caught)
+            value = case.expr(engine.module(), frame)
+            return _shaped(engine, value), None, list(caught)
         except BaseException as error:  # noqa: BLE001  a crash in the subject is a result
             return None, error, list(caught)
 
