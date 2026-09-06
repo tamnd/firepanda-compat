@@ -54,13 +54,14 @@ from std.sys import argv, exit
 
 from firepanda.array.array import Array
 from firepanda.array.strings import StringBuilder
+from firepanda.array.value import Value
 from firepanda.dtype import Field, LogicalType, Schema
 from firepanda.frame.frame import DataFrame
 from firepanda.frame.index import Index
 from firepanda.frame.series import Series
 from firepanda.frame.groupby import AggSpec
 from firepanda.io import read_arrow, write_arrow
-from firepanda.kernel import AggKind
+from firepanda.kernel import AggKind, BinaryOp
 
 # The exit status is not the protocol, the JSON line is, and this is only here so
 # that a harness reading a truncated line has something to say about it. Zero means a
@@ -143,7 +144,9 @@ def option(args: List[String], name: String) -> String:
     return String("")
 
 
-def scalar_frame[dt: DType](name: String, value: Scalar[dt]) raises -> DataFrame:
+def scalar_frame[
+    dt: DType
+](name: String, value: Scalar[dt]) raises -> DataFrame:
     """Wraps one value as a frame of one row and one column.
 
     A scalar answer travels as a table rather than as a number in the JSON line, so
@@ -364,6 +367,57 @@ def emit_frame(frame: DataFrame, path: String) raises:
     )
 
 
+def scalar_case(case_id: String, name: String) -> Bool:
+    """Says whether a case id is one of an operation's two scalar cases.
+
+    Each of the seven operations has two of them, `basics/add-scalar` on the ten
+    half null width frames and `basics/add-scalar-dense` on the ten dense ones.
+    The driver runs identical code for both, so matching them together here is
+    what keeps the chain seven branches long instead of fourteen.
+
+    They are two cases in the corpus rather than one because pandas answers them
+    differently, and for a reason that has nothing to do with the operation. A
+    narrow numpy backed column with a null in it is a float64 before any
+    arithmetic starts, so the half null family measures the read path and every
+    one of its answers is a float64. The dense family is the only place the
+    width rule itself is visible.
+
+    Args:
+        case_id: The case the runner asked for.
+        name: The pandas method name, such as `add`.
+
+    Returns:
+        True if the id is either of that operation's two scalar cases.
+    """
+    var base = String("basics/", name, "-scalar")
+    return case_id == base or case_id == base + "-dense"
+
+
+def scalar_op(frame: DataFrame, op: BinaryOp, value: Int64) raises -> Series:
+    """Applies one operation to the `value` column and one Python integer.
+
+    The `weakened` is the whole point of the helper existing rather than the
+    call being written out seven times. A Python `1` has no width and takes the
+    column's, so `s + 1` on an int8 column is an int8 in pandas 3, and a
+    constant that arrives at the kernel without that flag brings int64 with it
+    and widens everything it touches. The Python binding weakens what it reads;
+    a driver that did not would be measuring a call no user can make.
+
+    Args:
+        frame: The corpus frame, which has a `value` column in every width.
+        op: The operation.
+        value: The constant, always a small integer, because these cases are
+            about what the width does and not about the number.
+
+    Returns:
+        The answer.
+
+    Raises:
+        Error: Whatever firepanda raises, which is a result about firepanda.
+    """
+    return frame.column("value").binary(Value(value).weakened(), op)
+
+
 def emit_series(name: String, var column: Series, path: String) raises:
     """Writes a series answer under its pandas name and prints its line.
 
@@ -529,9 +583,15 @@ def main() raises:
     var frame_name = option(arguments, "frame")
     var corpus = option(arguments, "corpus")
     var out = option(arguments, "out")
-    if case_id.byte_length() == 0 or frame_name.byte_length() == 0 or corpus.byte_length() == 0 or out.byte_length() == 0:
+    if (
+        case_id.byte_length() == 0
+        or frame_name.byte_length() == 0
+        or corpus.byte_length() == 0
+        or out.byte_length() == 0
+    ):
         print(
-            '{"status":"broken","message":"needs --case, --frame, --corpus and --out"}'
+            '{"status":"broken","message":"needs --case, --frame, --corpus and'
+            ' --out"}'
         )
         exit(BROKEN)
         return
@@ -570,11 +630,15 @@ def main() raises:
     # reported as one. The harness decides what it means; this program only reports.
     try:
         if case_id == "basics/len":
-            write_arrow(scalar_frame[DType.int64]("value", Int64(len(frame))), out)
+            write_arrow(
+                scalar_frame[DType.int64]("value", Int64(len(frame))), out
+            )
             print('{"status":"ok","kind":"scalar"}')
         elif case_id == "basics/size":
             write_arrow(
-                scalar_frame[DType.int64]("value", Int64(len(frame) * frame.width())),
+                scalar_frame[DType.int64](
+                    "value", Int64(len(frame) * frame.width())
+                ),
                 out,
             )
             print('{"status":"ok","kind":"scalar"}')
@@ -584,7 +648,8 @@ def main() raises:
         elif case_id == "basics/empty":
             write_arrow(
                 scalar_frame[DType.bool](
-                    "value", Scalar[DType.bool](len(frame) == 0 or frame.width() == 0)
+                    "value",
+                    Scalar[DType.bool](len(frame) == 0 or frame.width() == 0),
                 ),
                 out,
             )
@@ -669,9 +734,7 @@ def main() raises:
             emit_frame(frame.rename(frame.names()[0], "renamed"), out)
         elif case_id == "basics/boolean-mask":
             emit_frame(
-                frame.filter(
-                    frame.column("flag").as_typed[DType.bool]()
-                ),
+                frame.filter(frame.column("flag").as_typed[DType.bool]()),
                 out,
             )
         elif case_id == "basics/head-negative":
@@ -679,10 +742,14 @@ def main() raises:
 
         # Nulls.
         elif case_id == "basics/isna":
-            emit_series("value", Series("value", frame.column("value").is_null()), out)
+            emit_series(
+                "value", Series("value", frame.column("value").is_null()), out
+            )
         elif case_id == "basics/notna":
             emit_series(
-                "value", Series("value", frame.column("value").is_not_null()), out
+                "value",
+                Series("value", frame.column("value").is_not_null()),
+                out,
             )
         elif case_id == "basics/dropna":
             emit_series("value", frame.column("value").drop_nulls(), out)
@@ -711,15 +778,101 @@ def main() raises:
 
         # Casts.
         elif case_id == "basics/astype-float":
-            emit_series(
-                "value", frame.column("value").cast(DType.float64), out
-            )
+            emit_series("value", frame.column("value").cast(DType.float64), out)
         elif case_id == "basics/astype-narrow":
             emit_series("value", frame.column("value").cast(DType.int8), out)
         elif case_id == "basics/astype-string":
             emit_series(
                 "value", frame.column("value").cast(LogicalType.STRING), out
             )
+
+        # Arithmetic against a constant, on all ten widths, twice. The width is
+        # the point of these rather than the arithmetic: `s + 1` answers int8 on
+        # an int8 column in pandas 3, because a Python integer has no width of
+        # its own and takes the column's, and a library that widens to int64
+        # here doubles a frame on the first expression anybody writes and keeps
+        # it doubled. Every constant is weakened, because that is what the
+        # Python binding does to a Python scalar and a driver that skipped it
+        # would be measuring a call no user can make.
+        #
+        # The dense half and the half null half of each pair run the same code,
+        # which is why `scalar_case` takes both ids. They are separate cases in
+        # the corpus rather than separate work here, because pandas answers them
+        # differently for a reason that is nothing to do with the operation.
+        elif scalar_case(case_id, "add"):
+            emit_series("value", scalar_op(frame, BinaryOp.ADD, Int64(1)), out)
+        elif scalar_case(case_id, "sub"):
+            emit_series("value", scalar_op(frame, BinaryOp.SUB, Int64(1)), out)
+        elif scalar_case(case_id, "mul"):
+            emit_series("value", scalar_op(frame, BinaryOp.MUL, Int64(2)), out)
+        elif scalar_case(case_id, "truediv"):
+            emit_series("value", scalar_op(frame, BinaryOp.DIV, Int64(2)), out)
+        elif scalar_case(case_id, "floordiv"):
+            emit_series(
+                "value", scalar_op(frame, BinaryOp.FLOORDIV, Int64(2)), out
+            )
+        elif scalar_case(case_id, "mod"):
+            emit_series("value", scalar_op(frame, BinaryOp.MOD, Int64(3)), out)
+        elif scalar_case(case_id, "pow"):
+            emit_series("value", scalar_op(frame, BinaryOp.POW, Int64(2)), out)
+        # The three bool answers. The other four raise, in both engines, and a
+        # case that raises is an L4 case and belongs in the errors section.
+        elif case_id == "basics/bool-add-column":
+            emit_series(
+                "flag",
+                frame.column("flag").binary(frame.column("flag"), BinaryOp.ADD),
+                out,
+            )
+        elif case_id == "basics/bool-mul-column":
+            emit_series(
+                "flag",
+                frame.column("flag").binary(frame.column("flag"), BinaryOp.MUL),
+                out,
+            )
+        elif case_id == "basics/bool-mod-column":
+            emit_series(
+                "flag",
+                frame.column("flag").binary(frame.column("flag"), BinaryOp.MOD),
+                out,
+            )
+        elif case_id == "basics/bool-add-scalar":
+            emit_series(
+                "flag",
+                frame.column("flag").binary(
+                    Value(True).weakened(), BinaryOp.ADD
+                ),
+                out,
+            )
+        elif case_id == "basics/add-edges":
+            emit_series(
+                "int8",
+                frame.column("int8").binary(
+                    Value(Int64(1)).weakened(), BinaryOp.ADD
+                ),
+                out,
+            )
+        elif case_id == "basics/div-by-zero":
+            emit_series(
+                "value",
+                frame.column("value").binary(
+                    Value(Int64(0)).weakened(), BinaryOp.DIV
+                ),
+                out,
+            )
+        elif case_id == "basics/column-arithmetic":
+            # Unnamed, because pandas gives the product of two differently named
+            # columns a name of None. firepanda gives it the empty string, which
+            # is the registered name divergence and is a separate thing from the
+            # values being right, so sending the label would fail this case for
+            # a reason it is not about.
+            var names = frame.names()
+            emit_series_unnamed(
+                frame.column(names[0]).binary(
+                    frame.column(names[1]), BinaryOp.MUL
+                ),
+                out,
+            )
+
         # Grouped aggregations. These used to produce a frame whose keys were
         # columns where the pandas answer has them in the index, so every one of them
         # failed on the shape and would have failed even if every number in it were
@@ -765,12 +918,16 @@ def main() raises:
             )
         elif case_id == "groupby/median":
             emit_frame(
-                grouped(frame, one_key("key"), AggKind.MEDIAN, True, True, True),
+                grouped(
+                    frame, one_key("key"), AggKind.MEDIAN, True, True, True
+                ),
                 out,
             )
         elif case_id == "groupby/nunique":
             emit_frame(
-                grouped(frame, one_key("key"), AggKind.NUNIQUE, True, True, True),
+                grouped(
+                    frame, one_key("key"), AggKind.NUNIQUE, True, True, True
+                ),
                 out,
             )
         elif case_id == "groupby/std":
@@ -933,9 +1090,9 @@ def main() raises:
             var wide = List[Series]()
             wide.append(Series("value", shifted^))
             var built = DataFrame.from_series(wide^)
-            var moment = (
-                AggKind.SKEW if case_id.endswith("/skew") else AggKind.VAR
-            )
+            var moment = AggKind.SKEW if case_id.endswith(
+                "/skew"
+            ) else AggKind.VAR
             emit_scalar(reduce(built, "value", moment), out)
         elif case_id == "stats/std":
             emit_scalar(reduce(frame, "value", AggKind.STD), out)
@@ -969,7 +1126,10 @@ def main() raises:
             )
             emit_scalar(
                 reduce_pair(
-                    frame, labels[len(labels) - 1], labels[len(labels) - 2], kind
+                    frame,
+                    labels[len(labels) - 1],
+                    labels[len(labels) - 2],
+                    kind,
                 ),
                 out,
             )
@@ -1020,6 +1180,8 @@ def main() raises:
         # gets them, and a driver that guessed at a type name from the message text
         # would be inventing a result.
         print(
-            '{"status":"raised","type":"Error","message":' + quote(String(error)) + "}"
+            '{"status":"raised","type":"Error","message":'
+            + quote(String(error))
+            + "}"
         )
     exit(OK)
