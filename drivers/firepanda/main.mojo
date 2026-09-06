@@ -1094,6 +1094,40 @@ def main() raises:
                 "/skew"
             ) else AggKind.VAR
             emit_scalar(reduce(built, "value", moment), out)
+
+        # The integer zero divisor. These build their own two columns for the
+        # reason the moment cases do, which is that no corpus frame guarantees a
+        # zero in the divisor, and the divergence is about nothing else. The
+        # numerator is the same three rows every time so that the five answers can
+        # be read against each other, and the divisor has two rows that divide
+        # perfectly well in it, which is what shows that pandas charges the whole
+        # column for one bad row.
+        elif case_id.startswith("divergences/zero-divisor/"):
+            var top = Array[DType.int64](3)
+            top[0] = 7
+            top[1] = -7
+            top[2] = 0
+            var numerator = Series("value", top^)
+            var op = BinaryOp.DIV
+            if case_id.startswith("divergences/zero-divisor/floordiv"):
+                op = BinaryOp.FLOORDIV
+            elif case_id.startswith("divergences/zero-divisor/mod"):
+                op = BinaryOp.MOD
+            if case_id.endswith("-scalar"):
+                # Weakened, because the pandas side divides by a Python `0`, which
+                # has no width of its own and takes the column's.
+                emit_series(
+                    "value",
+                    numerator.binary(Value(Int64(0)).weakened(), op),
+                    out,
+                )
+            else:
+                var bottom = Array[DType.int64](3)
+                bottom[0] = 3
+                bottom[1] = 0
+                bottom[2] = 2
+                var divisor = Series("value", bottom^)
+                emit_series("value", numerator.binary(divisor, op), out)
         elif case_id == "stats/std":
             emit_scalar(reduce(frame, "value", AggKind.STD), out)
         elif case_id == "stats/var":
