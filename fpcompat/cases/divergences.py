@@ -525,3 +525,75 @@ case(
     note="the same column and the same cause, smaller because the second moment is "
     "squared rather than cubed. pandas answers 37.25 and the true value is 37.2",
 )
+
+# ---------------------------------------------------------------------------
+# The integer zero divisor
+# ---------------------------------------------------------------------------
+
+# These build their own two columns for the same reason the moment cases do, which is
+# that the divergence needs a zero in the divisor on every frame it runs on and no
+# corpus frame guarantees one. The numerator carries a positive, a negative and a zero,
+# because the pandas answer is a different infinity for each of the first two and a NaN
+# for the third, and an entry that only showed one of them would read as though the rule
+# were about division by zero rather than about what the column's type becomes.
+#
+# The divisor is `[3, 0, 2]` and not three zeros. Two of its rows divide perfectly well,
+# which is what makes the point: pandas turns the whole column into a float64 over one
+# bad row, so `[7, -7, 0] % [3, 0, 2]` comes back `[1.0, nan, 0.0]` and the two good
+# answers paid for the bad one.
+
+
+def _zero_divisor(pd, op):
+    """One integer column against a divisor column with a zero in the middle of it."""
+    top = pd.Series([7, -7, 0], dtype="int64", name="value")
+    bottom = pd.Series([3, 0, 2], dtype="int64", name="value")
+    return op(top, bottom)
+
+
+def _zero_constant(pd, op):
+    """The same numerator against a literal zero, which is a different kernel path."""
+    return op(pd.Series([7, -7, 0], dtype="int64", name="value"), 0)
+
+
+case(
+    "divergences/zero-divisor/floordiv-column",
+    "Series.floordiv",
+    frames=("two",),
+    expr=lambda pd, df: _zero_divisor(pd, lambda a, b: a // b),
+    note="pandas answers float64 [2.0, -inf, 0.0] and firepanda answers int64 [2, null, "
+    "0], so the two engines disagree about the type as well as about the middle row",
+)
+case(
+    "divergences/zero-divisor/mod-column",
+    "Series.mod",
+    frames=("two",),
+    expr=lambda pd, df: _zero_divisor(pd, lambda a, b: a % b),
+    note="the remainder loses the same way and is worse to read, because a NaN in a "
+    "column of remainders looks like a missing input rather than like a zero divisor",
+)
+case(
+    "divergences/zero-divisor/truediv-column",
+    "Series.truediv",
+    frames=("two",),
+    expr=lambda pd, df: _zero_divisor(pd, lambda a, b: a / b),
+    note="the control, and the only one of the three that is not registered. True "
+    "division answers a float64 whatever the divisor is, so there is no type to lose "
+    "and firepanda gives the same infinity pandas gives. This case has to pass, because "
+    "without it the entry above reads as though the whole family were different",
+)
+case(
+    "divergences/zero-divisor/floordiv-scalar",
+    "Series.floordiv",
+    frames=("two",),
+    expr=lambda pd, df: _zero_constant(pd, lambda a, b: a // b),
+    note="a constant divisor takes the const path in the kernel rather than the column "
+    "path, and the two are separate loops, so a fix to one of them is not a fix to both",
+)
+case(
+    "divergences/zero-divisor/mod-scalar",
+    "Series.mod",
+    frames=("two",),
+    expr=lambda pd, df: _zero_constant(pd, lambda a, b: a % b),
+    note="every row divides by zero here, so pandas answers three NaNs and firepanda "
+    "answers three nulls, which is the clearest form of the difference",
+)

@@ -359,14 +359,16 @@ def test_an_entry_with_no_expiry_never_expires():
 
 
 def test_the_committed_registry_loads():
-    """Seven, down from the eight this repository started with.
+    """Eight, having been eight at the start, then seven, then eight again.
 
     The count is pinned so that an entry cannot appear or disappear without somebody
     saying so here. `engine/index-alignment` is the one that went, because firepanda
     now aligns on the union of the labels exactly as pandas does and an entry that
-    stopped being true is deleted rather than reworded."""
+    stopped being true is deleted rather than reworded. `engine/moment-precision` and
+    `engine/zero-divisor` are the two that arrived, and both of them are cases where
+    firepanda answers something pandas does not rather than refusing to answer."""
     entries = divergences.registry()
-    assert len(entries) == 7
+    assert len(entries) == 8
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

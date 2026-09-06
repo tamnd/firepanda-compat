@@ -85,3 +85,18 @@ spec = "06-pandas-parity.md#the-genuine-omissions"
 expect = "differs"
 instead = "the moments are corrected for the centre they were measured around, so the answer does not change when a constant is added to the column. Where the two disagree, firepanda is the one nearer the value exact arithmetic gives."
 since = "2026-09-05"
+
+# The ninth. The four cases it names are listed one by one rather than as
+# `divergences/zero-divisor/*`, because the fifth case in that family is the control and
+# has to pass. A glob would have covered it, the suite would have required it to diverge,
+# and the entry would then be asserting the opposite of the thing it exists to say.
+
+[[divergence]]
+id = "engine/zero-divisor"
+cases = ["divergences/zero-divisor/floordiv-column", "divergences/zero-divisor/mod-column", "divergences/zero-divisor/floordiv-scalar", "divergences/zero-divisor/mod-scalar", "basics/bool-mod-column"]
+kind = "engine"
+reason = "Dividing an integer by zero has no answer, and the two engines disagree about what to write in the row that has none. pandas promotes the whole column to float64 and writes an infinity or a NaN, which costs every other row in that column its type: an int64 column with one zero divisor in it comes back float64, and every value in it above two to the fifty third is then silently rounded, so one bad row damages the good ones. firepanda writes a null, which is the value the format already has for a row with no answer, and keeps the column's width, so the rows that divided exactly stay exact. True division is not affected and is not registered here, because its answer is a float64 whatever the divisor is and there is no type to lose. The bool remainder is the one place this is visible outside the integer widths: pandas answers int8 zeros for `flag % flag` because the bool path skips the masking it applies to the integer dtypes, and firepanda widens to int8 and answers a null at the zero divisor like every other integer column."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "differs"
+instead = "the row divided by zero is null and the column keeps the dtype it started with. Floor division and the remainder on an int64 column answer int64, and `flag % flag` on two bool columns answers int8 nulls rather than int8 zeros."
+since = "2026-09-06"
