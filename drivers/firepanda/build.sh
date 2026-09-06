@@ -31,7 +31,8 @@
 #
 # The stamp still reads the version, the commit and the dirty flag from the library
 # checkout, which is the one that decides what was measured. Only `mojo` itself comes
-# from the toolchain.
+# from the toolchain. The stamp cannot check its own claim, since it asks git rather
+# than the compiler, so the build line below is the only thing making the claim true.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -55,16 +56,30 @@ if [ ! -f "$toolchain/pixi.toml" ]; then
 fi
 toolchain="$(cd "$toolchain" && pwd)"
 
-# Built from the toolchain checkout with the library named by an absolute path,
-# rather than from the library with `-I .`, so that the two can be different
-# directories. When they are the same directory this is the same command.
-cd "$toolchain"
-pixi run mojo build -I "$firepanda" "$source_file" -o "$binary"
+# Built from the library checkout with the manifest named by an absolute path,
+# and not the other way around. Mojo resolves an import against the current
+# directory before it looks at `-I`, so building from the toolchain checkout
+# with `-I "$firepanda"` compiles the toolchain checkout's library and reaches
+# the `-I` path for nothing that exists in both. Nothing about that is visible
+# afterwards: the build succeeds, and the stamp below reads the version and the
+# commit from the library checkout without asking the compiler, so the result
+# file carries a commit that was not the one measured.
+#
+# A raw command under `pixi run` keeps the caller's directory, unlike a named
+# task, which is what lets the manifest come from one place and the sources from
+# another. When the two arguments are the same directory this is the same
+# command it always was.
+cd "$firepanda"
+pixi run --manifest-path "$toolchain/pixi.toml" mojo build -I . "$source_file" \
+  -o "$binary"
 
 version=$(sed -n 's/^version = "\(.*\)"/\1/p' "$firepanda/pixi.toml" | head -1)
 commit=$(git -C "$firepanda" rev-parse --short HEAD 2>/dev/null || echo unknown)
 dirty=$(git -C "$firepanda" status --porcelain 2>/dev/null | head -1)
-mojo=$(pixi run mojo --version 2>/dev/null | head -1)
+# Same manifest as the build, for the same reason. The current directory is the
+# library checkout now, and a worktree has a pixi.toml but no environment behind
+# it, so a bare `pixi run` here would go and install one.
+mojo=$(pixi run --manifest-path "$toolchain/pixi.toml" mojo --version 2>/dev/null | head -1)
 toolchain_note=""
 [ "$toolchain" != "$firepanda" ] && toolchain_note=" (toolchain from $toolchain)"
 
