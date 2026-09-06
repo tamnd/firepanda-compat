@@ -1,6 +1,6 @@
 # The specification
 
-Twelve documents. They are mirrored from the author's notes at `Spec/2126/compat`
+Fourteen documents. They are mirrored from the author's notes at `Spec/2126/compat`
 and they are the reason every design decision in this repository looks the way it
 does.
 
@@ -18,6 +18,8 @@ does.
 | [09](09-resources.md) | the operation level cost matrix, and the ten times on a tenth goal |
 | [10](10-bench-and-compat.md) | the line between this and firepanda-bench |
 | [11](11-milestones.md) | C0 to C5, with exit criteria |
+| [12](12-the-index-gap.md) | the largest cause the suite ever reported, and the two stages that closed it |
+| [13](13-the-type-gap.md) | the four column types three sections are waiting on, and the milestone nobody claimed them in |
 
 Read [01](01-what-100-percent-means.md) first. It is the only one that says what
 the project is claiming, and everything else is machinery in service of it.
