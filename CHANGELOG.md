@@ -6,7 +6,11 @@ follows [semantic versioning](https://semver.org/spec/v2.0.0.html), where the
 public interface is the case id namespace, the result file schema and the
 divergence registry format.
 
-## [Unreleased]
+### Added
+
+- The firepanda driver runs the arithmetic cases. `basics/{add,sub,mul,truediv,floordiv,mod,pow}-scalar` have existed since the section was written and run over ten width frames each, and the driver had no entry for any of them, so all seventy runs reported `Absent: the firepanda driver has no entry for basics/add-scalar` and the section's number could not move no matter what the library did to its arithmetic. `basics/add-edges`, `basics/div-by-zero` and `basics/column-arithmetic` were absent the same way. Every constant goes through `Value(...).weakened()`, which is what the Python binding does to a Python scalar, because a driver that skipped it would be measuring a call no user can make and would answer int64 to every width. This is the measurement that firepanda [#264](https://github.com/tamnd/firepanda/pull/264) was missing, and the pull request that landed that change said the corpus could not construct a narrow dtype, which was wrong: it has `int8_*` through `uint64_*` and `float32_*` and always did, and the gap was here.
+- `basics/{op}-scalar-dense`, the same seven operations over the same ten widths with no nulls in them, which is the only place the width rule is visible at all. A narrow numpy backed column with one null in it is a float64 before pandas gets to the arithmetic, so every one of the seventy half null runs answers float64 whatever the operation was and is a measurement of the read path rather than of the arithmetic. Splitting them means one family measures the widening and the other measures the width. Sixty six of the seventy dense runs pass, which is what says the NEP 50 rule landed.
+- Four bool arithmetic cases on the `tall` frame, which has a bool column in it and always did. `+` is the logical or, `*` is the logical and, `%` is an int8, and a Python `True` against a bool column behaves like a bool column, which is firepanda [#265](https://github.com/tamnd/firepanda/pull/265). The other four operations raise in pandas and are not here, because a case that raises is an L4 case and this driver has no exception type to report: Mojo's `Error` is one type carrying a message, so every L4 case fails against it for a reason that is nothing to do with the case.
 
 ### Fixed
 

@@ -33,6 +33,18 @@ WIDTHS = (
     "float32_half_null",
     "float64_half_null",
 )
+DENSE_WIDTHS = (
+    "int8_no_nulls",
+    "int16_no_nulls",
+    "int32_no_nulls",
+    "int64_no_nulls",
+    "uint8_no_nulls",
+    "uint16_no_nulls",
+    "uint32_no_nulls",
+    "uint64_no_nulls",
+    "float32_no_nulls",
+    "float64_no_nulls",
+)
 
 ACCUMULATED = Rules(
     tolerance=Tolerance.ACCUMULATION,
@@ -327,7 +339,7 @@ case(
 # Arithmetic, over every width, because overflow is width dependent
 # ---------------------------------------------------------------------------
 
-for name, symbol in (
+SCALAR_ARITHMETIC = (
     ("add", lambda s: s + 1),
     ("sub", lambda s: s - 1),
     ("mul", lambda s: s * 2),
@@ -335,7 +347,9 @@ for name, symbol in (
     ("floordiv", lambda s: s // 2),
     ("mod", lambda s: s % 3),
     ("pow", lambda s: s**2),
-):
+)
+
+for name, symbol in SCALAR_ARITHMETIC:
     case(
         f"basics/{name}-scalar",
         f"Series.{name}",
@@ -344,6 +358,50 @@ for name, symbol in (
         note="every width, because what an int8 does at 127 is not what an int64 does",
     )
 
+for name, symbol in SCALAR_ARITHMETIC:
+    case(
+        f"basics/{name}-scalar-dense",
+        f"Series.{name}",
+        frames=DENSE_WIDTHS,
+        expr=(lambda op: lambda pd, df: op(df["value"]))(symbol),
+        note="the same seven operations on the same ten widths with no nulls in them, which "
+        "is the only place the width rule is visible at all. A narrow column with a null in "
+        "it is already a float64 by the time pandas gets to the arithmetic, so the half null "
+        "family above measures the read path rather than the arithmetic, and every one of its "
+        "answers is float64 whatever the operation was",
+    )
+
+case(
+    "basics/bool-add-column",
+    "Series.add",
+    frames=("tall",),
+    expr=lambda pd, df: df["flag"] + df["flag"],
+    note="the answer is the logical or and the dtype stays bool, which is numpy showing "
+    "through pandas and is not what the symbol looks like",
+)
+case(
+    "basics/bool-mul-column",
+    "Series.mul",
+    frames=("tall",),
+    expr=lambda pd, df: df["flag"] * df["flag"],
+    note="the logical and, for the same reason add is the or",
+)
+case(
+    "basics/bool-mod-column",
+    "Series.mod",
+    frames=("tall",),
+    expr=lambda pd, df: df["flag"] % df["flag"],
+    note="the only one of the seven whose answer on two bools is a number. The other "
+    "four raise, and they are in the errors section rather than here",
+)
+case(
+    "basics/bool-add-scalar",
+    "Series.add",
+    frames=("tall",),
+    expr=lambda pd, df: df["flag"] + True,
+    note="a Python bool against a bool column is still the or, so what decides these is "
+    "the dtype and not the shape of the other operand",
+)
 case(
     "basics/add-edges",
     "Series.add",
