@@ -466,3 +466,15 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.set_index("key").index.isin([1, 2, 3]),
 )
+case(
+    "indexing/assign-misaligned-column",
+    "DataFrame.__setitem__",
+    frames=("tall",),
+    expr=lambda pd, df: (
+        lambda copy: (copy.__setitem__("shifted", copy["value"].tail(len(copy) - 2)), copy)[1]
+    )(df.copy()),
+    note="assigning a shorter column back into the frame lines it up on the labels "
+    "rather than on position, so the two rows it does not cover come back null instead "
+    "of the column landing at the top. This is the one that surprises people who have "
+    "used pandas for years. It was a divergence case until firepanda started aligning",
+)

@@ -699,3 +699,72 @@ case(
         reason="same tie breaking as the case above",
     ),
 )
+
+
+# ---------------------------------------------------------------------------
+# Automatic index alignment
+# ---------------------------------------------------------------------------
+
+# These were `divergences/alignment/*` until firepanda started aligning, and they are
+# here rather than deleted because the behaviour they describe is worth checking now
+# that both engines are supposed to do it. Two operands that share no labels give the
+# union of both, filled with nulls, and an answer longer than either input.
+#
+# The two that run still fail, but not on the index. One reports nulls where pandas has
+# NaN and the other keeps an integer column where pandas widens to double, which are
+# the two open dtype questions and not anything to do with alignment. The shape and the
+# labels of the answer already match.
+#
+# `head` and `tail` do the splitting rather than `iloc`, which is what the old versions
+# used. That is not a stylistic change: `iloc` does not exist in firepanda yet, so the
+# expression raised `AttributeError` before it reached any arithmetic and the case
+# could not have told alignment from absence.
+#
+# None of these expressions has a lambda inside it, which is also not style. The
+# unimplemented rule counts traceback frames below the case expression, so an inner
+# lambda puts an absent name one frame too deep and the case is scored as a bug rather
+# than as a gap. `align` does not exist yet and was being reported as a failure until
+# the inner lambda came out.
+
+
+def _top(df):
+    """The first half of a frame."""
+    return df.head(len(df) // 2)
+
+
+def _bottom(df):
+    """The second half, which shares no index label with the first."""
+    return df.tail(len(df) - len(df) // 2)
+
+
+case(
+    "basics/alignment-series-add",
+    "Series.add",
+    frames=("tall", "float64_no_nulls"),
+    expr=lambda pd, df: _top(df)["value"] + _bottom(df)["value"],
+    note="two halves of one column added together. Every value in the answer is null, "
+    "because no label appears in both, and the answer is twice as long as either "
+    "operand. A user who meant to add them elementwise gets no error at all",
+)
+case(
+    "basics/alignment-frame-add",
+    "DataFrame.add",
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: _top(df) + _bottom(df),
+)
+case(
+    "basics/alignment-subtract-shifted",
+    "Series.sub",
+    frames=("tall",),
+    expr=lambda pd, df: df["value"] - df["value"].shift(1),
+    note="the one alignment that people rely on and that reads correctly, which is why "
+    "it was the expensive part of the decision to leave it out",
+)
+case(
+    "basics/alignment-align",
+    "DataFrame.align",
+    level="L3",
+    covers=("other", "join"),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: _top(df).align(_bottom(df), join="outer")[0],
+)
