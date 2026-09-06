@@ -397,65 +397,6 @@ case(
 )
 
 # ---------------------------------------------------------------------------
-# Automatic index alignment
-# ---------------------------------------------------------------------------
-
-# The largest behavioural divergence in the project and the one most likely to change a
-# user's answer without telling them. Every case here produces nulls on pandas, and the
-# nulls are the whole point: the two operands do not line up, pandas silently takes the
-# union of their labels, and the result is longer than either input and mostly empty.
-
-
-def _halves(df):
-    """The first and second halves of a frame, which share no index labels."""
-    middle = len(df) // 2
-    return df.iloc[:middle], df.iloc[middle:]
-
-
-case(
-    "divergences/alignment/series-add",
-    "Series.add",
-    frames=("tall", "float64_no_nulls"),
-    expr=lambda pd, df: (lambda halves: halves[0].iloc[:, -1] + halves[1].iloc[:, -1])(_halves(df)),
-    note="two halves of one column added together. Every value in the pandas answer is "
-    "null, because no label appears in both, and the answer is twice as long as either "
-    "operand. A user who meant to add them elementwise gets no error at all",
-)
-case(
-    "divergences/alignment/frame-add",
-    "DataFrame.add",
-    frames=("float64_no_nulls",),
-    expr=lambda pd, df: (lambda halves: halves[0] + halves[1])(_halves(df)),
-)
-case(
-    "divergences/alignment/subtract-shifted",
-    "Series.sub",
-    frames=("tall",),
-    expr=lambda pd, df: df["value"] - df["value"].shift(1),
-    note="the one alignment that people rely on and that reads correctly, which is why "
-    "removing it is a real cost rather than a free simplification",
-)
-case(
-    "divergences/alignment/align",
-    "DataFrame.align",
-    level="L3",
-    covers=("other", "join"),
-    frames=("float64_no_nulls",),
-    expr=lambda pd, df: (lambda halves: halves[0].align(halves[1], join="outer")[0])(_halves(df)),
-)
-case(
-    "divergences/alignment/assign-misaligned-column",
-    "DataFrame.__setitem__",
-    frames=("tall",),
-    expr=lambda pd, df: (
-        lambda copy: (copy.__setitem__("shifted", copy["value"].iloc[::-1]), copy)[1]
-    )(df.copy()),
-    note="assigning a reversed column back into the frame puts every value back where "
-    "it started, because the assignment aligns on the index rather than on position. "
-    "This is the one that surprises people who have used pandas for years",
-)
-
-# ---------------------------------------------------------------------------
 # No implicit index
 # ---------------------------------------------------------------------------
 

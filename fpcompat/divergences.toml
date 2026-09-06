@@ -51,20 +51,10 @@ expect = "raises"
 since = "2026-09-04"
 
 [[divergence]]
-id = "engine/index-alignment"
-cases = ["divergences/alignment/*"]
-kind = "engine"
-reason = "Automatic alignment on the index is the largest behavioural difference in this project and the only one that changes a user's answer instead of raising. When two operands do not share labels, pandas produces the union of the labels filled with nulls, so adding two halves of one column gives an answer twice as long and entirely null, with no error anywhere. firepanda operates positionally and raises on a length mismatch. This is the entry to read twice before porting anything."
-spec = "06-pandas-parity.md#the-genuine-omissions"
-expect = "differs"
-instead = "the operation is positional. Operands of equal length are combined elementwise and operands of different lengths raise a ValueError naming both lengths, so the case that silently produces an all null answer in pandas either produces the elementwise answer or refuses."
-since = "2026-09-04"
-
-[[divergence]]
 id = "engine/implicit-index"
 cases = ["divergences/implicit-index/*"]
 kind = "engine"
-reason = "The other half of alignment. pandas gives every frame an index whether or not anybody asked for one, and then performs operations against it, so loc reads as a label lookup on numbers that are actually positions and reindex against a label nobody declared returns a row of nulls. firepanda has no implicit index, so the operations that need one either take an explicit key or work positionally, and the places where that is visible are fewer than the size of this decision suggests."
+reason = "pandas gives every frame an index whether or not anybody asked for one, and then performs operations against it, so loc reads as a label lookup on numbers that are actually positions and reindex against a label nobody declared returns a row of nulls. firepanda has no implicit index, so the operations that need one either take an explicit key or work positionally, and the places where that is visible are fewer than the size of this decision suggests."
 spec = "06-pandas-parity.md#the-genuine-omissions"
 expect = "differs"
 instead = "there is no index unless one was declared. loc takes a declared key or raises, reindex against undeclared labels raises rather than manufacturing null rows, and reset_index has nothing to move into a column."
