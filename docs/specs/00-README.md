@@ -33,6 +33,11 @@ A single row of document 06 reads `- [ ] rolling with window, min_periods, cente
 | `09-resources.md` | the operation level cost matrix, and the ten times faster on a tenth of the memory goal |
 | `10-bench-and-compat.md` | why this is not in firepanda-bench, and what firepanda-bench gains from it |
 | `11-milestones.md` | C0 to C5 for the compat repository, with exit criteria |
+| `12-the-index-gap.md` | what the index work is worth on the board, measured rather than estimated |
+| `13-the-type-gap.md` | the five column types pandas has and firepanda did not, and the 228 runs behind them |
+| `14-the-dt-accessor.md` | the 42 names on a datetime column, and the 108 runs waiting on them |
+
+The last three were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
 
 Read `01` first. It is the only one that says what the project is claiming, and every other document in the folder is machinery in service of it.
 
