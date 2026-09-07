@@ -418,6 +418,74 @@ def scalar_op(frame: DataFrame, op: BinaryOp, value: Int64) raises -> Series:
     return frame.column("value").binary(Value(value).weakened(), op)
 
 
+def dt_column(frame: DataFrame) raises -> String:
+    """Which column of a temporal corpus frame the `dt` cases read.
+
+    The cases are written as `df["us" if "us" in df else "second"]`, because the
+    resolutions frame carries the same instants four times under the names of the
+    four units and the range frame carries them once under `second`. This is that
+    expression, and it is a function rather than a line repeated at every entry so
+    that the two files cannot drift apart on which column was measured.
+
+    Args:
+        frame: The corpus frame.
+
+    Returns:
+        The column name.
+
+    Raises:
+        Error: Never, and it is declared because `names` is.
+    """
+    for name in frame.names():
+        if name == "us":
+            return "us"
+    return "second"
+
+
+def dt_field_name(case_id: String) -> String:
+    """Turns a `temporal/` case id into the pandas `dt` name it asks for.
+
+    The ids spell a field with hyphens and pandas spells it with underscores, so
+    `temporal/days-in-month` is `days_in_month`. Anything under `temporal/` that is
+    not one of the nineteen fields comes back empty, so that `temporal/floor` and
+    the rest are reported absent rather than reported as raising. Those two are
+    scored the same and they read differently, and a case firepanda has no
+    implementation for is an absence.
+
+    Args:
+        case_id: The case the runner asked for.
+
+    Returns:
+        The pandas field name, or an empty string.
+    """
+    if not case_id.startswith("temporal/"):
+        return ""
+    var tail = String(case_id[byte="temporal/".byte_length() :]).replace("-", "_")
+    if (
+        tail == "year"
+        or tail == "month"
+        or tail == "day"
+        or tail == "hour"
+        or tail == "minute"
+        or tail == "second"
+        or tail == "microsecond"
+        or tail == "nanosecond"
+        or tail == "dayofweek"
+        or tail == "dayofyear"
+        or tail == "quarter"
+        or tail == "days_in_month"
+        or tail == "is_leap_year"
+        or tail == "is_month_start"
+        or tail == "is_month_end"
+        or tail == "is_quarter_start"
+        or tail == "is_quarter_end"
+        or tail == "is_year_start"
+        or tail == "is_year_end"
+    ):
+        return tail
+    return ""
+
+
 def emit_series(name: String, var column: Series, path: String) raises:
     """Writes a series answer under its pandas name and prints its line.
 
@@ -1060,6 +1128,50 @@ def main() raises:
                 scalar_frame[DType.int64](
                     "value",
                     Int64(len(frame.group_by(one_key("key"), List[AggSpec]()))),
+                ),
+                out,
+            )
+            print('{"status":"ok","kind":"scalar"}')
+        # The dt accessor. Every one of these reads a column of instants and a
+        # count of them per second and nothing else, so the nineteen fields are one
+        # entry rather than nineteen. The name the answer travels under is the
+        # column's own, because `df["us"].dt.year` is a Series called `us` in
+        # pandas and a series whose values are right and whose name is wrong is a
+        # failure the suite is supposed to see.
+        elif dt_field_name(case_id) != "":
+            var stamps = dt_column(frame)
+            emit_series(
+                stamps, frame.column(stamps).dt(dt_field_name(case_id)), out
+            )
+        elif case_id == "temporal/date":
+            var stamps = dt_column(frame)
+            emit_series(stamps, frame.column(stamps).dt_date(), out)
+        elif case_id == "temporal/normalize":
+            var stamps = dt_column(frame)
+            emit_series(stamps, frame.column(stamps).dt_normalize(), out)
+        elif case_id.startswith("temporal/nanosecond-"):
+            # Unlike the nineteen above, these name their column in the id, because
+            # the whole point of the family is that the same instant answers zero at
+            # three resolutions and a real number at the fourth.
+            var stamps = String(case_id[byte="temporal/nanosecond-".byte_length() :])
+            emit_series(stamps, frame.column(stamps).dt("nanosecond"), out)
+        elif case_id.startswith("temporal/unit-"):
+            var stamps = String(case_id[byte="temporal/unit-".byte_length() :])
+            write_arrow(
+                string_scalar_frame(
+                    "value", String(frame.column(stamps).logical().unit)
+                ),
+                out,
+            )
+            print('{"status":"ok","kind":"scalar"}')
+        elif case_id.startswith("temporal/dtype-"):
+            # The logical type and not the physical one. A timestamp column is
+            # int64 underneath and answering `int64` here would be a true statement
+            # about the buffer and a wrong answer to the question.
+            var stamps = String(case_id[byte="temporal/dtype-".byte_length() :])
+            write_arrow(
+                string_scalar_frame(
+                    "value", String(frame.column(stamps).logical())
                 ),
                 out,
             )
