@@ -56,7 +56,7 @@ from firepanda.array.array import Array
 from firepanda.array.strings import StringBuilder
 from firepanda.array.value import Value
 from firepanda.dtype import Field, LogicalType, Schema
-from firepanda.frame.frame import DataFrame
+from firepanda.frame.frame import DataFrame, dt_isocalendar
 from firepanda.frame.index import Index
 from firepanda.frame.series import Series
 from firepanda.frame.groupby import AggSpec
@@ -1149,6 +1149,26 @@ def main() raises:
         elif case_id == "temporal/normalize":
             var stamps = dt_column(frame)
             emit_series(stamps, frame.column(stamps).dt_normalize(), out)
+        elif case_id == "temporal/day-name":
+            var stamps = dt_column(frame)
+            emit_series(stamps, frame.column(stamps).dt_day_name(), out)
+        elif case_id == "temporal/month-name":
+            var stamps = dt_column(frame)
+            emit_series(stamps, frame.column(stamps).dt_month_name(), out)
+        elif case_id == "temporal/strftime":
+            var stamps = dt_column(frame)
+            emit_series(
+                stamps,
+                frame.column(stamps).dt_strftime("%Y-%m-%dT%H:%M:%S"),
+                out,
+            )
+        elif case_id == "temporal/isocalendar":
+            # The one member of the accessor that answers a frame, which is why
+            # it is a free function in firepanda and an `emit_frame` here. The
+            # three column names travel with it and pandas' are `year`, `week`
+            # and `day`.
+            var stamps = dt_column(frame)
+            emit_frame(dt_isocalendar(frame.column(stamps)), out)
         elif case_id == "temporal/floor":
             var stamps = dt_column(frame)
             emit_series(stamps, frame.column(stamps).dt_floor("h"), out)
