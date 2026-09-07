@@ -173,7 +173,8 @@ case(
     covers=("unit",),
     frames=RESOLUTIONS,
     expr=lambda pd, df: df["ns"].dt.as_unit("s"),
-    note="going down in precision truncates rather than rounding, and going back up "
+    note="going down in precision floors rather than truncating towards zero, so half "
+    "a second before the epoch is minus one second and not zero, and going back up "
     "does not recover what was lost",
 )
 case(
