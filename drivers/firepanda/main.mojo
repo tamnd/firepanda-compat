@@ -447,9 +447,9 @@ def dt_field_name(case_id: String) -> String:
 
     The ids spell a field with hyphens and pandas spells it with underscores, so
     `temporal/days-in-month` is `days_in_month`. Anything under `temporal/` that is
-    not one of the nineteen fields comes back empty, so that `temporal/floor` and
-    the rest are reported absent rather than reported as raising. Those two are
-    scored the same and they read differently, and a case firepanda has no
+    not one of the nineteen fields comes back empty, so that `temporal/strftime`
+    and the rest are reported absent rather than reported as raising. Those two
+    are scored the same and they read differently, and a case firepanda has no
     implementation for is an absence.
 
     Args:
@@ -1149,6 +1149,21 @@ def main() raises:
         elif case_id == "temporal/normalize":
             var stamps = dt_column(frame)
             emit_series(stamps, frame.column(stamps).dt_normalize(), out)
+        elif case_id == "temporal/floor":
+            var stamps = dt_column(frame)
+            emit_series(stamps, frame.column(stamps).dt_floor("h"), out)
+        elif case_id == "temporal/ceil":
+            var stamps = dt_column(frame)
+            emit_series(stamps, frame.column(stamps).dt_ceil("h"), out)
+        elif case_id == "temporal/round":
+            var stamps = dt_column(frame)
+            emit_series(stamps, frame.column(stamps).dt_round("h"), out)
+        elif case_id == "temporal/round-minute":
+            emit_series("second", frame.column("second").dt_round("min"), out)
+        elif case_id == "temporal/as-unit":
+            emit_series("ns", frame.column("ns").dt_as_unit("s"), out)
+        elif case_id == "temporal/as-unit-up":
+            emit_series("s", frame.column("s").dt_as_unit("ns"), out)
         elif case_id.startswith("temporal/nanosecond-"):
             # Unlike the nineteen above, these name their column in the id, because
             # the whole point of the family is that the same instant answers zero at
