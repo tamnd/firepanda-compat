@@ -41,8 +41,9 @@ A single row of document 06 reads `- [ ] rolling with window, min_periods, cente
 | `17-the-elapsed-time.md` | why the finer unit wins, and the mean that goes through a float on purpose |
 | `18-the-type-that-survives.md` | the sort that gave back numbers, and the standard deviation of instants that is a length of time |
 | `19-the-zone-that-needs-no-database.md` | why half the time zone work needed no time zone database, and why the other half needs nothing else |
+| `20-the-missing-number.md` | the eighty seven failures that were one decision, and where an integer stops being an integer |
 
-The last eight were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
+The last nine were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
 
 Read `01` first. It is the only one that says what the project is claiming, and every other document in the folder is machinery in service of it.
 

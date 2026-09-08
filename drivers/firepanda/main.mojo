@@ -735,7 +735,16 @@ def main() raises:
 
     var frame: DataFrame
     try:
-        frame = read_arrow(source)
+        # `widen_for_missing` is what turns the Arrow file into the frame a
+        # pandas user would have been handed, which is the frame this suite is
+        # about. pandas on the numpy backend has one missing value for a number
+        # and it is NaN, so it widens an integer column with a missing row to
+        # float64 at read time, and the oracle beside this program has already
+        # had that done to it by `to_pandas`. Reading the file without it would
+        # mean the two engines started from different data and every difference
+        # after that would be attributed to the operation under test. See
+        # firepanda #171 and document 20.
+        frame = read_arrow(source).widen_for_missing()
     except error:
         # The file is there and firepanda would not read it, which is the opposite
         # case and is a result about firepanda. It is what happens today for a
