@@ -39,8 +39,9 @@ A single row of document 06 reads `- [ ] rolling with window, min_periods, cente
 | `15-the-frequency-string.md` | what pandas really accepts as a frequency, and the one tie rule that covers both signs |
 | `16-the-format-string.md` | the thirteen directives a padding flag moves, the four digit year, and the Thursday rule |
 | `17-the-elapsed-time.md` | why the finer unit wins, and the mean that goes through a float on purpose |
+| `18-the-type-that-survives.md` | the sort that gave back numbers, and the standard deviation of instants that is a length of time |
 
-The last six were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
+The last seven were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
 
 Read `01` first. It is the only one that says what the project is claiming, and every other document in the folder is machinery in service of it.
 

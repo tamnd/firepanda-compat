@@ -442,6 +442,34 @@ def dt_column(frame: DataFrame) raises -> String:
     return "second"
 
 
+def dt_column_name(frame: DataFrame) raises -> String:
+    """Picks the datetime column the case means, the way the case picks it.
+
+    The two cases that use this run over three differently shaped frames and
+    name their column with a conditional on the pandas side rather than with a
+    parameter, so this is that same conditional and not a lookup by type. Doing
+    it by type would find the right column today and a different one the moment
+    a frame gains a second datetime column, and then the two engines would be
+    reducing different data and agreeing about it.
+
+    Args:
+        frame: The frame the case was handed.
+
+    Returns:
+        The name of the column to operate on.
+
+    Raises:
+        If the frame is none of the three the cases run over.
+    """
+    if frame.has("second"):
+        return String("second")
+    if frame.has("us"):
+        return String("us")
+    if frame.has("zoned"):
+        return String("zoned")
+    raise Error("no datetime column in this frame")
+
+
 def first_instant(column: Series) raises -> Value:
     """Reads row zero of a timestamp series back out as a constant.
 
@@ -1291,6 +1319,18 @@ def main() raises:
             )
         elif case_id == "temporal/to-timedelta":
             emit_series("value", frame.column("value").to_timedelta("s"), out)
+        # Two cases that needed no new operation and no new case, only for the
+        # sort and the reduction to stop handing back the integer count they had
+        # been reducing. Both had been reported absent since the temporal frames
+        # first became readable, which made them look like missing features
+        # rather than missing labels.
+        elif case_id == "temporal/sort-timestamps":
+            var instants = dt_column_name(frame)
+            emit_series(
+                instants, frame.column(instants).sort_values(), out
+            )
+        elif case_id == "temporal/max":
+            emit_scalar(reduce(frame, dt_column_name(frame), AggKind.MAX), out)
         # The stats section. Almost every case here answers with a scalar, which is
         # the one answer shape that does not go through an index, so this is the
         # section where firepanda's arithmetic can be compared to pandas without
