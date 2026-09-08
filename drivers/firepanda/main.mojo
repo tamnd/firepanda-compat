@@ -893,6 +893,33 @@ def main() raises:
         elif case_id == "basics/bfill":
             emit_series("value", frame.column("value").fill_backward(), out)
 
+        # Moving a column along its own rows. The type is as much of the answer
+        # as the values here: a shift that opens a gap in an integer column
+        # answers float64 because pandas has no integer that means absent, and a
+        # shift of nothing or a shift with a fill value opens no gap and stays
+        # integer. All three go through the same call, so the three entries below
+        # are one rule measured from three sides.
+        elif case_id == "basics/shift":
+            emit_series("value", frame.column("value").shift(), out)
+        elif case_id == "basics/shift-negative":
+            emit_series("value", frame.column("value").shift(-2), out)
+        elif case_id == "basics/shift-fill":
+            emit_series(
+                "value",
+                frame.column("value").shift(1, Value(Int64(0)).weakened()),
+                out,
+            )
+        elif case_id == "basics/diff":
+            emit_series("value", frame.column("value").diff(), out)
+        elif case_id == "basics/pct-change":
+            emit_series("value", frame.column("value").pct_change(), out)
+        elif case_id == "basics/alignment-subtract-shifted":
+            # Written out the long way rather than called as `diff`, because the
+            # case is about the subtraction finding the same labels on both sides
+            # and not about the difference it arrives at.
+            var lagged = frame.column("value").shift(1)
+            emit_series("value", frame.column("value") - lagged, out)
+
         # Ordering. firepanda has no default for the null position and pandas'
         # default is last, so that default is written out here rather than left to
         # be guessed. Where firepanda puts a null when it is asked to put it last is
@@ -1296,6 +1323,13 @@ def main() raises:
             emit_scalar(reduce(frame, "value", AggKind.MEAN), out)
         elif case_id == "temporal/duration-abs":
             emit_series("value", frame.column("value").abs(), out)
+        elif case_id == "temporal/dst-difference":
+            # The zoned column counts instants and not wall clocks, so the gap
+            # across a transition comes out as the hour that was really there
+            # rather than the hour the clock face suggests. Nothing in the call
+            # says so; it falls out of the column keeping its zone through the
+            # shift and the subtraction.
+            emit_series("zoned", frame.column("zoned").diff(), out)
         elif case_id == "temporal/timestamp-minus-timestamp":
             var stamps = frame.column("second")
             emit_series(
