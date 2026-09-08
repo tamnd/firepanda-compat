@@ -18,7 +18,7 @@ A zoned column is UTC instants plus a name. The integers are the moments; the na
 
 ```python
 converted = s.dt.tz_convert("Asia/Kolkata")
-(converted.astype("int64") == s.astype("int64")).all()   # True
+(converted.astype("int64") == s.astype("int64")).all()  # True
 ```
 
 Every integer is where it was. Only the dtype moved, from `datetime64[us, America/New_York]` to `datetime64[us, Asia/Kolkata]`. Which means `tz_convert` never asks what the offset is, which means it needs no database, which means it works for every zone there is including the rule ones. The largest single operation in the blocked group turns out not to be in the blocked group.
