@@ -920,6 +920,21 @@ def main() raises:
             var lagged = frame.column("value").shift(1)
             emit_series("value", frame.column("value") - lagged, out)
 
+        # Running folds. These are the shift's opposite number on the missing
+        # question: a shift makes a gap where there was none and has to widen for
+        # it, while a scan is missing in exactly the rows its input was and has
+        # nothing to widen. The four are here separately because the type rule is
+        # not one rule: a running total widens a narrow integer column and a
+        # running extreme does not.
+        elif case_id == "basics/cumsum":
+            emit_series("value", frame.column("value").cumsum(), out)
+        elif case_id == "basics/cumprod":
+            emit_series("value", frame.column("value").cumprod(), out)
+        elif case_id == "basics/cummax":
+            emit_series("value", frame.column("value").cummax(), out)
+        elif case_id == "basics/cummin":
+            emit_series("value", frame.column("value").cummin(), out)
+
         # Ordering. firepanda has no default for the null position and pandas'
         # default is last, so that default is written out here rather than left to
         # be guessed. Where firepanda puts a null when it is asked to put it last is
@@ -1544,6 +1559,19 @@ def main() raises:
                 Series("key", frame.column("key").argsort()),
                 out,
             )
+        elif case_id == "stats/cumsum-tall":
+            # Ten thousand rows, which is where a block scan and a row at a time
+            # loop stop being able to hide a disagreement about the carry between
+            # blocks. The short frames above would pass with the carry deleted.
+            emit_series("value", frame.column("value").cumsum(), out)
+        elif case_id == "stats/cumsum-float-edges":
+            # The frame with the infinities and the signed zeros in it, compared
+            # exactly rather than within a tolerance. A running total that adds
+            # infinity to negative infinity produces a NaN, and that NaN is a
+            # value rather than a missing row, so it is carried to the end of the
+            # column. Reading it as missing would answer the rest of the column
+            # instead, which is why this is exact.
+            emit_series("value", frame.column("value").cumsum(), out)
         else:
             print('{"status":"absent"}')
     except error:
