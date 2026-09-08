@@ -44,8 +44,9 @@ A single row of document 06 reads `- [ ] rolling with window, min_periods, cente
 | `20-the-missing-number.md` | the eighty seven failures that were one decision, and where an integer stops being an integer |
 | `21-the-row-before.md` | why a shift is a copy with a gap rather than a gather, and the layer the widening rule really lives in |
 | `22-the-running-total.md` | how a scan gets a vector unit to help, and the one case where letting it help answers the wrong column |
+| `23-the-sort-that-was-measuring-numpy.md` | the oldest failures on the board were three cases comparing an order pandas does not promise |
 
-The last eleven were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
+The last twelve were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
 
 Read `01` first. It is the only one that says what the project is claiming, and every other document in the folder is machinery in service of it.
 

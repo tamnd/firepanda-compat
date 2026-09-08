@@ -939,10 +939,45 @@ def main() raises:
         # default is last, so that default is written out here rather than left to
         # be guessed. Where firepanda puts a null when it is asked to put it last is
         # the thing being measured.
+        #
+        # The first two name a second key, and that is not firepanda needing the
+        # help. pandas defaults to an unstable kind, so a sort on a column with
+        # ties returns a permutation pandas does not promise and does not
+        # reproduce, and a case comparing one of those is measuring numpy's
+        # introsort rather than either library. Document 23.
         elif case_id == "basics/sort-values":
-            emit_frame(frame.sort_values(["key"], [False], [False]), out)
+            emit_frame(
+                frame.sort_values(
+                    ["key", "value"], [False, False], [False, False]
+                ),
+                out,
+            )
         elif case_id == "basics/sort-values-descending":
-            emit_frame(frame.sort_values(["key"], [True], [False]), out)
+            emit_frame(
+                frame.sort_values(
+                    ["key", "value"], [True, True], [False, False]
+                ),
+                out,
+            )
+        # The one case where pandas does promise the tie order, because it was
+        # asked to. firepanda has no kind argument and never needed one, since
+        # its sort is a stable merge sort and stable is the only answer it can
+        # give, so this case passes by construction and is here to say so.
+        elif case_id == "basics/sort-values-stable":
+            emit_frame(frame.sort_values(["key"], [False], [False]), out)
+        # The first two columns, taken from the frame rather than named, because
+        # the null bearing column is the key in one of these frames and the
+        # value in the other, which is what the case is about.
+        elif case_id == "basics/sort-values-na-first":
+            var na_first_keys = frame.names()
+            emit_frame(
+                frame.sort_values(
+                    [na_first_keys[0], na_first_keys[1]],
+                    [False, False],
+                    [True, True],
+                ),
+                out,
+            )
         elif case_id == "basics/sort-two-columns":
             emit_frame(
                 frame.sort_values(
