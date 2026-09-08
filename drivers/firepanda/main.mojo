@@ -1331,6 +1331,36 @@ def main() raises:
             )
         elif case_id == "temporal/max":
             emit_scalar(reduce(frame, dt_column_name(frame), AggKind.MAX), out)
+        # The zone entries that need no zone database, which is more of them than
+        # it sounds. Converting keeps the instant and changes the name it is read
+        # against, so it never asks what the offset is and works for every zone
+        # there is. Localising to UTC needs the offset and UTC's is zero. What is
+        # missing is the rest of `tz_localize`, where the offset is a rule.
+        elif case_id == "temporal/tz":
+            emit_scalar(
+                string_scalar_frame("value", frame.column("zoned").dt_tz()),
+                out,
+            )
+        elif case_id == "temporal/tz-convert-utc":
+            emit_series(
+                "zoned", frame.column("zoned").dt_tz_convert("UTC"), out
+            )
+        elif case_id == "temporal/tz-convert-half-hour":
+            emit_series(
+                "zoned",
+                frame.column("zoned").dt_tz_convert("Asia/Kolkata"),
+                out,
+            )
+        elif case_id == "temporal/tz-convert-hour":
+            emit_series(
+                "zoned",
+                frame.column("zoned").dt_tz_convert("UTC").dt("hour"),
+                out,
+            )
+        elif case_id == "temporal/tz-localize":
+            emit_series(
+                "second", frame.column("second").dt_tz_localize("UTC"), out
+            )
         # The stats section. Almost every case here answers with a scalar, which is
         # the one answer shape that does not go through an index, so this is the
         # section where firepanda's arithmetic can be compared to pandas without
