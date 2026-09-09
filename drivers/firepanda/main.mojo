@@ -995,6 +995,16 @@ def main() raises:
             emit_series(
                 "value", frame.column("value").cast(LogicalType.STRING), out
             )
+        # The target is read off the column rather than named, because the case
+        # runs on an integer frame and a float one and the whole question is
+        # whether the column that comes back is the column that went out.
+        elif case_id == "basics/astype-round-trip":
+            var round_trip = frame.column("value")
+            var as_text = round_trip.cast(LogicalType.STRING)
+            if round_trip.values.type.is_float():
+                emit_series("value", as_text.cast(DType.float64), out)
+            else:
+                emit_series("value", as_text.cast(DType.int64), out)
 
         # Arithmetic against a constant, on all ten widths, twice. The width is
         # the point of these rather than the arithmetic: `s + 1` answers int8 on

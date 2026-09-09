@@ -664,6 +664,20 @@ case(
     "and the float frames start with nan and both infinities",
 )
 case(
+    "basics/astype-round-trip",
+    "Series.astype",
+    level="L3",
+    covers=("dtype",),
+    frames=("int64_no_nulls", "float64_no_nulls"),
+    expr=lambda pd, df: df["value"].astype("str").astype(df["value"].dtype),
+    note="out to text and back, which is the only way this suite can reach the text to "
+    "number direction today, because the corpus has no string frame of numerals with a "
+    "missing row in it. The float frame is the one that makes it a question rather than a "
+    "formality, since its nan has to leave the values on the way out and come back into "
+    "them on the way in, and a library that writes the word nan instead passes the first "
+    "leg and then reads a word",
+)
+case(
     "basics/astype-narrow",
     "Series.astype",
     level="L3",
