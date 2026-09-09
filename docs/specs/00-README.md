@@ -48,8 +48,9 @@ A single row of document 06 reads `- [ ] rolling with window, min_periods, cente
 | `24-the-word-nan.md` | sixty three of sixty four values already matched, and the last one was a missing row that changed its spelling |
 | `25-two-thirds-of-the-board-was-unaskable.md` | 2447 of the 3441 absent runs were absent because the instrument could not be pointed at them |
 | `26-the-binding-is-behind-the-library.md` | the core had seventeen reductions and the Python binding exposed none of them, so a large part of the unimplemented count was a door problem rather than a library one |
+| `27-the-ladder-was-blocked-at-the-bottom.md` | fourteen names with thirteen passing behaviour cases between them could not be called from Python, and the board can now count how many more are in that position |
 
-The last fifteen were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
+The last sixteen were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
 
 Read `01` first. It is the only one that says what the project is claiming, and every other document in the folder is machinery in service of it.
 

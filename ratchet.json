@@ -8,7 +8,7 @@
     "indexing": 1,
     "nested": 0,
     "reshape": 0,
-    "stats": 1,
+    "stats": 2,
     "strings": 0,
     "temporal": 0,
     "windows": 0
