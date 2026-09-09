@@ -71,6 +71,8 @@ That second implementation is a real cost and it is worth paying for one reason:
 
 When the in process form lands, the driver stays for one release as a cross check and is then deleted. Two implementations of a test suite is a state to pass through and not to live in.
 
+That last paragraph is wrong and document 25 is the correction, kept here rather than edited away because the mistake cost the board 2447 runs and the reasoning that produced it is the kind that repeats. The two forms are not a scaffold and its replacement, they answer different questions. The driver runs a case the library can do and the binding cannot yet spell. The module answers a question about the API itself, which the driver cannot answer at all: 2447 of the runs on this board are generated one per public pandas name and ask whether the name resolves and whether its signature matches, nobody is going to hand write 2447 driver entries, and a driver entry could not answer those questions if they did, because the driver is handed a case id and asked to compute an answer while "does `DataFrame.pivot` exist" has none to compute. So the engine holds both at once and routes per case on the level: L0 and L1 are questions about the API and go to the module, L2 and above are questions about data and go to the driver. The driver gets deleted when the binding can spell every hand written case, which is a different day from the one this paragraph was expecting, and the module was needed long before it.
+
 ## The driver protocol
 
 Written down because it is a contract between a Mojo program and a Python one, with no type checker spanning the two of them, and the only thing that keeps them agreeing is that both sides were written against this section.

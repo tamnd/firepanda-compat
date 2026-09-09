@@ -25,6 +25,11 @@ people for different reasons and collapsing them would make both useless.
 property and firepanda exposes as a method is not the same name, because `frame.shape`
 and `frame.shape()` are different programs. Comparing the kind costs nothing and
 catches it.
+
+The kind is two values and not three, and `_kind` below carries the argument. Anything
+finer measures how a descriptor was written rather than what a caller can see, and a
+case that compares something no user program can observe is a case that can fail
+without anybody being wrong.
 """
 
 from __future__ import annotations
@@ -81,19 +86,29 @@ def _namespace(module: Any, space: str) -> Any:
 
 
 def _kind(obj: Any, member: str) -> str:
-    """What a member is, in the inventory's vocabulary.
+    """What a member is, as a program using it can tell.
+
+    Two kinds and not three. An earlier version split a `property` from an ordinary
+    attribute by asking `isinstance(descriptor, property)`, and that measures how the
+    descriptor was written rather than anything a caller can see. pandas answers
+    `AxisProperty` for `DataFrame.columns` and `CachedProperty` for `Index.dtype`,
+    neither of which is a `property`, while `DataFrame.shape` is one, so the split put
+    three pandas names on one side and one on the other for reasons no user program
+    can observe. It cost seven false failures the day the reflection cases first ran.
+
+    What a caller can tell is whether the name has to be called. `frame.shape` and
+    `frame.shape()` are different programs and that is the distinction worth having,
+    which is the one the module docstring argues for and the one this keeps. Whether
+    the value behind the name is stored, computed or cached is the library's business.
 
     Args:
         obj: The namespace sample object.
         member: The member name, which is known to exist.
 
     Returns:
-        `callable`, `property` or `attribute`.
+        `callable` or `value`.
     """
-    owner = obj if isinstance(obj, type) else type(obj)
-    if isinstance(getattr(owner, member, None), property):
-        return "property"
-    return "callable" if callable(getattr(obj, member)) else "attribute"
+    return "callable" if callable(getattr(obj, member)) else "value"
 
 
 def _resolution(space: str, member: str):

@@ -197,6 +197,29 @@ def _shaped(engine: Any, value: Any) -> Any:
     return normalize(value, shape)
 
 
+def _out_of_process(engine: Any, case: Any) -> bool:
+    """Whether this engine wants this case run through its own process.
+
+    Asked per case rather than once per engine, because an engine can have more than
+    one way to answer and the ways do not cover the same questions. The firepanda
+    engine is the one that does: a case asking whether a name resolves can only be
+    answered by reflection, and a case asking whether a sum is right is answered by a
+    driver that runs the library. An engine with a single form still answers a plain
+    `out_of_process`, and pandas answers neither and is evaluated directly.
+
+    Args:
+        engine: The engine.
+        case: The case about to be run.
+
+    Returns:
+        True when `engine.run` should be called instead of the case expression.
+    """
+    per_case = getattr(engine, "out_of_process_for", None)
+    if per_case is not None:
+        return bool(per_case(case))
+    return bool(getattr(engine, "out_of_process", False))
+
+
 def run_expression(
     case: Case, engine: Any, frame_name: str
 ) -> tuple[Any, BaseException | None, list[Any]]:
@@ -226,7 +249,7 @@ def run_expression(
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         try:
-            if getattr(engine, "out_of_process", False):
+            if _out_of_process(engine, case):
                 return engine.run(case, frame_name), None, list(caught)
             frame = engine.frame(frame_name)
             value = case.expr(engine.module(), frame)
