@@ -10,7 +10,7 @@
     "reshape": 0,
     "stats": 2,
     "strings": 0,
-    "temporal": 0,
+    "temporal": 7,
     "windows": 0
   }
 }

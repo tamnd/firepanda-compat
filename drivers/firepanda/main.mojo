@@ -1314,6 +1314,35 @@ def main() raises:
                 frame.column(stamps).dt_strftime("%Y-%m-%dT%H:%M:%S"),
                 out,
             )
+        elif case_id == "temporal/to-datetime-strings":
+            # A round trip. The column is rendered to text and read back, and
+            # the answer has to be the column it started as. This is the only
+            # case on the board that exercises the reading half of the calendar
+            # against a whole frame of instants rather than a handful of
+            # literals, and the two halves share their format machinery, so a
+            # directive that one of them reads differently from how the other
+            # writes it shows up here as a column of wrong answers.
+            var stamps = dt_column(frame)
+            emit_series(
+                stamps,
+                frame.column(stamps)
+                .dt_strftime("%Y-%m-%d %H:%M:%S")
+                .to_datetime(),
+                out,
+            )
+        elif case_id == "temporal/to-datetime-format":
+            # The same round trip with the format said out loud, in an order
+            # firepanda's guesser will not touch. Day first is exactly the shape
+            # that cannot be guessed safely, since `01/02/2026` is a real date
+            # under both readings and nothing later catches the wrong one.
+            var stamps = dt_column(frame)
+            emit_series(
+                stamps,
+                frame.column(stamps)
+                .dt_strftime("%d/%m/%Y")
+                .to_datetime("%d/%m/%Y"),
+                out,
+            )
         elif case_id == "temporal/isocalendar":
             # The one member of the accessor that answers a frame, which is why
             # it is a free function in firepanda and an `emit_frame` here. The
