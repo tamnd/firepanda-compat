@@ -442,6 +442,34 @@ def dt_column(frame: DataFrame) raises -> String:
     return "second"
 
 
+def dt_column_name(frame: DataFrame) raises -> String:
+    """Picks the datetime column the case means, the way the case picks it.
+
+    The two cases that use this run over three differently shaped frames and
+    name their column with a conditional on the pandas side rather than with a
+    parameter, so this is that same conditional and not a lookup by type. Doing
+    it by type would find the right column today and a different one the moment
+    a frame gains a second datetime column, and then the two engines would be
+    reducing different data and agreeing about it.
+
+    Args:
+        frame: The frame the case was handed.
+
+    Returns:
+        The name of the column to operate on.
+
+    Raises:
+        If the frame is none of the three the cases run over.
+    """
+    if frame.has("second"):
+        return String("second")
+    if frame.has("us"):
+        return String("us")
+    if frame.has("zoned"):
+        return String("zoned")
+    raise Error("no datetime column in this frame")
+
+
 def first_instant(column: Series) raises -> Value:
     """Reads row zero of a timestamp series back out as a constant.
 
@@ -707,7 +735,16 @@ def main() raises:
 
     var frame: DataFrame
     try:
-        frame = read_arrow(source)
+        # `widen_for_missing` is what turns the Arrow file into the frame a
+        # pandas user would have been handed, which is the frame this suite is
+        # about. pandas on the numpy backend has one missing value for a number
+        # and it is NaN, so it widens an integer column with a missing row to
+        # float64 at read time, and the oracle beside this program has already
+        # had that done to it by `to_pandas`. Reading the file without it would
+        # mean the two engines started from different data and every difference
+        # after that would be attributed to the operation under test. See
+        # firepanda #171 and document 20.
+        frame = read_arrow(source).widen_for_missing()
     except error:
         # The file is there and firepanda would not read it, which is the opposite
         # case and is a result about firepanda. It is what happens today for a
@@ -856,14 +893,91 @@ def main() raises:
         elif case_id == "basics/bfill":
             emit_series("value", frame.column("value").fill_backward(), out)
 
+        # Moving a column along its own rows. The type is as much of the answer
+        # as the values here: a shift that opens a gap in an integer column
+        # answers float64 because pandas has no integer that means absent, and a
+        # shift of nothing or a shift with a fill value opens no gap and stays
+        # integer. All three go through the same call, so the three entries below
+        # are one rule measured from three sides.
+        elif case_id == "basics/shift":
+            emit_series("value", frame.column("value").shift(), out)
+        elif case_id == "basics/shift-negative":
+            emit_series("value", frame.column("value").shift(-2), out)
+        elif case_id == "basics/shift-fill":
+            emit_series(
+                "value",
+                frame.column("value").shift(1, Value(Int64(0)).weakened()),
+                out,
+            )
+        elif case_id == "basics/diff":
+            emit_series("value", frame.column("value").diff(), out)
+        elif case_id == "basics/pct-change":
+            emit_series("value", frame.column("value").pct_change(), out)
+        elif case_id == "basics/alignment-subtract-shifted":
+            # Written out the long way rather than called as `diff`, because the
+            # case is about the subtraction finding the same labels on both sides
+            # and not about the difference it arrives at.
+            var lagged = frame.column("value").shift(1)
+            emit_series("value", frame.column("value") - lagged, out)
+
+        # Running folds. These are the shift's opposite number on the missing
+        # question: a shift makes a gap where there was none and has to widen for
+        # it, while a scan is missing in exactly the rows its input was and has
+        # nothing to widen. The four are here separately because the type rule is
+        # not one rule: a running total widens a narrow integer column and a
+        # running extreme does not.
+        elif case_id == "basics/cumsum":
+            emit_series("value", frame.column("value").cumsum(), out)
+        elif case_id == "basics/cumprod":
+            emit_series("value", frame.column("value").cumprod(), out)
+        elif case_id == "basics/cummax":
+            emit_series("value", frame.column("value").cummax(), out)
+        elif case_id == "basics/cummin":
+            emit_series("value", frame.column("value").cummin(), out)
+
         # Ordering. firepanda has no default for the null position and pandas'
         # default is last, so that default is written out here rather than left to
         # be guessed. Where firepanda puts a null when it is asked to put it last is
         # the thing being measured.
+        #
+        # The first two name a second key, and that is not firepanda needing the
+        # help. pandas defaults to an unstable kind, so a sort on a column with
+        # ties returns a permutation pandas does not promise and does not
+        # reproduce, and a case comparing one of those is measuring numpy's
+        # introsort rather than either library. Document 23.
         elif case_id == "basics/sort-values":
-            emit_frame(frame.sort_values(["key"], [False], [False]), out)
+            emit_frame(
+                frame.sort_values(
+                    ["key", "value"], [False, False], [False, False]
+                ),
+                out,
+            )
         elif case_id == "basics/sort-values-descending":
-            emit_frame(frame.sort_values(["key"], [True], [False]), out)
+            emit_frame(
+                frame.sort_values(
+                    ["key", "value"], [True, True], [False, False]
+                ),
+                out,
+            )
+        # The one case where pandas does promise the tie order, because it was
+        # asked to. firepanda has no kind argument and never needed one, since
+        # its sort is a stable merge sort and stable is the only answer it can
+        # give, so this case passes by construction and is here to say so.
+        elif case_id == "basics/sort-values-stable":
+            emit_frame(frame.sort_values(["key"], [False], [False]), out)
+        # The first two columns, taken from the frame rather than named, because
+        # the null bearing column is the key in one of these frames and the
+        # value in the other, which is what the case is about.
+        elif case_id == "basics/sort-values-na-first":
+            var na_first_keys = frame.names()
+            emit_frame(
+                frame.sort_values(
+                    [na_first_keys[0], na_first_keys[1]],
+                    [False, False],
+                    [True, True],
+                ),
+                out,
+            )
         elif case_id == "basics/sort-two-columns":
             emit_frame(
                 frame.sort_values(
@@ -881,6 +995,16 @@ def main() raises:
             emit_series(
                 "value", frame.column("value").cast(LogicalType.STRING), out
             )
+        # The target is read off the column rather than named, because the case
+        # runs on an integer frame and a float one and the whole question is
+        # whether the column that comes back is the column that went out.
+        elif case_id == "basics/astype-round-trip":
+            var round_trip = frame.column("value")
+            var as_text = round_trip.cast(LogicalType.STRING)
+            if round_trip.values.type.is_float():
+                emit_series("value", as_text.cast(DType.float64), out)
+            else:
+                emit_series("value", as_text.cast(DType.int64), out)
 
         # Arithmetic against a constant, on all ten widths, twice. The width is
         # the point of these rather than the arithmetic: `s + 1` answers int8 on
@@ -1190,6 +1314,35 @@ def main() raises:
                 frame.column(stamps).dt_strftime("%Y-%m-%dT%H:%M:%S"),
                 out,
             )
+        elif case_id == "temporal/to-datetime-strings":
+            # A round trip. The column is rendered to text and read back, and
+            # the answer has to be the column it started as. This is the only
+            # case on the board that exercises the reading half of the calendar
+            # against a whole frame of instants rather than a handful of
+            # literals, and the two halves share their format machinery, so a
+            # directive that one of them reads differently from how the other
+            # writes it shows up here as a column of wrong answers.
+            var stamps = dt_column(frame)
+            emit_series(
+                stamps,
+                frame.column(stamps)
+                .dt_strftime("%Y-%m-%d %H:%M:%S")
+                .to_datetime(),
+                out,
+            )
+        elif case_id == "temporal/to-datetime-format":
+            # The same round trip with the format said out loud, in an order
+            # firepanda's guesser will not touch. Day first is exactly the shape
+            # that cannot be guessed safely, since `01/02/2026` is a real date
+            # under both readings and nothing later catches the wrong one.
+            var stamps = dt_column(frame)
+            emit_series(
+                stamps,
+                frame.column(stamps)
+                .dt_strftime("%d/%m/%Y")
+                .to_datetime("%d/%m/%Y"),
+                out,
+            )
         elif case_id == "temporal/isocalendar":
             # The one member of the accessor that answers a frame, which is why
             # it is a free function in firepanda and an `emit_frame` here. The
@@ -1259,6 +1412,13 @@ def main() raises:
             emit_scalar(reduce(frame, "value", AggKind.MEAN), out)
         elif case_id == "temporal/duration-abs":
             emit_series("value", frame.column("value").abs(), out)
+        elif case_id == "temporal/dst-difference":
+            # The zoned column counts instants and not wall clocks, so the gap
+            # across a transition comes out as the hour that was really there
+            # rather than the hour the clock face suggests. Nothing in the call
+            # says so; it falls out of the column keeping its zone through the
+            # shift and the subtraction.
+            emit_series("zoned", frame.column("zoned").diff(), out)
         elif case_id == "temporal/timestamp-minus-timestamp":
             var stamps = frame.column("second")
             emit_series(
@@ -1291,6 +1451,48 @@ def main() raises:
             )
         elif case_id == "temporal/to-timedelta":
             emit_series("value", frame.column("value").to_timedelta("s"), out)
+        # Two cases that needed no new operation and no new case, only for the
+        # sort and the reduction to stop handing back the integer count they had
+        # been reducing. Both had been reported absent since the temporal frames
+        # first became readable, which made them look like missing features
+        # rather than missing labels.
+        elif case_id == "temporal/sort-timestamps":
+            var instants = dt_column_name(frame)
+            emit_series(
+                instants, frame.column(instants).sort_values(), out
+            )
+        elif case_id == "temporal/max":
+            emit_scalar(reduce(frame, dt_column_name(frame), AggKind.MAX), out)
+        # The zone entries that need no zone database, which is more of them than
+        # it sounds. Converting keeps the instant and changes the name it is read
+        # against, so it never asks what the offset is and works for every zone
+        # there is. Localising to UTC needs the offset and UTC's is zero. What is
+        # missing is the rest of `tz_localize`, where the offset is a rule.
+        elif case_id == "temporal/tz":
+            emit_scalar(
+                string_scalar_frame("value", frame.column("zoned").dt_tz()),
+                out,
+            )
+        elif case_id == "temporal/tz-convert-utc":
+            emit_series(
+                "zoned", frame.column("zoned").dt_tz_convert("UTC"), out
+            )
+        elif case_id == "temporal/tz-convert-half-hour":
+            emit_series(
+                "zoned",
+                frame.column("zoned").dt_tz_convert("Asia/Kolkata"),
+                out,
+            )
+        elif case_id == "temporal/tz-convert-hour":
+            emit_series(
+                "zoned",
+                frame.column("zoned").dt_tz_convert("UTC").dt("hour"),
+                out,
+            )
+        elif case_id == "temporal/tz-localize":
+            emit_series(
+                "second", frame.column("second").dt_tz_localize("UTC"), out
+            )
         # The stats section. Almost every case here answers with a scalar, which is
         # the one answer shape that does not go through an index, so this is the
         # section where firepanda's arithmetic can be compared to pandas without
@@ -1431,6 +1633,19 @@ def main() raises:
                 Series("key", frame.column("key").argsort()),
                 out,
             )
+        elif case_id == "stats/cumsum-tall":
+            # Ten thousand rows, which is where a block scan and a row at a time
+            # loop stop being able to hide a disagreement about the carry between
+            # blocks. The short frames above would pass with the carry deleted.
+            emit_series("value", frame.column("value").cumsum(), out)
+        elif case_id == "stats/cumsum-float-edges":
+            # The frame with the infinities and the signed zeros in it, compared
+            # exactly rather than within a tolerance. A running total that adds
+            # infinity to negative infinity produces a NaN, and that NaN is a
+            # value rather than a missing row, so it is carried to the end of the
+            # column. Reading it as missing would answer the rest of the column
+            # instead, which is why this is exact.
+            emit_series("value", frame.column("value").cumsum(), out)
         else:
             print('{"status":"absent"}')
     except error:

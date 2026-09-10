@@ -667,6 +667,24 @@ def _scalar_type(value: Any) -> str:
         return "null[NA]"
     if value is None:
         return "null"
+    # `pa.scalar` on a `pd.Timestamp` or a `pd.Timedelta` always answers a
+    # microsecond type, whatever resolution the scalar itself carries, because it
+    # goes through the generic Python object path and that path picks one unit
+    # and uses it. So the maximum of a second column looked like a microsecond
+    # answer here even though pandas reported `unit='s'`, and an engine that got
+    # the resolution right was marked wrong for it. Going through numpy first
+    # keeps the unit, since a `datetime64` carries it in its own dtype and Arrow
+    # reads it from there rather than guessing.
+    # The type is built rather than inferred, because the two ways of inferring
+    # it each lose one half. `pa.scalar` keeps the time zone and throws the unit
+    # away, and `pa.scalar(value.to_numpy())` keeps the unit and throws the time
+    # zone away, so either one alone turns a right answer into a wrong one on
+    # some frame in the corpus. Both halves are on the scalar itself.
+    if isinstance(value, pd.Timestamp):
+        zone = None if value.tz is None else str(value.tz)
+        return canonical_type(pa.timestamp(value.unit, tz=zone))
+    if isinstance(value, pd.Timedelta):
+        return canonical_type(pa.duration(value.unit))
     try:
         return canonical_type(pa.scalar(value).type)
     except (pa.ArrowInvalid, pa.ArrowTypeError, pa.ArrowNotImplementedError, ValueError):

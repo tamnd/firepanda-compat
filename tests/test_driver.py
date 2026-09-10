@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import stat
 import textwrap
+import types
 from pathlib import Path
 
 import pyarrow as pa
@@ -33,6 +34,7 @@ from fpcompat import corpus, runner
 from fpcompat.cases import Case
 from fpcompat.compare import Rules
 from fpcompat.driver import Absent, Driver, DriverBroken, SubjectRaised
+from fpcompat.engines import firepanda_engine
 from fpcompat.engines.firepanda_engine import DRIVER, FirepandaEngine
 
 BODY = """
@@ -465,16 +467,27 @@ built = pytest.mark.skipif(
 )
 
 
+@pytest.fixture
+def driver_only(monkeypatch):
+    """Hides any importable firepanda, so the engine really is in the driver form.
+
+    A developer who has staged a module has both, and the engine then says
+    `module+driver`, so without this these two measure whether the person running them
+    happens to have staged one rather than what the driver form reports.
+    """
+    monkeypatch.setattr(firepanda_engine, "_import_staged", lambda: None)
+
+
 @built
-def test_the_engine_picks_the_driver_up_and_says_so():
+def test_the_engine_picks_the_driver_up_and_says_so(driver_only):
     engine = FirepandaEngine()
     assert engine.available
     assert engine.form == "driver"
-    assert engine.out_of_process
+    assert engine.out_of_process_for(types.SimpleNamespace(level="L2"))
 
 
 @built
-def test_the_result_file_can_say_which_firepanda_produced_it():
+def test_the_result_file_can_say_which_firepanda_produced_it(driver_only):
     # A conformance number with no version attached is not a number anybody can act
     # on, and the driver form has no `__version__` to ask for, so the build stamps it.
     versions = FirepandaEngine().versions()
@@ -499,13 +512,22 @@ def test_the_real_driver_reports_absent_for_a_case_it_has_no_entry_for():
 
 
 @built
-def test_a_corpus_frame_firepanda_cannot_read_is_a_result_and_not_a_broken_harness():
-    # firepanda has no dictionary encoded column to read a categorical into. That is a
-    # gap in firepanda and it has to be scored as one. Reporting it as a broken harness
-    # would hide a real limitation behind a message about the driver, and this test is
-    # here because the driver did exactly that until it was pointed at the file first.
-    with pytest.raises(SubjectRaised, match="dictionary"):
-        Driver(DRIVER, corpus.CORPUS).run("basics/len", "categorical_ordered")
+def test_the_real_driver_reads_every_frame_in_the_corpus():
+    # This used to be the opposite test. firepanda had no dictionary encoded column to
+    # read a categorical into, so `categorical_ordered` came back as a subject error,
+    # and the test asserted that the harness scored it as a gap in firepanda rather
+    # than reporting itself broken. The gap closed and all 56 frames now load, so the
+    # fact worth holding on to is the one that would go away if a reader regressed.
+    # The scoring rule it used to guard is still covered against a fake driver above,
+    # which is where it belongs, since it is a rule about the harness.
+    driver = Driver(DRIVER, corpus.CORPUS)
+    unreadable = []
+    for name in corpus.frames():
+        try:
+            driver.run("basics/len", name)
+        except SubjectRaised as error:
+            unreadable.append(f"{name}: {error}")
+    assert unreadable == []
 
 
 @built

@@ -24,3 +24,7 @@ results/*.json
 drivers/firepanda/firepanda-compat-driver
 drivers/firepanda/firepanda-compat-driver.sources
 drivers/firepanda/stamp.json
+# The staged Python extension, which is a build product for the same reason the
+# driver binary is and describes the same checkout.
+drivers/firepanda/python/
+drivers/firepanda/extension/

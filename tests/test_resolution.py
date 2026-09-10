@@ -130,7 +130,14 @@ def test_a_missing_member_is_unimplemented_at_l1_too():
 
 
 def test_a_method_where_pandas_has_a_property_fails():
-    """`frame.shape` and `frame.shape()` are different programs."""
+    """`frame.shape` and `frame.shape()` are different programs.
+
+    The detail says `callable` where pandas said `value`, which is the vocabulary the
+    generator settled on. It used to say `property`, and the word went away when the
+    kind stopped being read off the descriptor type, because pandas answers
+    `AxisProperty` and `CachedProperty` for names a caller cannot tell apart from a
+    plain attribute.
+    """
 
     class Frame:
         def shape(self):
@@ -138,7 +145,8 @@ def test_a_method_where_pandas_has_a_property_fails():
 
     record = run("resolution/dataframe.shape", module_with(DataFrame=Frame))
     assert record["outcome"] == runner.FAIL
-    assert "property" in record["detail"]
+    assert "callable" in record["detail"]
+    assert "value" in record["detail"]
 
 
 def test_a_signature_with_the_wrong_parameter_names_fails():

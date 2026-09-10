@@ -83,6 +83,52 @@ mojo=$(pixi run --manifest-path "$toolchain/pixi.toml" mojo --version 2>/dev/nul
 toolchain_note=""
 [ "$toolchain" != "$firepanda" ] && toolchain_note=" (toolchain from $toolchain)"
 
+# The Python extension, staged beside the driver, and the reason it is here rather
+# than in a second script is that it has to describe the same firepanda the driver
+# does. Two build steps against two checkouts would produce a result file claiming
+# one version and measuring two.
+#
+# It answers a different question from the driver rather than a smaller version of
+# the same one. The driver takes a case id and runs the firepanda spelling of that
+# case, so it can only answer a question somebody hand wrote an entry for, and the
+# 2452 generated cases asking whether a pandas name resolves and whether its
+# signature matches can never have hand written entries. Those are reflection
+# questions and the only thing that can answer them is an importable module. So the
+# two forms are not a scaffold and its replacement, they are two instruments, and
+# the engine holds both.
+#
+# A failure here is not a failure of the build. A firepanda old enough to have no
+# extension, or a toolchain that cannot link one today, should still get its data
+# cases measured, and the engine reads the absence as every reflection case being
+# unimplemented, which is the truthful answer rather than a broken run.
+staged="$here/python"
+rm -rf "$staged"
+if [ -f "$firepanda/tools/build_extension.sh" ]; then
+  if pixi run --manifest-path "$toolchain/pixi.toml" \
+      bash "$firepanda/tools/build_extension.sh" "$here/extension" >/dev/null 2>&1; then
+    mkdir -p "$staged/firepanda"
+    # The package directory and the build product go into one directory, because
+    # `python/firepanda/__init__.py` does `from . import _firepanda` and the runtime
+    # libraries are found through `@loader_path` and `$ORIGIN`, which mean the
+    # directory the extension was loaded from. That is the layout a wheel has and it
+    # is the only one that works.
+    # Recursively, because `firepanda.api` is a subpackage and a wheel carries it
+    # whole. Copying only the top level files stages a firepanda with no `api` in
+    # it, and the board then reports every name under `api.types` as unimplemented
+    # on the strength of a staging bug rather than of anything in firepanda.
+    cp -R "$firepanda/python/firepanda/." "$staged/firepanda/"
+    find "$staged/firepanda" -name __pycache__ -type d -prune -exec rm -rf {} +
+    cp -R "$here/extension/." "$staged/firepanda/"
+    rm -rf "$here/extension"
+    echo "staged the python extension in $staged"
+  else
+    echo "no python extension built, the reflection cases will read as unimplemented" >&2
+    rm -rf "$here/extension"
+  fi
+else
+  echo "no tools/build_extension.sh in $firepanda, skipping the python extension" >&2
+fi
+
 cat > "$stamp" <<JSON
 {
   "firepanda": "${version:-unknown}",

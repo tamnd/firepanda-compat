@@ -28,7 +28,12 @@ import pyarrow as pa
 import pytest
 
 from fpcompat import corpus
+from fpcompat.engines import firepanda_engine
 from fpcompat.engines.firepanda_engine import FirepandaEngine
+
+# A path no checkout has, so that the engine reports the module form whether or not the
+# person running the suite has built a driver.
+NO_DRIVER = corpus.ROOT / "drivers" / "firepanda" / "no-driver-was-built-here"
 
 
 def fake(**names) -> types.ModuleType:
@@ -59,10 +64,17 @@ def module_form(monkeypatch):
     so the fake has to be in `sys.modules` before the engine exists. Putting it there
     is also what stops a machine that really does have firepanda installed from
     changing what these tests measure.
+
+    The built driver is hidden for the same reason. A developer who has run
+    `pixi run driver` has one on disk, and the engine would then report `module+driver`
+    and send half the cases to it, so without this the file measures whether the person
+    running it happens to have built a binary. It passed in CI only because CI never
+    builds one.
     """
 
     def build(module: types.ModuleType) -> FirepandaEngine:
         monkeypatch.setitem(sys.modules, "firepanda", module)
+        monkeypatch.setattr(firepanda_engine, "DRIVER", NO_DRIVER)
         return FirepandaEngine()
 
     return build
@@ -101,29 +113,40 @@ def test_the_engine_asks_firepanda_for_nothing_firepanda_does_not_have(module_fo
 def test_the_module_form_evaluates_the_case_expression_in_this_process(module_form):
     """The whole point of the module form, stated as an assertion.
 
-    The runner asks `out_of_process` rather than asking whether a `run` method exists,
-    because this engine has one in both forms and calling it in the module form would
-    run every case through the driver protocol against a driver that is not there.
+    The runner asks `out_of_process_for` rather than asking whether a `run` method
+    exists, because this engine has one in both forms and calling it in the module form
+    would run every case through the driver protocol against a driver that is not
+    there. It is asked per case rather than once per engine, so the answer wanted here
+    is the one for a case the driver would otherwise have taken.
     """
     engine = module_form(fake(from_arrow=lambda table: "frame"))
 
     assert engine.available
     assert engine.form == "module"
-    assert not engine.out_of_process
+    assert not engine.out_of_process_for(types.SimpleNamespace(level="L2"))
     assert engine.module().from_arrow is not None
 
 
-def test_the_module_form_wins_when_a_driver_is_built_too(module_form):
+def test_both_forms_present_is_a_split_and_not_a_contest(monkeypatch, tmp_path):
     """Both forms present is the normal state of a working checkout, not a conflict.
 
-    The driver is built by hand and stays on disk long after it stops matching the
-    firepanda beside it, so the importable module has to be the one that wins. The
-    stale binary is then only a thing that takes up space, rather than a thing that
-    silently produces the score.
+    This used to assert that the module won outright, which was true while the two were
+    mutually exclusive and stopped being true when the choice moved per case. The two
+    answer different questions. A reflection case asks whether a name resolves, which
+    only the module can answer, and every hand written case asks for a value, which the
+    driver is where the firepanda spelling of lives. So the engine reports both and
+    routes by level, and the thing worth asserting is the routing.
     """
-    engine = module_form(fake(from_arrow=lambda table: "frame"))
+    binary = tmp_path / "firepanda-compat-driver"
+    binary.write_text("not a real driver, only a file that exists")
+    monkeypatch.setitem(sys.modules, "firepanda", fake(from_arrow=lambda table: "frame"))
+    monkeypatch.setattr(firepanda_engine, "DRIVER", binary)
+    engine = FirepandaEngine()
 
-    assert engine.form == "module"
+    assert engine.form == "module+driver"
+    assert not engine.out_of_process_for(types.SimpleNamespace(level="L0"))
+    assert not engine.out_of_process_for(types.SimpleNamespace(level="L1"))
+    assert engine.out_of_process_for(types.SimpleNamespace(level="L2"))
 
 
 def test_a_result_file_says_which_firepanda_produced_it(module_form):

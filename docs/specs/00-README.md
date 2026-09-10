@@ -39,8 +39,22 @@ A single row of document 06 reads `- [ ] rolling with window, min_periods, cente
 | `15-the-frequency-string.md` | what pandas really accepts as a frequency, and the one tie rule that covers both signs |
 | `16-the-format-string.md` | the thirteen directives a padding flag moves, the four digit year, and the Thursday rule |
 | `17-the-elapsed-time.md` | why the finer unit wins, and the mean that goes through a float on purpose |
+| `18-the-type-that-survives.md` | the sort that gave back numbers, and the standard deviation of instants that is a length of time |
+| `19-the-zone-that-needs-no-database.md` | why half the time zone work needed no time zone database, and why the other half needs nothing else |
+| `20-the-missing-number.md` | the eighty seven failures that were one decision, and where an integer stops being an integer |
+| `21-the-row-before.md` | why a shift is a copy with a gap rather than a gather, and the layer the widening rule really lives in |
+| `22-the-running-total.md` | how a scan gets a vector unit to help, and the one case where letting it help answers the wrong column |
+| `23-the-sort-that-was-measuring-numpy.md` | the oldest failures on the board were three cases comparing an order pandas does not promise |
+| `24-the-word-nan.md` | sixty three of sixty four values already matched, and the last one was a missing row that changed its spelling |
+| `25-two-thirds-of-the-board-was-unaskable.md` | 2447 of the 3441 absent runs were absent because the instrument could not be pointed at them |
+| `26-the-binding-is-behind-the-library.md` | the core had seventeen reductions and the Python binding exposed none of them, so a large part of the unimplemented count was a door problem rather than a library one |
+| `27-the-ladder-was-blocked-at-the-bottom.md` | fourteen names with thirteen passing behaviour cases between them could not be called from Python, and the board can now count how many more are in that position |
+| `28-the-namespace-nothing-could-open.md` | the accessor is finished and forty eight of its fifty five runs are blocked by a constructor that belongs to something else |
+| `29-the-parser-that-refuses-to-guess.md` | the constructor landed and moved fifty two runs, a door had a second door behind it, and two new corpus cases found a silent overflow that fifty six tests did not |
+| `30-the-namespace-that-was-one-call-away.md` | a hundred and twenty rows reported one missing attribute, the implementation behind it was already written, and the thirty two runs it was worth are all reflection |
+| `31-forty-five-questions-other-libraries-ask.md` | the namespace other libraries import, forty five names answered by hand, six pandas answers that measurement changed and two staging loops that had never seen a subpackage |
 
-The last six were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
+The last seventeen were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
 
 Read `01` first. It is the only one that says what the project is claiming, and every other document in the folder is machinery in service of it.
 

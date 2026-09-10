@@ -1,22 +1,38 @@
 """firepanda, the subject.
 
-Two forms, because the project is not finished.
+Two forms, and they are two instruments rather than a scaffold and its replacement.
 
-After M3 there is an importable `firepanda` and this binds it as the module the case
-expression receives, which makes every case a direct comparison in one interpreter.
-That is three lines and it is the form the whole design is aimed at.
+`drivers/firepanda/main.mojo` is a program that takes a case id and a corpus
+directory, runs the firepanda spelling of that case and writes the answer as an Arrow
+IPC file. `fpcompat.driver` is this side of that, and it hands back the same `Answer`
+the pandas side builds, so nothing downstream of `compare` can tell the two forms
+apart. It costs a process per case, roughly a millisecond, and it buys the ability to
+measure a library that has no Python bindings at all.
 
-Before M3 there is no Python module, so `drivers/firepanda/main.mojo` is a program
-that takes a case id and a corpus directory, runs the firepanda spelling of that case
-and writes the answer as an Arrow IPC file. `fpcompat.driver` is this side of that,
-and it hands back the same `Answer` the pandas side builds, so nothing downstream of
-`compare` can tell the two forms apart.
+The other form is an importable `firepanda`, bound as the module the case expression
+receives, which makes a case a direct comparison in one interpreter.
 
-The driver form runs a case in a process, which the module form will not, and that is
-worth roughly a millisecond per case in exchange for being able to measure a library
-that has no Python bindings at all. It is a scaffold and it is meant to be deleted the
-day the module arrives, which is why `module()` is still the path a case expression
-takes and the driver is a separate method rather than a fake module.
+This file used to say the driver was a scaffold to be deleted the day the module
+arrived, and that was wrong in a way worth recording, because it was costing the
+board 2452 runs. The driver can only answer a question somebody hand wrote an entry
+for. 2452 of the 4081 runs on the board are generated, one per public pandas name,
+and they ask whether the name resolves and whether its signature matches. Nobody is
+ever going to hand write 2452 driver entries, and a driver entry could not answer
+those questions if they did, because "does `DataFrame.pivot` exist" is a question
+about a module and the driver is handed a case id. Only reflection answers a
+reflection question.
+
+So the engine holds both at once and routes per case, and the routing rule is the
+level rather than a list of sections. L0 asks whether a name resolves and L1 whether
+its signature matches, and both are questions about the API, answerable by looking at
+the module and by nothing else. L2 and above ask whether an answer is right, which is
+a question about data, and the driver is what runs those today. That is a rule with a
+reason in it rather than a lookup table, and it stays correct when a section is added.
+
+An engine with only one form uses it for everything it can and reports the rest as
+unimplemented, which is the truthful reading: a firepanda with no extension built has
+not answered the reflection questions, and a firepanda with no driver has not answered
+the data ones.
 
 Until one of the two arrives, this engine reports itself as unavailable and the
 runner marks every case unimplemented. That is the honest outcome and it is a real
@@ -40,9 +56,48 @@ from fpcompat.driver import Driver
 
 DRIVER = corpus.ROOT / "drivers" / "firepanda" / "firepanda-compat-driver"
 
+# Where `drivers/firepanda/build.sh` stages the Python extension, laid out the way a
+# wheel has it. Looked for beside the driver rather than on the ambient path so that
+# the module and the driver describe the same firepanda: a run that measured a branch
+# with the driver and whatever happened to be pip installed with the module would be
+# reporting one version and comparing two.
+STAGED = corpus.ROOT / "drivers" / "firepanda" / "python"
+
+# The levels that are questions about the API rather than about an answer. See the
+# module docstring: these are the ones only reflection can answer, and they are two
+# thirds of the board.
+REFLECTION = ("L0", "L1")
+
 
 class EngineUnavailable(RuntimeError):
-    """Neither form of the subject is present."""
+    """The form of the subject a case needs is not present."""
+
+
+def _import_staged() -> Any:
+    """Imports the staged firepanda, or an ambient one, or nothing.
+
+    The staged copy wins, because it is the one the driver beside it was built from
+    and a run has to measure one firepanda rather than two. An ambient `firepanda` is
+    accepted when nothing is staged, which is how a machine with a real installation
+    and no driver still gets the reflection cases scored.
+
+    An import failure is not an error here. A firepanda too old to have an extension,
+    an extension built for another interpreter and a machine with no firepanda at all
+    all arrive here the same way, and all three mean the same thing to the board,
+    which is that no reflection question has been answered.
+
+    Returns:
+        The module, or None.
+    """
+    if STAGED.is_dir() and str(STAGED) not in sys.path:
+        # Appended rather than inserted, so a staged copy can never shadow something
+        # the caller deliberately put in front of it.
+        sys.path.append(str(STAGED))
+    try:
+        import firepanda
+    except Exception:  # noqa: BLE001  an extension that will not load is an absence
+        return None
+    return firepanda
 
 
 class FirepandaEngine:
@@ -51,18 +106,8 @@ class FirepandaEngine:
     name = "firepanda"
 
     def __init__(self) -> None:
-        self._module: Any = None
-        self._driver: Path | None = None
-        try:
-            # Imported here because the import is the availability check. A machine
-            # with no firepanda on it still has to be able to run the pandas oracle.
-            import firepanda
-        except ImportError:
-            firepanda = None
-        if firepanda is not None:
-            self._module = firepanda
-        elif DRIVER.exists():
-            self._driver = DRIVER
+        self._module: Any = _import_staged()
+        self._driver: Path | None = DRIVER if DRIVER.exists() else None
         self._runner = None if self._driver is None else Driver(self._driver, corpus.CORPUS)
 
     @property
@@ -70,18 +115,38 @@ class FirepandaEngine:
         """Whether anything can actually be run."""
         return self._module is not None or self._driver is not None
 
-    @property
-    def out_of_process(self) -> bool:
+    def out_of_process_for(self, case: Case) -> bool:
         """Whether the runner should call `run` instead of the case expression.
 
-        The runner reads this rather than asking whether a `run` method exists, because
-        this engine has one either way and in the module form it is the wrong path.
+        A reflection case goes to the module, because the driver cannot answer it: the
+        driver is handed a case id and asked to produce an answer, and "does this name
+        resolve" is not a question with an answer to produce. Everything else goes to
+        the driver when there is one, because the driver is where the firepanda
+        spelling of each hand written case lives.
+
+        The runner asks this per case rather than reading a property once per run,
+        which is the change that let the two forms coexist. While it was a property the
+        two were mutually exclusive across the whole board, so an importable firepanda
+        would have taken every hand written case away from the driver and given it to a
+        binding that answers far fewer of them. That was a trap: the first person to
+        put firepanda on the path would have watched the board fall off a cliff and
+        would have had no reason to suspect the harness.
+
+        Args:
+            case: The case about to be run.
+
+        Returns:
+            True when the driver should run it.
         """
-        return self._module is None and self._runner is not None
+        if case.level in REFLECTION:
+            return False
+        return self._runner is not None
 
     @property
     def form(self) -> str:
-        """Which of the two forms is in use, for the result file."""
+        """Which forms are in use, for the result file."""
+        if self._module is not None and self._driver is not None:
+            return "module+driver"
         if self._module is not None:
             return "module"
         if self._driver is not None:
@@ -100,9 +165,9 @@ class FirepandaEngine:
         """
         if self._module is None:
             raise EngineUnavailable(
-                "no importable firepanda and no built driver at "
-                f"{DRIVER.relative_to(corpus.ROOT)}. Build the driver against a "
-                "firepanda checkout, or wait for M3 and the Python module"
+                "no importable firepanda, so no reflection case can be answered. "
+                f"`pixi run driver <checkout>` stages one in {STAGED.relative_to(corpus.ROOT)} "
+                "when the checkout has tools/build_extension.sh and it links"
             )
         return self._module
 
