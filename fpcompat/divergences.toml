@@ -118,12 +118,12 @@ since = "2026-09-11"
 
 [[divergence]]
 id = "engine/comparison-null"
-cases = ["categorical/compare-eq", "categorical/compare-lt", "strings/startswith", "strings/endswith"]
+cases = ["categorical/compare-eq", "categorical/compare-lt"]
 kind = "engine"
-reason = "Comparing a missing value to anything has no answer. pandas writes False, because the result of a comparison in pandas is a numpy bool array and a bool array has two values and nowhere to say a third thing. firepanda's result is an Arrow column with a validity bitmap, so the row that had no answer is missing rather than false. This is the whole library and not the category columns: it is already what a text or a number column answers, and the reason the category cases are the ones registered here is that they are the ones the suite currently runs. The difference matters to a caller who counts the False rows, since the pandas count folds the rows that were missing in with the rows that genuinely did not match, and there is no way back from that number to either one. pandas reaches the same False for a string predicate by a route worth naming, since it is not the numpy one: the default str dtype carries its missing values as NaN and the predicates fill them with False on purpose, while pandas' own nullable string dtype answers NA and agrees with firepanda. So this is a difference from one of pandas' two string backends and not from both."
+reason = "Comparing a missing value to anything has no answer. pandas writes False, because the result of a comparison in pandas is a numpy bool array and a bool array has two values and nowhere to say a third thing. firepanda's result is an Arrow column with a validity bitmap, so the row that had no answer is missing rather than false. This is the whole library and not the category columns: it is already what a text or a number column answers, and the reason the category cases are the ones registered here is that they are the ones the suite currently runs. The difference matters to a caller who counts the False rows, since the pandas count folds the rows that were missing in with the rows that genuinely did not match, and there is no way back from that number to either one."
 spec = "28-comparing-a-category.md#nulls-follow-the-library-rather-than-pandas"
 expect = "differs"
-instead = "a row whose value is missing compares to null rather than to False, so the result has three states and the caller can tell a row that did not match from a row that had nothing to match. A category column inherits this from the rest of the library rather than restating it, and so does a string predicate: str.startswith on a row that is missing answers null here and False in pandas, which pandas arrives at by a different road and lands in the same place."
+instead = "a row whose value is missing compares to null rather than to False, so the result has three states and the caller can tell a row that did not match from a row that had nothing to match. A category column inherits this from the rest of the library rather than restating it."
 since = "2026-09-11"
 
 # The twelfth. A count and a position are integers, and this is the second entry about
@@ -135,9 +135,26 @@ since = "2026-09-11"
 [[divergence]]
 id = "engine/string-count-width"
 cases = ["strings/len", "strings/find", "strings/rfind"]
+frames = ["strings_null_heavy"]
 kind = "engine"
-reason = "How many characters a row has and where a substring sits in it are both integers, and both are unanswerable on a row that is missing. pandas has nowhere to put that in a numpy int64 array, so it widens the whole column to float64 and writes a NaN, and every count in the column becomes a float because one row had nothing to count. firepanda answers int64 with a null in that row, which is the type the question has and the value the format already has for a row with no answer. The cost of the pandas answer is not theoretical: a position above two to the fifty third does not survive the trip through a float, and a caller who wanted to index with the number gets a float back and has to cast it. A column with no missing rows in it is int64 in pandas too, so this is only visible on the frames that have holes, which is why the suite sees it on strings_null_heavy and nowhere else."
+reason = "How many characters a row has and where a substring sits in it are both integers, and both are unanswerable on a row that is missing. pandas has nowhere to put that in a numpy int64 array, so it widens the whole column to float64 and writes a NaN, and every count in the column becomes a float because one row had nothing to count. firepanda answers int64 with a null in that row, which is the type the question has and the value the format already has for a row with no answer. The cost of the pandas answer is not theoretical: a position above two to the fifty third does not survive the trip through a float, and a caller who wanted to index with the number gets a float back and has to cast it. A column with no missing rows in it is int64 in pandas too, which is why this entry names one frame: on the other three text frames the two engines agree to the last bit and the suite requires them to."
 spec = "30-a-position-in-a-string.md#the-library-already-counted-and-it-counted-bytes"
 expect = "differs"
 instead = "str.len, str.find and str.rfind answer int64 with a null on a missing row, rather than float64 with a NaN. The counts and positions themselves agree."
+since = "2026-09-11"
+
+# The thirteenth, and the first entry in the file to narrow itself to a frame. It says
+# the same thing the eleventh does, about a different kind of predicate and by way of a
+# different pandas decision, and it is separate from it because the eleventh is true on
+# every frame it covers and this one is only true where a row is missing.
+
+[[divergence]]
+id = "engine/string-predicate-null"
+cases = ["strings/startswith", "strings/endswith"]
+frames = ["strings_null_heavy"]
+kind = "engine"
+reason = "Asking whether a missing string starts with a letter has no answer, and firepanda writes a null for the same reason engine/comparison-null gives: the result is an Arrow column with a validity bitmap and there is a place to say so. pandas writes False, and the road it takes there is worth naming because it is not the numpy one the comparison entry describes. pandas has two string backends. Its default str dtype carries missing values as NaN and its predicates fill those rows with False deliberately, while its own nullable string dtype answers NA and agrees with firepanda exactly. So this is a difference from one of pandas' two answers rather than from both, and a user who wants the firepanda behaviour in pandas can already have it by asking for the other dtype. It matters to anyone counting the False rows, since that count folds the rows that had no answer in with the rows that genuinely did not match and there is no way back from the number to either one."
+spec = "30-a-position-in-a-string.md#the-library-already-counted-and-it-counted-bytes"
+expect = "differs"
+instead = "str.startswith and str.endswith answer null on a missing row rather than False, so the mask has three states and a caller can tell a row that did not match from a row that had nothing to match."
 since = "2026-09-11"

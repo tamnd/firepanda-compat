@@ -97,6 +97,14 @@ class Divergence:
         id: Stable, and it appears in the generated page users read.
         cases: Case id patterns. A pattern may cover a family of generated cases and
             may not cover a whole section.
+        frames: Corpus frame names the entry applies to, or empty for every frame the
+            covered cases run on. This exists because a difference can be real and
+            still not be visible on every frame: firepanda answers int64 where pandas
+            answers float64 for `str.len`, and only on a frame that has a missing row
+            in it, because with nothing missing pandas has no reason to widen. An
+            entry with no frames on it would tell the suite that the case has to
+            differ everywhere, and the runs where the two engines agree exactly would
+            then be failures for agreeing.
         kind: One of `KINDS`.
         reason: Why the difference exists, in terms a user would accept.
         spec: Where the decision is written down.
@@ -111,6 +119,7 @@ class Divergence:
 
     id: str
     cases: tuple[str, ...]
+    frames: tuple[str, ...]
     kind: str
     reason: str
     spec: str
@@ -121,16 +130,22 @@ class Divergence:
     milestone: str = ""
     upstream: str = ""
 
-    def matches(self, case_id: str) -> bool:
-        """Whether this entry covers a case.
+    def matches(self, case_id: str, frame: str | None = None) -> bool:
+        """Whether this entry covers a case, and a run of it on a frame.
 
         Args:
             case_id: The case id.
+            frame: The corpus frame, for a run. `None` asks the case question rather
+                than the run question, which is what the scoreboard and the registry
+                tests want: they are asking whether the entry is about this case at
+                all, not whether a particular run of it is expected to differ.
 
         Returns:
-            Whether any pattern matches.
+            Whether any pattern matches, and the frame is one the entry names.
         """
-        return any(fnmatch.fnmatchcase(case_id, pattern) for pattern in self.cases)
+        if not any(fnmatch.fnmatchcase(case_id, pattern) for pattern in self.cases):
+            return False
+        return frame is None or not self.frames or frame in self.frames
 
     def is_expired(self, today: date | None = None) -> bool:
         """Whether a pending entry has run out of time.
@@ -213,6 +228,25 @@ def _check_patterns(entry: Divergence, known: dict[str, Any] | None) -> None:
                 f"the {section} section. That is the score being redefined rather "
                 "than measured"
             )
+    if not entry.frames:
+        return
+    # A frame named here has to be one the covered cases actually run on, or the
+    # narrowing silently does nothing and the entry goes back to claiming every run
+    # differs. That is how a renamed corpus frame would turn a precise entry into a
+    # blanket one without anybody editing it.
+    running = {
+        name
+        for case_id, case in known.items()
+        if entry.matches(case_id)
+        for name in getattr(case, "frames", ())
+    }
+    for name in entry.frames:
+        if name not in running:
+            raise DivergenceError(
+                f"{entry.id} names the frame {name!r}, which none of the cases it "
+                "covers runs on. A frame list that matches nothing narrows nothing, "
+                "so the entry would be claiming every run of those cases differs"
+            )
 
 
 def parse(document: dict[str, Any], known: dict[str, Any] | None = None) -> list[Divergence]:
@@ -284,6 +318,15 @@ def parse(document: dict[str, Any], known: dict[str, Any] | None = None) -> list
         if not isinstance(cases, list) or not cases:
             raise DivergenceError(f"{entry_id} covers no cases, so it asserts nothing")
 
+        frames = raw.get("frames", [])
+        if not isinstance(frames, list) or any(
+            not isinstance(name, str) or not name.strip() for name in frames
+        ):
+            raise DivergenceError(
+                f"{entry_id} has a frames field that is not a list of frame names. "
+                "Leave it out to mean every frame the covered cases run on"
+            )
+
         instead = raw.get("instead", "")
         if expect == "differs" and not instead:
             raise DivergenceError(
@@ -320,6 +363,7 @@ def parse(document: dict[str, Any], known: dict[str, Any] | None = None) -> list
         entry = Divergence(
             id=entry_id,
             cases=tuple(cases),
+            frames=tuple(frames),
             kind=kind,
             reason=reason,
             spec=spec,
@@ -368,17 +412,18 @@ def registry() -> tuple[Divergence, ...]:
     return tuple(entries)
 
 
-def match(case_id: str) -> Divergence | None:
+def match(case_id: str, frame: str | None = None) -> Divergence | None:
     """The entry covering a case, if there is one.
 
     Args:
         case_id: The case id.
+        frame: The corpus frame, for a run, or None to ask about the case itself.
 
     Returns:
         The entry or None.
     """
     for entry in registry():
-        if entry.matches(case_id):
+        if entry.matches(case_id, frame):
             return entry
     return None
 
@@ -455,6 +500,14 @@ def page() -> str:
         lines.append("")
         for pattern in entry.cases:
             lines.append(f"- `{pattern}`")
+        if entry.frames:
+            lines.append("")
+            lines.append(
+                "On the "
+                + ", ".join(f"`{name}`" for name in entry.frames)
+                + " frames only. On the others the two engines agree exactly, and the "
+                "suite requires them to."
+            )
         lines.append("")
 
     return "\n".join(lines)

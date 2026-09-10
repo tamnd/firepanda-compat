@@ -1823,6 +1823,74 @@ def main() raises:
                 .cat_categories(),
                 out,
             )
+        elif case_id == "strings/len":
+            # The case the unicode frame exists for. A byte count would pass this
+            # on the ascii frame and fail on the other three, which is the whole
+            # reason the corpus has four text frames rather than one.
+            emit_series("value", frame.column("value").chars_length(), out)
+        elif case_id == "strings/slice":
+            emit_series(
+                "value",
+                frame.column("value").chars_slice(Optional(1), Optional(4), 1),
+                out,
+            )
+        elif case_id == "strings/slice-step":
+            # Both bounds absent and a step of two, which is the shape where the
+            # direction of a missing bound is decided. A resolver that reads a
+            # missing stop as the low end rather than the far end answers the
+            # empty string on every row here and gets everything else right.
+            emit_series(
+                "value",
+                frame.column("value").chars_slice(None, None, 2),
+                out,
+            )
+        elif case_id == "strings/slice-negative":
+            emit_series(
+                "value",
+                frame.column("value").chars_slice(Optional(-3), None, 1),
+                out,
+            )
+        elif case_id == "strings/slice-replace":
+            emit_series(
+                "value",
+                frame.column("value").chars_slice_replace(
+                    Optional(1), Optional(3), "XX"
+                ),
+                out,
+            )
+        elif case_id == "strings/get":
+            # Past the end is a null here rather than the empty string a slice of
+            # one character would give, which is the difference that makes this a
+            # kernel of its own rather than a call into the slice above.
+            emit_series("value", frame.column("value").chars_get(1), out)
+        elif case_id == "strings/find":
+            emit_series(
+                "value",
+                frame.column("value").chars_find("a", None, None, False),
+                out,
+            )
+        elif case_id == "strings/rfind":
+            emit_series(
+                "value",
+                frame.column("value").chars_find("a", None, None, True),
+                out,
+            )
+        elif case_id == "strings/startswith":
+            emit_series(
+                "value", frame.column("value").chars_starts_with("a"), out
+            )
+        elif case_id == "strings/endswith":
+            emit_series(
+                "value", frame.column("value").chars_ends_with("z"), out
+            )
+        elif case_id == "strings/removeprefix":
+            emit_series(
+                "value", frame.column("value").chars_remove_prefix("a"), out
+            )
+        elif case_id == "strings/removesuffix":
+            emit_series(
+                "value", frame.column("value").chars_remove_suffix("z"), out
+            )
         else:
             print('{"status":"absent"}')
     except error:
