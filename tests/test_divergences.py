@@ -376,9 +376,16 @@ def test_the_committed_registry_loads():
     the encoder. The second is that a comparison against a missing value answers null
     rather than False, which is the whole library and not this section: pandas has a
     numpy bool array with nowhere to say a third thing and firepanda has a validity
-    bitmap that does."""
+    bitmap that does.
+
+    `engine/string-count-width` is the eleventh, and it is the ninth again from the
+    other direction. There the row with no answer was one divided by zero, here it is
+    a missing string, and both times pandas widens the column to float64 and firepanda
+    writes a null and keeps the width. The same day it arrived, `engine/comparison-null`
+    picked up `str.startswith` and `str.endswith`, which reach pandas' False by a
+    different road than a comparison does and land in the same place."""
     entries = divergences.registry()
-    assert len(entries) == 10
+    assert len(entries) == 11
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
