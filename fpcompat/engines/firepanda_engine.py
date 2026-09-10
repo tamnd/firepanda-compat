@@ -25,9 +25,25 @@ reflection question.
 So the engine holds both at once and routes per case, and the routing rule is the
 level rather than a list of sections. L0 asks whether a name resolves and L1 whether
 its signature matches, and both are questions about the API, answerable by looking at
-the module and by nothing else. L2 and above ask whether an answer is right, which is
-a question about data, and the driver is what runs those today. That is a rule with a
+the module and by nothing else. L2 and L3 ask whether an answer is right, which is a
+question about data, and the driver is what runs those today. That is a rule with a
 reason in it rather than a lookup table, and it stays correct when a section is added.
+
+L4 joins the reflection levels, for the same kind of reason and not the same reason.
+An L4 case asks which exception class comes out, and `fpcompat.driver` says at length
+why the driver cannot answer that: Mojo has one `Error` carrying a message, so every
+raise arrives here as a `SubjectRaised` with no class on it, and guessing a class from
+the message would be inventing a result that nothing downstream could tell from a real
+one. The driver is not slightly worse at L4, it is structurally unable, and it shows:
+there is not one `errors/` entry in `drivers/firepanda/main.mojo` and there was never
+going to be. All 46 L4 runs were scored unimplemented on that account, which was
+accurate and was measuring the harness rather than the library.
+
+The module has the classes. `firepanda.errors` maps a tagged message back to a real
+Python class at the boundary, so `except KeyError` fires on a missing column and an
+`IntCastingNaNError` arrives as one. Routing L4 to the module asks firepanda the
+question the level exists to ask, and a wrong answer is now a failure with a reason in
+it rather than a gap with the harness's name on it.
 
 An engine with only one form uses it for everything it can and reports the rest as
 unimplemented, which is the truthful reading: a firepanda with no extension built has
@@ -63,10 +79,11 @@ DRIVER = corpus.ROOT / "drivers" / "firepanda" / "firepanda-compat-driver"
 # reporting one version and comparing two.
 STAGED = corpus.ROOT / "drivers" / "firepanda" / "python"
 
-# The levels that are questions about the API rather than about an answer. See the
-# module docstring: these are the ones only reflection can answer, and they are two
-# thirds of the board.
-REFLECTION = ("L0", "L1")
+# The levels the module answers and the driver cannot. See the module docstring. L0
+# and L1 are questions about the API rather than about an answer, and they are two
+# thirds of the board. L4 is a question about which exception class comes out, and one
+# Error type carrying one message has no class in it to report.
+IN_PROCESS = ("L0", "L1", "L4")
 
 
 class EngineUnavailable(RuntimeError):
@@ -120,9 +137,11 @@ class FirepandaEngine:
 
         A reflection case goes to the module, because the driver cannot answer it: the
         driver is handed a case id and asked to produce an answer, and "does this name
-        resolve" is not a question with an answer to produce. Everything else goes to
-        the driver when there is one, because the driver is where the firepanda
-        spelling of each hand written case lives.
+        resolve" is not a question with an answer to produce. An L4 case goes to the
+        module for the same kind of reason, which is that the class an exception has is
+        not something a message can carry. Everything else goes to the driver when
+        there is one, because the driver is where the firepanda spelling of each hand
+        written case lives.
 
         The runner asks this per case rather than reading a property once per run,
         which is the change that let the two forms coexist. While it was a property the
@@ -138,7 +157,7 @@ class FirepandaEngine:
         Returns:
             True when the driver should run it.
         """
-        if case.level in REFLECTION:
+        if case.level in IN_PROCESS:
             return False
         return self._runner is not None
 

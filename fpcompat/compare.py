@@ -1345,6 +1345,31 @@ def resolve_error(name: str) -> type[BaseException]:
     )
 
 
+def _qualified(cls: type) -> str:
+    """Names a class the way a person would have to write it to catch it.
+
+    The bare name is what a verdict used to print on both sides of a class mismatch,
+    and it produced `raised IntCastingNaNError, which is not a IntCastingNaNError`,
+    which reads as a harness bug and is not one. firepanda has a class of that name in
+    `firepanda.errors` because pandas has one of that name in `pandas.errors`, and the
+    two are unrelated classes because firepanda cannot import pandas. That is a real
+    fact about what an `except` clause catches and the verdict has to be able to say
+    it.
+
+    A builtin keeps its bare name, because `builtins.ValueError` is nobody's spelling.
+
+    Args:
+        cls: The class.
+
+    Returns:
+        The name, with its module in front of it unless it is a builtin.
+    """
+    module = getattr(cls, "__module__", "")
+    if not module or module == "builtins":
+        return cls.__name__
+    return f"{module}.{cls.__name__}"
+
+
 def check_error(
     raised: BaseException | None, name: str, substring: str, *, exact: bool = True
 ) -> Verdict:
@@ -1409,8 +1434,8 @@ def check_error(
         )
     elif not exact and not isinstance(raised, expected):
         verdict.note(
-            f"raised {type(raised).__name__}, which is not a {expected.__name__}, so "
-            "an except clause written against pandas does not catch it"
+            f"raised {_qualified(type(raised))}, which is not a {_qualified(expected)}, "
+            "so an except clause written against pandas does not catch it"
         )
     if substring and substring not in str(raised):
         verdict.note(

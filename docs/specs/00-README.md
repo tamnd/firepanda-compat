@@ -56,8 +56,9 @@ A single row of document 06 reads `- [ ] rolling with window, min_periods, cente
 | `32-the-scalar-a-column-hands-back.md` | the value a datetime column returns, a differential sweep that opened at a hundred and ninety six differences, and why the failure count going up is the board working |
 | `33-the-constructor-that-only-accepted-its-own-repr.md` | thirty two finished names the board could not ask about because `Timedelta("1D")` was refused, and the four rules that decide a unit |
 | `34-sixty-ways-to-spell-a-dozen-types.md` | the numpy dtype vocabulary measured a name at a time, four types firepanda has and refuses on purpose, and three ways a cast fails that nobody had asked about |
+| `35-the-forty-six-questions-nobody-was-asking.md` | a whole level of the board reporting on the harness, one line of routing, and twelve bugs that had been sitting behind an absence |
 
-The last twenty were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
+The last twenty one were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
 
 Read `01` first. It is the only one that says what the project is claiming, and every other document in the folder is machinery in service of it.
 
