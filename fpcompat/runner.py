@@ -316,7 +316,7 @@ def run_case(
         record["detail"] = f"{type(actual_error).__name__}: {actual_error}"
         return record
 
-    entry = None if oracle_mode else divergence_for(case.id)
+    entry = None if oracle_mode else divergence_for(case.id, frame_name)
     if entry is not None:
         return _check_divergence(entry, case, expected, actual, actual_error, record)
 

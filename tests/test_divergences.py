@@ -95,7 +95,7 @@ def test_an_entry_that_stopped_diverging_fails(monkeypatch):
     because on that day the library got better.
     """
     entry = load_one()[0]
-    monkeypatch.setattr(runner, "divergence_for", lambda case_id: entry)
+    monkeypatch.setattr(runner, "divergence_for", lambda case_id, frame=None: entry)
     record = runner.run_case(build(), ORACLE, Subject(), "two")
     assert record["outcome"] == runner.FAIL
     assert "out of date" in record["detail"]
@@ -104,7 +104,7 @@ def test_an_entry_that_stopped_diverging_fails(monkeypatch):
 
 def test_an_entry_that_is_still_diverging_is_divergent(monkeypatch):
     entry = load_one()[0]
-    monkeypatch.setattr(runner, "divergence_for", lambda case_id: entry)
+    monkeypatch.setattr(runner, "divergence_for", lambda case_id, frame=None: entry)
 
     def raising(module, df):
         raise TypeError("firepanda has no plotting, use to_pandas()")
@@ -112,6 +112,38 @@ def test_an_entry_that_is_still_diverging_is_divergent(monkeypatch):
     record = runner.run_case(build(expr=_subject_only(raising)), ORACLE, Subject(), "two")
     assert record["outcome"] == runner.DIVERGENT
     assert "to_pandas" in record["detail"]
+
+
+def test_a_frame_list_narrows_which_runs_have_to_differ():
+    """The reason the field exists, stated as the thing that goes wrong without it.
+
+    `str.len` on a column with a missing row is float64 in pandas and int64 here. On a
+    column with nothing missing pandas has no reason to widen and the two agree to the
+    last bit. An entry with no frame list would be telling the suite that every run of
+    the case differs, and the runs where they agree would fail for agreeing.
+    """
+    entry = load_one(cases=["strings/len"], frames=["strings_null_heavy"])[0]
+    assert entry.matches("strings/len", "strings_null_heavy")
+    assert not entry.matches("strings/len", "strings_ascii")
+    assert entry.matches("strings/len")
+
+
+def test_an_entry_with_no_frame_list_covers_every_frame():
+    """Which is the behaviour every entry written before the field had."""
+    entry = load_one()[0]
+    assert entry.matches("divergences/plotting/frame-plot", "two")
+    assert entry.matches("divergences/plotting/frame-plot", "anything-at-all")
+
+
+def test_a_frame_no_covered_case_runs_on_is_refused():
+    """A frame list that narrows nothing has quietly turned back into a blanket."""
+    with pytest.raises(DivergenceError, match="narrows nothing"):
+        load_one(cases=["strings/len"], frames=["int64_half_null"])
+
+
+def test_a_frame_list_that_is_not_a_list_of_names_is_refused():
+    with pytest.raises(DivergenceError, match="frames field"):
+        load_one(cases=["strings/len"], frames="strings_null_heavy")
 
 
 def _subject_only(replacement):
@@ -129,7 +161,7 @@ def _subject_only(replacement):
 
 def test_a_differs_entry_that_matched_pandas_fails(monkeypatch):
     entry = load_one(expect="differs", instead="it is positional")[0]
-    monkeypatch.setattr(runner, "divergence_for", lambda case_id: entry)
+    monkeypatch.setattr(runner, "divergence_for", lambda case_id, frame=None: entry)
     record = runner.run_case(build(), ORACLE, Subject(), "two")
     assert record["outcome"] == runner.FAIL
     assert "matched pandas exactly" in record["detail"]
@@ -138,7 +170,7 @@ def test_a_differs_entry_that_matched_pandas_fails(monkeypatch):
 def test_a_differs_entry_that_raised_fails(monkeypatch):
     """Refusing is a different promise from answering differently."""
     entry = load_one(expect="differs", instead="it is positional")[0]
-    monkeypatch.setattr(runner, "divergence_for", lambda case_id: entry)
+    monkeypatch.setattr(runner, "divergence_for", lambda case_id, frame=None: entry)
 
     def raising(module, df):
         raise TypeError("no")
@@ -150,7 +182,7 @@ def test_a_differs_entry_that_raised_fails(monkeypatch):
 
 def test_a_differs_entry_that_differs_is_divergent(monkeypatch):
     entry = load_one(expect="differs", instead="it is positional")[0]
-    monkeypatch.setattr(runner, "divergence_for", lambda case_id: entry)
+    monkeypatch.setattr(runner, "divergence_for", lambda case_id, frame=None: entry)
     record = runner.run_case(
         build(expr=_subject_only(lambda module, df: "SomethingElse")),
         ORACLE,
@@ -201,7 +233,7 @@ def test_an_entry_over_a_name_that_does_not_exist_is_unimplemented(monkeypatch):
     the name exists.
     """
     entry = load_one()[0]
-    monkeypatch.setattr(runner, "divergence_for", lambda case_id: entry)
+    monkeypatch.setattr(runner, "divergence_for", lambda case_id, frame=None: entry)
 
     record = runner.run_case(build(expr=_absent_for_the_subject), ORACLE, Absent(), "two")
     assert record["outcome"] == runner.UNIMPLEMENTED
@@ -216,7 +248,7 @@ def test_an_unimplemented_case_does_not_carry_the_entry_id(monkeypatch):
     column while the outcome underneath said the opposite.
     """
     entry = load_one()[0]
-    monkeypatch.setattr(runner, "divergence_for", lambda case_id: entry)
+    monkeypatch.setattr(runner, "divergence_for", lambda case_id, frame=None: entry)
 
     record = runner.run_case(build(expr=_absent_for_the_subject), ORACLE, Absent(), "two")
     assert record["divergence"] == ""
@@ -381,11 +413,17 @@ def test_the_committed_registry_loads():
     `engine/string-count-width` is the eleventh, and it is the ninth again from the
     other direction. There the row with no answer was one divided by zero, here it is
     a missing string, and both times pandas widens the column to float64 and firepanda
-    writes a null and keeps the width. The same day it arrived, `engine/comparison-null`
-    picked up `str.startswith` and `str.endswith`, which reach pandas' False by a
-    different road than a comparison does and land in the same place."""
+    writes a null and keeps the width. `engine/string-predicate-null` is the twelfth
+    and says what the tenth says about a comparison, about a string predicate, by way
+    of a pandas decision rather than a numpy one.
+
+    Those two are also the first entries in the file to name a frame. A difference can
+    be real and still not be visible everywhere: with nothing missing from a column
+    pandas has no reason to widen it and the two engines agree to the last bit, so an
+    entry with no frame list would be telling the suite that those runs have to differ
+    and failing them for agreeing."""
     entries = divergences.registry()
-    assert len(entries) == 11
+    assert len(entries) == 12
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

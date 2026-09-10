@@ -2,14 +2,14 @@
   "fail": 11,
   "l3": {
     "basics": 0,
-    "categorical": 0,
+    "categorical": 3,
     "errors": 0,
     "groupby": 0,
     "indexing": 1,
     "nested": 0,
     "reshape": 0,
     "stats": 2,
-    "strings": 0,
+    "strings": 5,
     "temporal": 8,
     "windows": 0
   }
