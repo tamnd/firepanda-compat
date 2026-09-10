@@ -19,10 +19,12 @@ the global rule in document 05, and a pandas answer whose index is anything else
 `DataFrame.tail` is the first case that fails this way and it is supposed to.
 
 There is no exception type. Mojo has one `Error` carrying a message, so a raise comes
-back as `SubjectRaised` and every L4 case that names a pandas exception type fails
-against the driver. Guessing a type name out of the message text would be inventing a
-result, and it would be an invisible invention, since nothing downstream could tell a
-guessed type from a real one.
+back as `SubjectRaised` with no class on it, and an L4 case names a pandas exception
+type. Guessing a type name out of the message text would be inventing a result, and it
+would be an invisible invention, since nothing downstream could tell a guessed type
+from a real one. This is not a gap to be closed here. `fpcompat.engines` routes L4 to
+the module for that reason, because the module has the classes and this cannot, so no
+L4 case reaches this file at all while there is an importable firepanda.
 
 There are no warnings. A separate process has no way to hand a `WarningMessage` back
 and this module does not pretend otherwise, so a case that declares a warning fails on
