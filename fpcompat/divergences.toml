@@ -158,3 +158,30 @@ spec = "30-a-position-in-a-string.md#the-library-already-counted-and-it-counted-
 expect = "differs"
 instead = "str.startswith and str.endswith answer null on a missing row rather than False, so the mask has three states and a caller can tell a row that did not match from a row that had nothing to match."
 since = "2026-09-11"
+
+# The fourteenth and fifteenth, and the second time after the eighth that firepanda is
+# the one giving the answer arithmetic gives. They are one difference split into two
+# entries because the registry narrows to frames per entry rather than per case, and the
+# two halves are visible on different frames.
+
+[[divergence]]
+id = "engine/window-infinity"
+cases = ["windows/rolling-min-periods", "windows/rolling-window-one", "windows/expanding-sum", "windows/expanding-mean", "windows/expanding-min", "windows/expanding-max", "windows/expanding-min-periods"]
+frames = ["float64_no_nulls", "float64_half_null"]
+kind = "engine"
+reason = "pandas cannot get an infinity back out of a window and firepanda can, and there are two separate reasons for that rather than one. A rolling or expanding sum is carried from one row to the next, so pandas' running total goes infinite the moment an infinity enters the window and goes to NaN when that row is subtracted again, and it has no way back. Measured on pandas 3.0.5, the expanding sum over the suite's own float64 frame answers the largest finite double from row five onward, where the window holds both a positive and a negative infinity and the arithmetic says NaN, and it answers that same finite number where the window holds only one of them and the arithmetic says an infinity. The extremes lose the same two values for an unrelated reason: pandas seeds its running maximum with negative infinity and reads a result equal to the seed as an empty window, so an expanding max over a column whose second row is a positive infinity answers the largest finite value it has seen instead, for every row after it. firepanda counts the two infinities beside the finite total and assembles the answer from the three at the end, and its extremes treat an infinity as the ordinary value it is, so both survive the row that carried them leaving the window again. pandas' exact recovery rule could not have been copied even if copying it were the right thing to do, because pandas ships its window kernels compiled and their source is not in the wheel."
+spec = "31-a-window-is-a-pair-of-rows.md#why-the-reductions-are-carried-and-what-that-costs"
+expect = "differs"
+instead = "a window that holds an infinity answers that infinity, a window that holds one of each sign answers a NaN, and both are still right after the row that carried the infinity has left the window again. Every window with no infinity in it agrees with pandas to the last bit, which is why this entry names two frames and not the other two the same cases run on."
+since = "2026-09-11"
+
+[[divergence]]
+id = "engine/window-infinity-dense"
+cases = ["windows/rolling-sum", "windows/rolling-mean", "windows/rolling-min", "windows/rolling-max", "windows/rolling-center", "windows/rolling-center-even", "windows/rolling-closed"]
+frames = ["float64_no_nulls"]
+kind = "engine"
+reason = "The difference engine/window-infinity describes, on the seven cases where it is only visible on the frame with nothing missing in it. Each of these asks for a four or five row window and does not set min_periods, so the window has to hold as many values as it has rows before it answers at all. The half null corpus frame has a missing value in every other row, so a window that narrow never fills, both engines answer NaN in every row, and the suite requires them to agree there. On the frame with no nulls the windows do fill, they reach the positive infinity in row one and the negative infinity in row two, and the two engines part company for the reasons the other entry gives. This is a second entry rather than a longer case list on the first one because an entry narrows to frames as a whole rather than case by case, and folding these seven in would have told the suite that a five row window over a half null column has to differ from pandas, which is the opposite of what is true."
+spec = "31-a-window-is-a-pair-of-rows.md#why-the-reductions-are-carried-and-what-that-costs"
+expect = "differs"
+instead = "a window that holds an infinity answers that infinity and a window that holds one of each sign answers a NaN, the same as engine/window-infinity. On the half null frame, and on the int64 and tall frames these cases also run on, there is no infinity in reach and the two engines agree exactly."
+since = "2026-09-11"
