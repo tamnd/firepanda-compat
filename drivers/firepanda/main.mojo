@@ -62,6 +62,7 @@ from firepanda.frame.series import Series
 from firepanda.frame.groupby import AggSpec
 from firepanda.io import read_arrow, write_arrow
 from firepanda.kernel import AggKind, BinaryOp
+from firepanda.kernel.window import WindowEdge, WindowOp
 
 # The exit status is not the protocol, the JSON line is, and this is only here so
 # that a harness reading a truncated line has something to say about it. Zero means a
@@ -695,6 +696,50 @@ def grouped(
         Error: Whatever `group_agg` raises.
     """
     return frame.group_agg(keys, kind, dropna, sort, as_index)
+
+
+def rolled(frame: DataFrame, op: WindowOp) raises -> Series:
+    """Runs one reduction over every five row window of the `value` column.
+
+    This is `df["value"].rolling(5).sum()` and the four cases beside it, which
+    ask for the plain form of each reduction with nothing but the width set. The
+    width is five in all five of them, so it is written here once rather than at
+    each arm.
+
+    Args:
+        frame: The corpus frame.
+        op: The reduction.
+
+    Returns:
+        The windowed column.
+
+    Raises:
+        Error: Whatever `rolling` raises.
+    """
+    return frame.column("value").rolling(
+        op, 5, None, False, WindowEdge.RIGHT, None
+    )
+
+
+def spread(frame: DataFrame, op: WindowOp) raises -> Series:
+    """Runs one reduction over every window that starts at the first row.
+
+    The `min_periods` is one rather than absent because the Mojo entry point
+    takes a number here where the Python one takes an absence. That is not the
+    driver choosing a default: one is what an expanding window defaults to in
+    pandas, and it is the Python layer above this that turns the absence into it.
+
+    Args:
+        frame: The corpus frame.
+        op: The reduction.
+
+    Returns:
+        The windowed column.
+
+    Raises:
+        Error: Whatever `expanding` raises.
+    """
+    return frame.column("value").expanding(op, 1)
 
 
 def category_label(column: Series, at: Int) raises -> String:
@@ -1890,6 +1935,107 @@ def main() raises:
         elif case_id == "strings/removesuffix":
             emit_series(
                 "value", frame.column("value").chars_remove_suffix("z"), out
+            )
+        elif case_id == "windows/rolling-sum":
+            emit_series("value", rolled(frame, WindowOp.SUM), out)
+        elif case_id == "windows/rolling-mean":
+            emit_series("value", rolled(frame, WindowOp.MEAN), out)
+        elif case_id == "windows/rolling-min":
+            emit_series("value", rolled(frame, WindowOp.MIN), out)
+        elif case_id == "windows/rolling-max":
+            emit_series("value", rolled(frame, WindowOp.MAX), out)
+        elif case_id == "windows/rolling-count":
+            # The one of the five with no hole at the top of a full column, and
+            # the one that tests `min_periods` against how many rows the window
+            # covers rather than how many of them hold a value.
+            emit_series("value", rolled(frame, WindowOp.COUNT), out)
+        elif case_id == "windows/rolling-min-periods":
+            emit_series(
+                "value",
+                frame.column("value").rolling(
+                    WindowOp.SUM, 5, Optional(1), False, WindowEdge.RIGHT, None
+                ),
+                out,
+            )
+        elif case_id == "windows/rolling-min-periods-nulls":
+            emit_series(
+                "value",
+                frame.column("value").rolling(
+                    WindowOp.MEAN, 4, Optional(3), False, WindowEdge.RIGHT, None
+                ),
+                out,
+            )
+        elif case_id == "windows/rolling-center":
+            emit_series(
+                "value",
+                frame.column("value").rolling(
+                    WindowOp.SUM, 5, None, True, WindowEdge.RIGHT, None
+                ),
+                out,
+            )
+        elif case_id == "windows/rolling-center-even":
+            # The case where which side gets the extra row is decided. A window
+            # that leaned the other way would pass the odd width case above and
+            # fail this one, which is why the suite has both.
+            emit_series(
+                "value",
+                frame.column("value").rolling(
+                    WindowOp.SUM, 4, None, True, WindowEdge.RIGHT, None
+                ),
+                out,
+            )
+        elif case_id == "windows/rolling-closed":
+            emit_series(
+                "value",
+                frame.column("value").rolling(
+                    WindowOp.SUM, 5, None, False, WindowEdge.LEFT, None
+                ),
+                out,
+            )
+        elif case_id == "windows/rolling-step":
+            # The only window case whose answer is shorter than the frame, and
+            # the labels it keeps are the labels of the rows it sampled. This
+            # driver emits the index along with the values, so a stepped window
+            # that relabelled its answer from zero would fail here rather than
+            # looking right.
+            emit_series(
+                "value",
+                frame.column("value").rolling(
+                    WindowOp.SUM, 10, None, False, WindowEdge.RIGHT, Optional(3)
+                ),
+                out,
+            )
+        elif case_id == "windows/rolling-window-one":
+            emit_series(
+                "value",
+                frame.column("value").rolling(
+                    WindowOp.SUM, 1, None, False, WindowEdge.RIGHT, None
+                ),
+                out,
+            )
+        elif case_id == "windows/rolling-window-longer-than-frame":
+            # A column called `b` rather than `value`, since the frames this
+            # case names are the one row and two row ones.
+            emit_series(
+                "b",
+                frame.column("b").rolling(
+                    WindowOp.SUM, 100, None, False, WindowEdge.RIGHT, None
+                ),
+                out,
+            )
+        elif case_id == "windows/expanding-sum":
+            emit_series("value", spread(frame, WindowOp.SUM), out)
+        elif case_id == "windows/expanding-mean":
+            emit_series("value", spread(frame, WindowOp.MEAN), out)
+        elif case_id == "windows/expanding-min":
+            emit_series("value", spread(frame, WindowOp.MIN), out)
+        elif case_id == "windows/expanding-max":
+            emit_series("value", spread(frame, WindowOp.MAX), out)
+        elif case_id == "windows/expanding-count":
+            emit_series("value", spread(frame, WindowOp.COUNT), out)
+        elif case_id == "windows/expanding-min-periods":
+            emit_series(
+                "value", frame.column("value").expanding(WindowOp.SUM, 5), out
             )
         else:
             print('{"status":"absent"}')
