@@ -55,7 +55,7 @@ from std.sys import argv, exit
 from firepanda.array.array import Array
 from firepanda.array.strings import StringBuilder
 from firepanda.array.value import Value
-from firepanda.dtype import Field, LogicalType, Schema
+from firepanda.dtype import Field, LogicalType, Schema, TimeUnit, TimeZone
 from firepanda.frame.frame import DataFrame, dt_isocalendar
 from firepanda.frame.index import Index
 from firepanda.frame.series import Series
@@ -440,6 +440,34 @@ def dt_column(frame: DataFrame) raises -> String:
         if name == "us":
             return "us"
     return "second"
+
+
+def first_instant(column: Series) raises -> Value:
+    """Reads row zero of a timestamp series back out as a constant.
+
+    This is `df["second"].iloc[0]`, which pandas hands back as a `Timestamp`. There
+    is no `iloc` in firepanda yet, so the value is read off the column and rebuilt as
+    a typed constant, and the resolution is read off the column with it. That last
+    part is the whole reason this is a function: a constant built at the wrong
+    resolution would still subtract, and the answer would come back in the wrong unit
+    rather than come back wrong, which is the harder failure to notice.
+
+    Args:
+        column: The timestamp series.
+
+    Returns:
+        The constant standing for its first row.
+
+    Raises:
+        Error: If the column is empty or is not stored as int64, which for a
+            timestamp column would be a bug in firepanda rather than here.
+    """
+    var type = column.logical()
+    return Value.timestamp(
+        column.values.as_typed_view[DType.int64]()[0],
+        type.unit,
+        TimeZone(copy=type.zone),
+    )
 
 
 def dt_field_name(case_id: String) -> String:
@@ -1211,6 +1239,58 @@ def main() raises:
                 out,
             )
             print('{"status":"ok","kind":"scalar"}')
+        # Elapsed times. A duration column is the answer to `s - s`, so almost
+        # nothing here is reachable until subtracting two instants is, which is why
+        # the ten arrived together rather than one at a time.
+        elif case_id == "temporal/duration-dtype":
+            emit_scalar(
+                string_scalar_frame(
+                    "value", String(frame.column("value").logical())
+                ),
+                out,
+            )
+        elif case_id == "temporal/total-seconds":
+            emit_series("value", frame.column("value").dt_total_seconds(), out)
+        elif case_id == "temporal/duration-days":
+            emit_series("value", frame.column("value").dt_days(), out)
+        elif case_id == "temporal/duration-sum":
+            emit_scalar(reduce(frame, "value", AggKind.SUM), out)
+        elif case_id == "temporal/duration-mean":
+            emit_scalar(reduce(frame, "value", AggKind.MEAN), out)
+        elif case_id == "temporal/duration-abs":
+            emit_series("value", frame.column("value").abs(), out)
+        elif case_id == "temporal/timestamp-minus-timestamp":
+            var stamps = frame.column("second")
+            emit_series(
+                "second",
+                stamps.binary(first_instant(stamps), BinaryOp.SUB),
+                out,
+            )
+        elif case_id == "temporal/timestamp-plus-duration":
+            # `pd.Timedelta(hours=1)` is a microsecond constant, so this answers a
+            # microsecond column even though the column it was added to counts
+            # seconds. That is pandas' rule and the next case is the same amount of
+            # time spelled the other way, where it is not.
+            emit_series(
+                "second",
+                frame.column("second").binary(
+                    Value.duration(3_600_000_000, TimeUnit.MICRO), BinaryOp.ADD
+                ),
+                out,
+            )
+        elif case_id == "temporal/timedelta-construct":
+            # `pd.Timedelta(90, unit='s')` is a second constant, so the answer stays
+            # a second column. Same accessor as the case above, same kind of amount,
+            # different answer type, and the difference is the spelling.
+            emit_series(
+                "second",
+                frame.column("second").binary(
+                    Value.duration(90, TimeUnit.SECOND), BinaryOp.ADD
+                ),
+                out,
+            )
+        elif case_id == "temporal/to-timedelta":
+            emit_series("value", frame.column("value").to_timedelta("s"), out)
         # The stats section. Almost every case here answers with a scalar, which is
         # the one answer shape that does not go through an index, so this is the
         # section where firepanda's arithmetic can be compared to pandas without
