@@ -53,8 +53,10 @@ A single row of document 06 reads `- [ ] rolling with window, min_periods, cente
 | `29-the-parser-that-refuses-to-guess.md` | the constructor landed and moved fifty two runs, a door had a second door behind it, and two new corpus cases found a silent overflow that fifty six tests did not |
 | `30-the-namespace-that-was-one-call-away.md` | a hundred and twenty rows reported one missing attribute, the implementation behind it was already written, and the thirty two runs it was worth are all reflection |
 | `31-forty-five-questions-other-libraries-ask.md` | the namespace other libraries import, forty five names answered by hand, six pandas answers that measurement changed and two staging loops that had never seen a subpackage |
+| `32-the-scalar-a-column-hands-back.md` | the value a datetime column returns, a differential sweep that opened at a hundred and ninety six differences, and why the failure count going up is the board working |
+| `33-the-constructor-that-only-accepted-its-own-repr.md` | thirty two finished names the board could not ask about because `Timedelta("1D")` was refused, and the four rules that decide a unit |
 
-The last seventeen were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
+The last nineteen were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
 
 Read `01` first. It is the only one that says what the project is claiming, and every other document in the folder is machinery in service of it.
 
