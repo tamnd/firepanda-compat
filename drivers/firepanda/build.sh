@@ -112,7 +112,12 @@ if [ -f "$firepanda/tools/build_extension.sh" ]; then
     # libraries are found through `@loader_path` and `$ORIGIN`, which mean the
     # directory the extension was loaded from. That is the layout a wheel has and it
     # is the only one that works.
-    find "$firepanda/python/firepanda" -maxdepth 1 -type f -exec cp {} "$staged/firepanda/" \;
+    # Recursively, because `firepanda.api` is a subpackage and a wheel carries it
+    # whole. Copying only the top level files stages a firepanda with no `api` in
+    # it, and the board then reports every name under `api.types` as unimplemented
+    # on the strength of a staging bug rather than of anything in firepanda.
+    cp -R "$firepanda/python/firepanda/." "$staged/firepanda/"
+    find "$staged/firepanda" -name __pycache__ -type d -prune -exec rm -rf {} +
     cp -R "$here/extension/." "$staged/firepanda/"
     rm -rf "$here/extension"
     echo "staged the python extension in $staged"

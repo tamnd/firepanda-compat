@@ -52,6 +52,7 @@ A single row of document 06 reads `- [ ] rolling with window, min_periods, cente
 | `28-the-namespace-nothing-could-open.md` | the accessor is finished and forty eight of its fifty five runs are blocked by a constructor that belongs to something else |
 | `29-the-parser-that-refuses-to-guess.md` | the constructor landed and moved fifty two runs, a door had a second door behind it, and two new corpus cases found a silent overflow that fifty six tests did not |
 | `30-the-namespace-that-was-one-call-away.md` | a hundred and twenty rows reported one missing attribute, the implementation behind it was already written, and the thirty two runs it was worth are all reflection |
+| `31-forty-five-questions-other-libraries-ask.md` | the namespace other libraries import, forty five names answered by hand, six pandas answers that measurement changed and two staging loops that had never seen a subpackage |
 
 The last seventeen were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
 
