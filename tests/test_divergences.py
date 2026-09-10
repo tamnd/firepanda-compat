@@ -421,9 +421,18 @@ def test_the_committed_registry_loads():
     be real and still not be visible everywhere: with nothing missing from a column
     pandas has no reason to widen it and the two engines agree to the last bit, so an
     entry with no frame list would be telling the suite that those runs have to differ
-    and failing them for agreeing."""
+    and failing them for agreeing.
+
+    `engine/window-infinity` and `engine/window-infinity-dense` are the thirteenth
+    and fourteenth, and they are one difference rather than two. pandas cannot get
+    an infinity back out of a rolling or expanding reduction, for one reason in the
+    sums and a different one in the extremes, and firepanda can. They are two
+    entries because an entry narrows to frames as a whole rather than case by case,
+    and the seven cases in the second one ask for a window narrow enough that it
+    never fills on the half null frame, so requiring them to differ there would
+    have been requiring the opposite of what is true."""
     entries = divergences.registry()
-    assert len(entries) == 12
+    assert len(entries) == 14
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
