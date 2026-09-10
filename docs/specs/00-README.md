@@ -50,6 +50,8 @@ A single row of document 06 reads `- [ ] rolling with window, min_periods, cente
 | `26-the-binding-is-behind-the-library.md` | the core had seventeen reductions and the Python binding exposed none of them, so a large part of the unimplemented count was a door problem rather than a library one |
 | `27-the-ladder-was-blocked-at-the-bottom.md` | fourteen names with thirteen passing behaviour cases between them could not be called from Python, and the board can now count how many more are in that position |
 | `28-the-namespace-nothing-could-open.md` | the accessor is finished and forty eight of its fifty five runs are blocked by a constructor that belongs to something else |
+| `29-the-parser-that-refuses-to-guess.md` | the constructor landed and moved fifty two runs, a door had a second door behind it, and two new corpus cases found a silent overflow that fifty six tests did not |
+| `30-the-namespace-that-was-one-call-away.md` | a hundred and twenty rows reported one missing attribute, the implementation behind it was already written, and the thirty two runs it was worth are all reflection |
 
 The last seventeen were written after the first eleven and against a board rather than against a plan, which is why each of them opens with a measurement and the first eleven open with a definition. That is the difference between scoping a suite and reading one.
 
