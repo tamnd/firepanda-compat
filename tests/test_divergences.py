@@ -430,9 +430,16 @@ def test_the_committed_registry_loads():
     entries because an entry narrows to frames as a whole rather than case by case,
     and the seven cases in the second one ask for a window narrow enough that it
     never fills on the half null frame, so requiring them to differ there would
-    have been requiring the opposite of what is true."""
+    have been requiring the opposite of what is true.
+
+    `engine/rolling-max-varargs` is the fifteenth and the first about a signature
+    rather than an answer. `Rolling.max` is the only one of pandas' ten window
+    reductions declaring `*args` and `**kwargs`, its body drops both on the floor
+    without reading them, and firepanda declares the same three real parameters on
+    all ten. Copying it would mean writing one signature that accepts anything and
+    ignores it."""
     entries = divergences.registry()
-    assert len(entries) == 14
+    assert len(entries) == 15
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
