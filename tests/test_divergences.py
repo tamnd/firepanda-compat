@@ -359,16 +359,26 @@ def test_an_entry_with_no_expiry_never_expires():
 
 
 def test_the_committed_registry_loads():
-    """Eight, having been eight at the start, then seven, then eight again.
+    """Ten, having been eight at the start, then seven, then eight, and now ten.
 
     The count is pinned so that an entry cannot appear or disappear without somebody
     saying so here. `engine/index-alignment` is the one that went, because firepanda
     now aligns on the union of the labels exactly as pandas does and an entry that
     stopped being true is deleted rather than reworded. `engine/moment-precision` and
-    `engine/zero-divisor` are the two that arrived, and both of them are cases where
-    firepanda answers something pandas does not rather than refusing to answer."""
+    `engine/zero-divisor` are the two that arrived first, and both of them are cases
+    where firepanda answers something pandas does not rather than refusing to answer.
+
+    `engine/category-code-width` and `engine/comparison-null` are the two newest, and
+    they arrived together because the category cases are the first ones in the suite
+    to reach either. Neither is about categories. The first is that firepanda writes
+    int32 codes whatever the number of categories, where pandas picks the width from
+    the cardinality, which is a decision about the dtype vocabulary rather than about
+    the encoder. The second is that a comparison against a missing value answers null
+    rather than False, which is the whole library and not this section: pandas has a
+    numpy bool array with nowhere to say a third thing and firepanda has a validity
+    bitmap that does."""
     entries = divergences.registry()
-    assert len(entries) == 8
+    assert len(entries) == 10
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

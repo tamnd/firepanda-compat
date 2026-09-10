@@ -100,3 +100,28 @@ spec = "06-pandas-parity.md#the-genuine-omissions"
 expect = "differs"
 instead = "the row divided by zero is null and the column keeps the dtype it started with. Floor division and the remainder on an int64 column answer int64, and `flag % flag` on two bool columns answers int8 nulls rather than int8 zeros."
 since = "2026-09-06"
+
+# The tenth and eleventh, both about category columns, and both listed case by case
+# rather than as `categorical/*` for the reason the ninth gives. Thirty four other cases
+# in that section have to match pandas exactly and a glob would have told the suite they
+# were allowed not to.
+
+[[divergence]]
+id = "engine/category-code-width"
+cases = ["categorical/codes"]
+kind = "engine"
+reason = "pandas picks the width of a categorical's codes from how many categories there are, so a column of three categories gets int8. firepanda writes int32 whatever the count is. Picking from the cardinality means the same column encodes to a different Arrow type on different data, so a program that reads the codes has no type to write down and a file written on Monday does not have the schema of the one written on Tuesday. It is also visible through the Arrow export, which is the boundary this library is built on, so it is a decision about the dtype vocabulary rather than one about the encoder. The values agree either way, and a program comparing codes to codes is unaffected. The one that is affected is a program comparing dtypes, and that program is better off finding out."
+spec = "27-what-a-caller-does-with-a-category.md#three-differences-from-pandas-all-of-them-deliberate"
+expect = "differs"
+instead = "the codes are int32 whatever the number of categories, and a code for a row whose category is missing is null rather than the sentinel minus one, because firepanda's codes are an Arrow column with a validity bitmap and pandas' are a numpy integer array with nowhere to record absence."
+since = "2026-09-11"
+
+[[divergence]]
+id = "engine/comparison-null"
+cases = ["categorical/compare-eq", "categorical/compare-lt"]
+kind = "engine"
+reason = "Comparing a missing value to anything has no answer. pandas writes False, because the result of a comparison in pandas is a numpy bool array and a bool array has two values and nowhere to say a third thing. firepanda's result is an Arrow column with a validity bitmap, so the row that had no answer is missing rather than false. This is the whole library and not the category columns: it is already what a text or a number column answers, and the reason the category cases are the ones registered here is that they are the ones the suite currently runs. The difference matters to a caller who counts the False rows, since the pandas count folds the rows that were missing in with the rows that genuinely did not match, and there is no way back from that number to either one."
+spec = "28-comparing-a-category.md#nulls-follow-the-library-rather-than-pandas"
+expect = "differs"
+instead = "a row whose value is missing compares to null rather than to False, so the result has three states and the caller can tell a row that did not match from a row that had nothing to match. A category column inherits this from the rest of the library rather than restating it."
+since = "2026-09-11"
