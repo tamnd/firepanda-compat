@@ -185,3 +185,18 @@ spec = "31-a-window-is-a-pair-of-rows.md#why-the-reductions-are-carried-and-what
 expect = "differs"
 instead = "a window that holds an infinity answers that infinity and a window that holds one of each sign answers a NaN, the same as engine/window-infinity. On the half null frame, and on the int64 and tall frames these cases also run on, there is no infinity in reach and the two engines agree exactly."
 since = "2026-09-11"
+
+# The sixteenth, and the first that is about a signature rather than an answer. It is
+# here because the frame form of a window arrived in firepanda and made this case
+# reachable, and it was absent rather than passing before that.
+
+[[divergence]]
+id = "engine/rolling-max-varargs"
+cases = ["signature/rolling.max"]
+frames = ["empty"]
+kind = "engine"
+reason = "pandas declares Rolling.max as (numeric_only=False, *args, engine=None, engine_kwargs=None, **kwargs) and it is the only one of the ten window reductions that does. Rolling.sum, Rolling.mean, Rolling.min and all five of the Expanding ones take numeric_only, engine and engine_kwargs and nothing else, and Expanding.max takes exactly those three as well. The two extra parameters are not read. The body of the method is a single call to super().max(numeric_only=..., engine=..., engine_kwargs=...), so args and kwargs are collected and dropped, and s.rolling(2).max(False, out=None) silently ignores out rather than refusing it. Their documentation in the method's own docstring says they are positional and keyword arguments passed into func, and there is no func in a maximum. firepanda declares the same three parameters on all ten reductions, which means nine of the ten match pandas exactly and this one does not. Copying the accident would mean writing a signature that accepts anything and ignores it, which is the one thing this library refuses to do everywhere else, and it would have to be written on Rolling.max alone to be faithful, so the generator that emits one table for both classes would gain a special case for a parameter nobody can use."
+spec = "31-a-window-is-a-pair-of-rows.md#the-python-surface-and-the-four-arguments-that-are-declared-and-refused"
+expect = "differs"
+instead = "Rolling.max takes numeric_only, engine and engine_kwargs, the same three the other nine reductions take, and refuses anything else by name. A caller who was relying on the extra parameters was relying on pandas throwing them away."
+since = "2026-09-11"
