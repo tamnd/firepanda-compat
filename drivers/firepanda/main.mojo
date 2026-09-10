@@ -53,7 +53,7 @@ from std.os.path import exists
 from std.sys import argv, exit
 
 from firepanda.array.array import Array
-from firepanda.array.strings import StringBuilder
+from firepanda.array.strings import StringArray, StringBuilder
 from firepanda.array.value import Value
 from firepanda.dtype import Field, LogicalType, Schema, TimeUnit, TimeZone
 from firepanda.frame.frame import DataFrame, dt_isocalendar
@@ -695,6 +695,64 @@ def grouped(
         Error: Whatever `group_agg` raises.
     """
     return frame.group_agg(keys, kind, dropna, sort, as_index)
+
+
+def category_label(column: Series, at: Int) raises -> String:
+    """Reads one of a category column's labels out, counting from either end.
+
+    Four cases need a label of the column they are about to operate on, because
+    the pandas spelling of them reads `cat.categories[0]` or `[-1]` rather than
+    naming a string. Doing the same here keeps the two sides asking the same
+    question of the same data instead of agreeing by hand written constant.
+
+    Args:
+        column: The category column.
+        at: The position, and negative counts back from the end.
+
+    Returns:
+        The label.
+
+    Raises:
+        Error: If the column is not a category column, or the position is not
+            in it.
+    """
+    var names = column.cat_categories()
+    var where = at + len(names) if at < 0 else at
+    return names.text(where)
+
+
+def category_list(var labels: List[String]) raises -> StringArray:
+    """Turns a list of words into the text column the category doors take.
+
+    Args:
+        labels: The labels, in the order to hold them. Consumed.
+
+    Returns:
+        The column.
+
+    Raises:
+        Error: If the column cannot be built.
+    """
+    var built = StringBuilder(capacity=len(labels))
+    for label in labels:
+        built.append(label.as_bytes())
+    return built^.finish()
+
+
+def emit_bool(value: Bool, path: String) raises:
+    """Writes a scalar bool answer and prints its line.
+
+    Args:
+        value: The answer.
+        path: Where to write it.
+
+    Raises:
+        Error: If it cannot be written.
+    """
+    write_arrow(
+        scalar_frame[DType.bool]("value", Scalar[DType.bool](value)), path
+    )
+    print('{"status":"ok","kind":"scalar"}')
 
 
 def main() raises:
@@ -1646,6 +1704,125 @@ def main() raises:
             # column. Reading it as missing would answer the rest of the column
             # instead, which is why this is exact.
             emit_series("value", frame.column("value").cumsum(), out)
+        elif case_id == "categorical/categories":
+            emit_index(frame.column("value").cat_categories(), out)
+        elif case_id == "categorical/codes":
+            # Unnamed, because pandas hands back a series with `None` there. The
+            # codes are not the column, so they do not carry its name, and a
+            # driver that sent the firepanda label would fail this for the wrong
+            # reason and then pass it for the wrong reason.
+            emit_series_unnamed(frame.column("value").cat_codes(), out)
+        elif case_id == "categorical/ordered":
+            emit_bool(frame.column("value").cat_ordered(), out)
+        elif case_id == "categorical/dtype":
+            write_arrow(
+                string_scalar_frame(
+                    "value", String(frame.column("value").logical())
+                ),
+                out,
+            )
+            print('{"status":"ok","kind":"scalar"}')
+        elif case_id == "categorical/isna":
+            emit_series(
+                "value",
+                Series("value", frame.column("value").is_null()),
+                out,
+            )
+        elif case_id == "categorical/dropna":
+            emit_series("value", frame.column("value").drop_nulls(), out)
+        elif case_id == "categorical/remove-unused":
+            emit_index(
+                frame.column("value")
+                .cat_drop_unused_categories()
+                .cat_categories(),
+                out,
+            )
+        elif case_id == "categorical/as-ordered":
+            emit_bool(
+                frame.column("value").cat_set_ordered(True).cat_ordered(), out
+            )
+        elif case_id == "categorical/as-unordered":
+            emit_bool(
+                frame.column("value").cat_set_ordered(False).cat_ordered(), out
+            )
+        elif case_id == "categorical/rename-categories":
+            # The pandas side builds a mapping from the categories it already
+            # has, so this builds the same list from the same place. A rename is
+            # decided by position and no code moves, which is why the answer is
+            # the whole column rather than the category list.
+            var renaming = frame.column("value")
+            var old = renaming.cat_categories()
+            var upper = List[String]()
+            for i in range(len(old)):
+                upper.append(old.text(i).upper())
+            emit_series(
+                "value",
+                renaming.cat_rename_categories(
+                    category_list(upper^), renaming.cat_ordered()
+                ),
+                out,
+            )
+        elif case_id == "categorical/reorder-categories":
+            # Reordering is `set_categories` with the same set in a different
+            # order, which is the Mojo spelling document 27 leaves a caller. The
+            # list arithmetic is on the pandas side of firepanda and this driver
+            # runs the Mojo side, so the list is built here the way a Mojo caller
+            # would build it.
+            var reordering = frame.column("value")
+            var held = reordering.cat_categories()
+            var backwards = List[String]()
+            for i in range(len(held)):
+                backwards.append(held.text(len(held) - 1 - i))
+            emit_series(
+                "value",
+                reordering.cat_set_categories(
+                    category_list(backwards^), reordering.cat_ordered()
+                ),
+                out,
+            )
+        elif case_id == "categorical/set-categories":
+            var setting = frame.column("value")
+            var wanted: List[String] = ["a", "b", "c"]
+            emit_series(
+                "value",
+                setting.cat_set_categories(
+                    category_list(wanted^), setting.cat_ordered()
+                ),
+                out,
+            )
+        elif case_id == "categorical/compare-eq":
+            var equated = frame.column("value")
+            emit_series(
+                "value",
+                equated.binary(
+                    Value(category_label(equated, 0)), BinaryOp.EQ
+                ),
+                out,
+            )
+        elif case_id == "categorical/compare-lt":
+            var ordered = frame.column("value")
+            emit_series(
+                "value",
+                ordered.binary(
+                    Value(category_label(ordered, -1)), BinaryOp.LT
+                ),
+                out,
+            )
+        elif case_id == "categorical/astype-string":
+            emit_series(
+                "value", frame.column("value").cast(LogicalType.STRING), out
+            )
+        elif case_id == "categorical/astype-category":
+            # The last column of a string frame rather than one called `value`,
+            # because the frames this case names are the ordinary text ones and
+            # the pandas spelling is `df.iloc[:, -1]`.
+            var columns = frame.names()
+            emit_index(
+                frame.column(columns[len(columns) - 1])
+                .cast(LogicalType.dictionary(DType.int32, False))
+                .cat_categories(),
+                out,
+            )
         else:
             print('{"status":"absent"}')
     except error:
