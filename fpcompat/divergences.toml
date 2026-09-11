@@ -312,3 +312,31 @@ spec = "31-a-window-is-a-pair-of-rows.md#the-quantile-is-a-position-and-the-rank
 expect = "differs"
 instead = "an infinity is an ordinary value with an ordinary place in the sorted window, so it counts towards min_periods and it occupies a rank. An expanding window never lets go of a row, so a rank under one is one higher than pandas' for the whole rest of the column, and the reason it is higher is that pandas removed a value from below the row it was ranking. On the tall frame this case also runs on there is no infinity in the column and the two engines agree to the last bit."
 since = "2026-09-11"
+
+# The twenty third and twenty fourth, which are the window infinity difference on the
+# third window type. They are two entries for the reason the thirteenth and fourteenth
+# were: an entry narrows to frames as a whole, and the two frames this shows on are not
+# two views of one difference here. On one of them the infinities cancel and the column
+# recovers, and on the other there is only one in reach and the column never does.
+
+[[divergence]]
+id = "engine/ewm-infinity"
+cases = ["windows/ewm-span-mean", "windows/ewm-com-mean", "windows/ewm-halflife-mean", "windows/ewm-alpha-mean", "windows/ewm-adjust-false", "windows/ewm-sum"]
+frames = ["float64_no_nulls"]
+kind = "engine"
+reason = "The difference engine/window-infinity describes, on the third window type. ExponentialMovingWindow is a BaseWindow, so the three lines of _prep_values that replace every infinity with a NaN under the comment `Convert inf to nan for C funcs` run before an exponentially weighted mean as well, and an infinity in a pandas ewm is a missing row. What makes this its own entry rather than a longer case list on that one is that an exponentially weighted window never drops a row, so the recovery the rolling entry describes cannot happen the same way. Exactly one of the sixty four rows differs here, and the reason it is one rather than all of them is worth writing down. Row one of the frame is a positive infinity and row two is a negative one. At row one firepanda answers the positive infinity and pandas, having seen nothing at all, answers NaN. At row two the fold reaches an infinity plus its negative, firepanda's carried value becomes a NaN, and both engines answer NaN for the same row by two different routes. From row three on they agree to the last bit for the remaining sixty one rows, because the test pandas' own kernel uses for whether the recurrence has started is whether the carried value equals itself, firepanda copies that test, and a cancelled infinity therefore reads as nothing having arrived yet and the row after it starts the recurrence again from its own value. Measured on pandas 3.0.3 for all six cases, and the exponentially weighted total goes the same way as the four means for the same reason. The var and std cases on this frame are not listed, because both engines lose the answer to an overflow in the squared deviation of the largest finite double and agree exactly on every row."
+spec = "32-a-window-that-is-a-weight.md#an-infinity-never-leaves-this-window-and-a-cancelled-one-ends-the-recurrence"
+expect = "differs"
+instead = "an infinity is a value, so the row that holds it is answered with it rather than declined, and the row where the two signs cancel is a NaN in both engines. One row of the sixty four differs. On the tall frame these cases also run on there is no infinity in the column and the two engines agree everywhere."
+since = "2026-09-11"
+
+[[divergence]]
+id = "engine/ewm-infinity-carried"
+cases = ["windows/ewm-ignore-na", "windows/ewm-min-periods"]
+frames = ["float64_half_null"]
+kind = "engine"
+reason = "The same replacement as engine/ewm-infinity and the opposite outcome, because on this frame there is only one infinity in reach and a lone infinity never cancels. The half null frame holds a NaN in row zero, nothing in row one, a negative infinity in row two and then a value in every second row. So firepanda's recurrence starts at the negative infinity, and the weighted average of an infinity and a finite number is that infinity however small the weight behind it has become, so every remaining row of the column answers negative infinity. pandas replaced the infinity before the kernel ran, so its recurrence starts at the smallest denormal in row four and climbs through ordinary values near ten to the fifteen. Sixty two of the sixty four rows differ under ignore_na, which is every row from the infinity onward, and fifty eight differ under the min_periods case, which is the same thing starting later because a count of three is not met until the third value arrives at row six. This is one entry over two cases rather than two entries because the two are the same difference at two starting rows, and neither of them recovers. Measured on pandas 3.0.3, where row eight of the min_periods case is 4898424505258373.0 against a negative infinity here."
+spec = "32-a-window-that-is-a-weight.md#an-infinity-never-leaves-this-window-and-a-cancelled-one-ends-the-recurrence"
+expect = "differs"
+instead = "an infinity is a value and this window never lets go of a row, so an infinity that has nothing to cancel against is carried to the bottom of the column and every row after it answers that infinity. On the all null frame the ignore_na case also runs on there is no value of any kind, both engines answer nothing in every row, and the suite requires them to agree there."
+since = "2026-09-11"
