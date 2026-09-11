@@ -722,12 +722,15 @@ def rolled(frame: DataFrame, op: WindowOp) raises -> Series:
 
 
 def measured(frame: DataFrame, op: WindowOp) raises -> Series:
-    """Runs one spread reduction over every eight row window of `value`.
+    """Runs one spread or shape reduction over every eight row window of `value`.
 
-    The three spread cases ask for a width of eight where the five plain ones ask
-    for five, because a variance needs more than a handful of rows before the
-    answer says anything, and eight is what the case list settled on. The degrees
-    of freedom is one, which is what pandas defaults to and what the cases spell.
+    The five of them ask for a width of eight where the five plain ones ask for
+    five, because a variance needs more than a handful of rows before the answer
+    says anything, and eight is what the case list settled on. It suits a skewness
+    and a kurtosis for the same reason and more so, since those need three and four
+    values before they answer at all. The degrees of freedom is one, which is what
+    pandas defaults to and what the cases spell, and the two shapes ignore it
+    because pandas gives neither of them one to read.
 
     Args:
         frame: The corpus frame.
@@ -1978,6 +1981,10 @@ def main() raises:
             emit_series("value", measured(frame, WindowOp.STD), out)
         elif case_id == "windows/rolling-sem":
             emit_series("value", measured(frame, WindowOp.SEM), out)
+        elif case_id == "windows/rolling-skew":
+            emit_series("value", measured(frame, WindowOp.SKEW), out)
+        elif case_id == "windows/rolling-kurt":
+            emit_series("value", measured(frame, WindowOp.KURT), out)
         elif case_id == "windows/rolling-min-periods":
             emit_series(
                 "value",
@@ -2068,6 +2075,10 @@ def main() raises:
             emit_series("value", spread(frame, WindowOp.STD), out)
         elif case_id == "windows/expanding-sem":
             emit_series("value", spread(frame, WindowOp.SEM), out)
+        elif case_id == "windows/expanding-skew":
+            emit_series("value", spread(frame, WindowOp.SKEW), out)
+        elif case_id == "windows/expanding-kurt":
+            emit_series("value", spread(frame, WindowOp.KURT), out)
         elif case_id == "windows/expanding-min-periods":
             emit_series(
                 "value", frame.column("value").expanding(WindowOp.SUM, 5), out

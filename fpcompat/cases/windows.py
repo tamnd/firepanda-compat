@@ -31,6 +31,12 @@ SPREAD = Rules(
     tolerance=Tolerance.STATISTICAL,
     reason="a rolling variance is carried the same way and it squares the error",
 )
+SHAPE = Rules(
+    tolerance=Tolerance.STATISTICAL,
+    reason="a rolling third and fourth moment are carried the same way again and they "
+    "raise the error to a cube and a fourth power, and pandas rebuilds them from raw "
+    "sums of powers where firepanda carries the central moments themselves",
+)
 
 # ---------------------------------------------------------------------------
 # Rolling
@@ -47,13 +53,25 @@ for name in ("sum", "mean", "min", "max", "count", "median"):
         "and count is the one that is not",
     )
 
-for name in ("std", "var", "sem", "skew", "kurt"):
+for name in ("std", "var", "sem"):
     case(
         f"windows/rolling-{name}",
         f"Rolling.{name}",
         frames=("float64_no_nulls", "tall"),
         expr=(lambda method: lambda pd, df: getattr(df["value"].rolling(8), method)())(name),
         rules=SPREAD,
+    )
+
+for name in ("skew", "kurt"):
+    case(
+        f"windows/rolling-{name}",
+        f"Rolling.{name}",
+        frames=("float64_no_nulls", "tall"),
+        expr=(lambda method: lambda pd, df: getattr(df["value"].rolling(8), method)())(name),
+        rules=SHAPE,
+        note="a shape is a ratio of moments and it has no units, so the answer is a "
+        "small number built out of large ones and the two libraries build it "
+        "differently",
     )
 
 case(
@@ -221,6 +239,18 @@ for name in ("std", "var", "sem"):
         frames=("float64_no_nulls", "tall"),
         expr=(lambda method: lambda pd, df: getattr(df["value"].expanding(), method)())(name),
         rules=SPREAD,
+    )
+
+for name in ("skew", "kurt"):
+    case(
+        f"windows/expanding-{name}",
+        f"Expanding.{name}",
+        frames=("float64_no_nulls", "tall"),
+        expr=(lambda method: lambda pd, df: getattr(df["value"].expanding(), method)())(name),
+        rules=SHAPE,
+        note="an expanding window never drops a row, so this is the one place a shape "
+        "is asked for over ten thousand values at once and the last row has to be the "
+        "whole column shape",
     )
 
 case(
