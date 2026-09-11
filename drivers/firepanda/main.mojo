@@ -2601,6 +2601,29 @@ def main() raises:
                 ),
                 out,
             )
+        elif case_id == "indexing/duplicated":
+            # The mask carries the frame's labels and pandas leaves it unnamed,
+            # so this is the unnamed series emitter rather than the array one.
+            # An array would compare the values and throw the labels away, which
+            # is most of what makes the answer usable.
+            emit_series_unnamed(frame.duplicated([frame.names()[0]]), out)
+        elif case_id == "indexing/duplicated-keep-last":
+            emit_series_unnamed(
+                frame.duplicated([frame.names()[0]], "last"), out
+            )
+        elif case_id == "indexing/duplicated-keep-false":
+            # pandas spells this rule `False` and the core spells it `"none"`.
+            # The translation lives in firepanda's pandas layer, which this
+            # driver does not go through, so the word is written out here.
+            emit_series_unnamed(frame.duplicated(["key"], "none"), out)
+        elif case_id == "indexing/drop-duplicates":
+            emit_frame(frame.drop_duplicates([frame.names()[0]]), out)
+        elif case_id == "reshape/duplicated-frame":
+            # The no subset form, which reads every column. It is the same
+            # method as the case above and it is a separate branch because the
+            # core takes the two through different overloads, one of which
+            # resolves the default and one of which does not.
+            emit_frame(frame.drop_duplicates(), out)
         else:
             print('{"status":"absent"}')
     except error:
