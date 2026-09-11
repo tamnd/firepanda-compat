@@ -52,7 +52,7 @@ exists. It matches column types against numpy's type tree, a tree where a durati
 a signed integer and a timestamp is not a number, and the whole of that tree lives in
 `python/firepanda/_pandas.py` because it is a pandas compatibility rule and not a
 dataframe operation. For the driver to answer the case it would have had to carry a
-copy of the tree in Mojo, and `drivers/README.md` forbids exactly that: the driver
+copy of the tree in Mojo, and `drivers/firepanda/README.md` forbids exactly that: the driver
 writes down what firepanda does and never what pandas does, and a driver that
 reimplements the operation it is testing is scoring itself.
 
@@ -165,7 +165,7 @@ class FirepandaEngine:
         method that lives only in firepanda's Python layer. `select_dtypes` is the one
         that forced it: the rules it follows are numpy's type tree, and the driver
         would have had to reimplement that tree in Mojo to answer the case at all,
-        which is the one thing `drivers/README.md` forbids, because a driver that
+        which is the one thing `drivers/firepanda/README.md` forbids, because a driver that
         reimplements the operation it is testing is scoring itself. The flag is a
         narrow door and it needs a note saying what the driver cannot reach, since
         skipping the driver silently is also how a failing case would be made to pass.

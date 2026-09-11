@@ -6,9 +6,9 @@ That rule has a reason in it rather than a lookup table behind it, which is why 
 
 ## Three methods that arrived with nowhere to be measured
 
-firepanda grew `DataFrame.filter`, `DataFrame.select_dtypes` and `DataFrame.truncate`. All three name a set of columns by a rule instead of by a list, and all three work out a list of labels and hand it to `select`. There are five cases waiting for them in `fpcompat/cases/indexing.py`, seven runs between them, and every one of those runs is L2.
+firepanda grew `DataFrame.filter`, `DataFrame.select_dtypes` and `DataFrame.truncate`. All three name a set of columns by a rule instead of by a list, and all three work out a list of labels and hand it to `select`. There are five cases waiting for them in `fpcompat/cases/indexing.py`, seven runs between them, and every one of those runs is L3, because each of the five names a parameter and a rule you have to name a parameter to reach is a parameter space question.
 
-L2 goes to the driver. The driver is `drivers/firepanda/main.mojo`, a Mojo binary that takes a case id, runs the firepanda spelling of that case against the core, and writes the answer out as Arrow. To arm `indexing/select-dtypes` the driver would need a branch that answers it, and the branch would have to do what `select_dtypes` does.
+L3 goes to the driver, as does L2. The driver is `drivers/firepanda/main.mojo`, a Mojo binary that takes a case id, runs the firepanda spelling of that case against the core, and writes the answer out as Arrow. To arm `indexing/select-dtypes` the driver would need a branch that answers it, and the branch would have to do what `select_dtypes` does.
 
 It cannot, and the interesting part is why not.
 
@@ -18,7 +18,7 @@ It cannot, and the interesting part is why not.
 
 None of that is a dataframe operation. It is a pandas compatibility rule, four tables and three small functions of it, and it lives in `python/firepanda/_pandas.py` because that is where firepanda keeps the things it does in order to be pandas rather than the things it does in order to be a dataframe. The core has no opinion about numpy's type hierarchy and should not grow one.
 
-So a driver branch for `indexing/select-dtypes` would have to carry a second copy of that tree, written in Mojo, next to the first one. `drivers/README.md` forbids it in one sentence: the driver writes down what firepanda does and never what pandas does, and a driver that reimplements the operation it is testing is scoring itself. A second copy would be worse than that, because the two copies would drift, and the run that found the drift would report it as a firepanda bug.
+So a driver branch for `indexing/select-dtypes` would have to carry a second copy of that tree, written in Mojo, next to the first one. `drivers/firepanda/README.md` forbids it in one sentence: the driver writes down what firepanda does and never what pandas does, and a driver that reimplements the operation it is testing is scoring itself. A second copy would be worse than that, because the two copies would drift, and the run that found the drift would report it as a firepanda bug.
 
 `filter` and `truncate` are the same shape for smaller reasons. `filter` has a regex rule that is Python's `re` module, and `truncate` reads `Index.slice_indexer`, which is a Python layer method.
 
@@ -32,7 +32,7 @@ It is a property of the case and not of the section or of the name. `DataFrame.f
 
 It requires a note, checked at declaration time and fatal like every other check in `case()`. Nothing in a case expression shows why one case is measured differently from every other case at its level. Without the note, the next reader has to work out from scratch whether the method really is unreachable from the driver or whether somebody wrote the flag because the driver branch was failing, and those two look identical from the outside. The note makes the second one something a person has to write down a false sentence to do.
 
-It is serialized. A reader looking at a passing L2 case in a result file has no other way to know the driver never saw it, and that is precisely the thing they would want to know before trusting the outcome. The declaration belongs where the outcome is.
+It is serialized. A reader looking at a passing L3 case in a result file has no other way to know the driver never saw it, and that is precisely the thing they would want to know before trusting the outcome. The declaration belongs where the outcome is.
 
 ## What it does not excuse
 

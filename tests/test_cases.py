@@ -160,7 +160,7 @@ def test_running_in_process_without_a_reason_is_fatal(isolated):
 def test_running_in_process_is_carried_into_the_result_file(isolated):
     """The declaration has to be visible where the outcome is.
 
-    A reader looking at a passing L2 case in a result file has no other way of knowing
+    A reader looking at a passing L3 case in a result file has no other way of knowing
     that the driver never saw it, and that is exactly the thing they would want to
     know before trusting the outcome.
     """
