@@ -2017,6 +2017,82 @@ def main() raises:
             emit_series(
                 "value", frame.column("value").chars_remove_suffix("z"), out
             )
+        elif case_id == "strings/strip":
+            emit_series(
+                "value",
+                frame.column("value").chars_strip("", False, True, True),
+                out,
+            )
+        elif case_id == "strings/lstrip":
+            emit_series(
+                "value",
+                frame.column("value").chars_strip("", False, True, False),
+                out,
+            )
+        elif case_id == "strings/rstrip":
+            emit_series(
+                "value",
+                frame.column("value").chars_strip("", False, False, True),
+                out,
+            )
+        elif case_id == "strings/strip-chars":
+            # A set of characters and not a prefix, which is the assertion the
+            # ascii frame carries: rows that begin with a run of the two letters
+            # in any order lose the whole run.
+            emit_series(
+                "value",
+                frame.column("value").chars_strip("ab", True, True, True),
+                out,
+            )
+        elif case_id == "strings/lstrip-chars":
+            emit_series(
+                "value",
+                frame.column("value").chars_strip("ab", True, True, False),
+                out,
+            )
+        elif case_id == "strings/rstrip-chars":
+            emit_series(
+                "value",
+                frame.column("value").chars_strip("ab", True, False, True),
+                out,
+            )
+        elif case_id == "strings/pad-left":
+            emit_series(
+                "value",
+                frame.column("value").chars_pad(12, " ", True, False),
+                out,
+            )
+        elif case_id == "strings/pad-both":
+            # The case the unicode frame decides. A width is a count of
+            # characters, so a row that is twelve bytes and eight characters is
+            # padded to twelve characters and comes out longer than twelve bytes.
+            emit_series(
+                "value",
+                frame.column("value").chars_pad(12, ".", True, True),
+                out,
+            )
+        elif case_id == "strings/center":
+            emit_series(
+                "value",
+                frame.column("value").chars_pad(12, " ", True, True),
+                out,
+            )
+        elif case_id == "strings/ljust":
+            emit_series(
+                "value",
+                frame.column("value").chars_pad(10, " ", False, True),
+                out,
+            )
+        elif case_id == "strings/rjust":
+            emit_series(
+                "value",
+                frame.column("value").chars_pad(10, " ", True, False),
+                out,
+            )
+        elif case_id == "strings/zfill":
+            emit_series("value", frame.column("value").chars_zfill(10), out)
+        elif case_id == "strings/repeat":
+            emit_series("value", frame.column("value").chars_repeat(3), out)
         elif case_id == "windows/rolling-sum":
             emit_series("value", rolled(frame, WindowOp.SUM), out)
         elif case_id == "windows/rolling-mean":
