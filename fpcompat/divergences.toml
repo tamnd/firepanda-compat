@@ -295,3 +295,20 @@ spec = "31-a-window-is-a-pair-of-rows.md#the-quantile-is-a-position-and-the-rank
 expect = "differs"
 instead = "an infinity is an ordinary value with an ordinary place in the sorted window, so it counts towards min_periods and it takes a position like anything else. The quantile of a window that holds one reads between whichever two values the fraction lands between, and the rank of a row is its place among every value the window holds. Two windows of the sixty four differ and both of them are windows pandas declined to answer at all. On the tall frame these two cases also run on there is no infinity in the column and the two engines agree everywhere."
 since = "2026-09-11"
+
+# The twenty second, which is the twenty first on the expanding form of the same rank.
+# It is a separate entry rather than a second case on that one because the two differ in
+# more than degree: there the count fell short and pandas answered nothing, here the
+# count falls short for two rows and then every remaining row is answered and displaced
+# by one, and an entry that claimed both would be describing neither.
+
+[[divergence]]
+id = "engine/window-rank-displaced"
+cases = ["windows/expanding-rank"]
+frames = ["float64_no_nulls"]
+kind = "engine"
+reason = "An expanding window never drops a row, so the positive infinity in row one and the negative infinity in row two of the suite's float64 frame are inside every later window, and pandas' replacement of both by missing values never stops being visible. A rank is a position, so what the replacement does to it is not what it does to a total. It does two different things here and they are worth separating. The case asks for ten rows before the window answers, and row zero of the frame is a genuine NaN, so firepanda reaches ten values at row ten and pandas, two values lighter, reaches them at row twelve. Rows ten and eleven are therefore rows firepanda answers 5.0 for and pandas declines. From row twelve on both engines answer, and pandas is lower by exactly one in every row of the remaining fifty two. That one is the negative infinity: it sits below every other value in the window, so removing it moves every ordinary row down a place, while removing the positive infinity from above the row moves nothing. Measured on pandas 3.0.3, row twelve is 7.0 against 6.0 and row sixty three is 42.0 against 41.0. So 54 of the 64 rows differ, two because pandas had nothing to say and fifty two by a displacement of one, and not one of the fifty two is a row where the window holds anything unusual."
+spec = "31-a-window-is-a-pair-of-rows.md#the-quantile-is-a-position-and-the-rank-is-a-row"
+expect = "differs"
+instead = "an infinity is an ordinary value with an ordinary place in the sorted window, so it counts towards min_periods and it occupies a rank. An expanding window never lets go of a row, so a rank under one is one higher than pandas' for the whole rest of the column, and the reason it is higher is that pandas removed a value from below the row it was ranking. On the tall frame this case also runs on there is no infinity in the column and the two engines agree to the last bit."
+since = "2026-09-11"

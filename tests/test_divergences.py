@@ -475,9 +475,16 @@ def test_the_committed_registry_loads():
     the quantile and the rank, which arrived beside the median and read out of the same
     sorted window. It is one entry rather than two because both cases ask for an eight
     row window over the same two frames and both differ on the same one of the two, so
-    there is no line of the kind that split the pairs above."""
+    there is no line of the kind that split the pairs above.
+
+    `engine/window-rank-displaced` is the twenty second and it is the twenty first on the
+    expanding form of the same rank, kept apart from it because the two differ in more
+    than degree. There pandas' count fell short and it answered nothing. Here it falls
+    short for two rows and then answers every remaining row one place low, because the
+    value pandas removed sits below the row it is ranking and taking it away moves
+    everything above it down."""
     entries = divergences.registry()
-    assert len(entries) == 21
+    assert len(entries) == 22
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
