@@ -1116,8 +1116,16 @@ def main() raises:
             emit_frame(frame.tail(), out)
         elif case_id == "basics/tail-n":
             emit_frame(frame.tail(3), out)
-        elif case_id == "basics/copy":
+        elif case_id == "basics/copy" or case_id == "basics/copy-shallow":
+            # One branch for both, because the core has one copy and `deep` is
+            # the parameter the Python layer accepts and never reads.
             emit_frame(DataFrame(copy=frame), out)
+        elif (
+            case_id == "basics/series-copy"
+            or case_id == "basics/series-copy-shallow"
+        ):
+            var second = frame.names()[1]
+            emit_series(second, Series(copy=frame.column(second)), out)
         elif case_id == "basics/column-select":
             var first = frame.names()[0]
             emit_series(first, frame.column(first), out)

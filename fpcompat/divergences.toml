@@ -45,9 +45,10 @@ since = "2026-09-04"
 id = "engine/inplace"
 cases = ["divergences/inplace/*"]
 kind = "engine"
-reason = "The inplace parameter does not save a copy in pandas either, it only hides the assignment, and it makes every call site ambiguous about whether it returns a frame or None. It also makes a chained call silently do nothing. firepanda raises TypeError with the reassignment form in the message, so the fix is visible in the error itself. This affects 42 pandas callables and every one of them has the same one line fix."
+reason = "The inplace parameter does not save a copy in pandas either, it only hides the assignment, and it makes every call site ambiguous about whether it returns a frame or None. It also makes a chained call silently do nothing. firepanda raises NotImplementedError naming the parameter and saying that the answer is a new frame over shared Arrow buffers, so the fix is visible in the error itself. This affects 40 of the 42 pandas callables that take the parameter, and every one of them has the same one line fix. The other two are Index.rename and DatetimeIndex.rename, where firepanda honours inplace instead of refusing it, because a level name is not data and renaming one does not move a single label."
 spec = "06-pandas-parity.md#the-genuine-omissions"
 expect = "raises"
+raises = "NotImplementedError"
 since = "2026-09-04"
 
 [[divergence]]

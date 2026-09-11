@@ -177,6 +177,71 @@ def test_a_deep_attribute_error_is_a_failure_and_not_unimplemented():
     assert record["outcome"] == runner.FAIL
 
 
+def test_a_name_that_is_not_there_is_a_gap_however_deep_it_was_reached_from():
+    """Depth is a proxy for the question, and this asks the question itself.
+
+    The cases that take a copy, mutate it and hand it back put three or four frames
+    under the subject before anything is called, and there is no way of writing them
+    that puts fewer. So a method the library has never had would come back from four
+    frames down and be scored a bug, which for the inplace block meant twenty cases
+    claiming a divergence had been asserted by an AttributeError saying the method
+    was not there at all.
+    """
+
+    def expr(module, df):
+        if module is pd:
+            return df.head(1)
+
+        def inner():
+            def deeper():
+                return module.never_written(df)
+
+            return deeper()
+
+        return inner()
+
+    record = run_one(build(expr=expr), subject=Lying(module=bare()))
+    assert record["outcome"] == runner.UNIMPLEMENTED
+    assert "never_written" in record["detail"]
+
+
+def test_a_name_that_is_there_is_still_a_bug_when_it_breaks():
+    """The other half of the pair, without which the check above says everything is a gap.
+
+    An AttributeError naming an attribute the object really has came from inside a
+    method that is written and went wrong, so it stays a failure.
+    """
+
+    class Holder:
+        colour = "red"
+
+    def expr(module, df):
+        if module is pd:
+            return df.head(1)
+
+        def inner():
+            def deeper():
+                raise AttributeError("colour", name="colour", obj=Holder())
+
+            return deeper()
+
+        return inner()
+
+    record = run_one(build(expr=expr), subject=Lying(module=Shadow()))
+    assert record["outcome"] == runner.FAIL
+
+
+def test_an_attribute_error_with_nothing_attached_falls_back_to_depth():
+    """Not every AttributeError carries the object it was raised about.
+
+    One raised by hand with a message and nothing else has no name and no obj, which
+    is all the direct question has to work with, so the depth proxy is still what
+    decides those.
+    """
+    assert not runner._name_is_not_there(AttributeError("something inside broke"))
+    assert not runner._name_is_not_there(TypeError("not this kind of error at all"))
+
+
 # The divergent outcome is produced by the registry in fpcompat/divergences.py and it
 # is tested in tests/test_divergences.py, next to the rule that a registered divergence
 # has to actually diverge. There is nothing left to assert about it from here.

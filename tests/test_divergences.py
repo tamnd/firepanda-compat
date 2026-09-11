@@ -352,6 +352,31 @@ def test_differs_without_saying_how_is_refused():
         load_one(expect="differs")
 
 
+def test_a_named_class_becomes_the_class_itself():
+    entry = load_one(raises="NotImplementedError")[0]
+    assert entry.raises == "NotImplementedError"
+    assert entry.expected_class() is NotImplementedError
+
+
+def test_an_entry_naming_no_class_has_none_to_give():
+    assert load_one()[0].expected_class() is None
+
+
+def test_a_class_nobody_has_heard_of_is_refused():
+    with pytest.raises(DivergenceError, match="not one of"):
+        load_one(raises="SomethingError")
+
+
+def test_a_class_name_that_is_not_a_string_is_refused():
+    with pytest.raises(DivergenceError, match="not a class name"):
+        load_one(raises=17)
+
+
+def test_naming_a_class_while_saying_the_answer_differs_is_refused():
+    with pytest.raises(DivergenceError, match="two different claims"):
+        load_one(expect="differs", instead="it comes back sorted", raises="TypeError")
+
+
 def test_a_duplicate_id_is_refused():
     with pytest.raises(DivergenceError, match="two entries cannot make one claim"):
         parse({"divergence": [dict(GOOD), dict(GOOD)]}, registry())
@@ -542,8 +567,7 @@ def test_the_inplace_table_covers_every_pandas_callable_that_takes_inplace():
     """
     import json
 
-    from fpcompat import surface
-    from fpcompat.cases.divergences import INDEX_INPLACE, INPLACE
+    from fpcompat import cases, surface
 
     document = json.loads(surface.path_for(pd.__version__).read_text())
     expected = set()
@@ -552,7 +576,13 @@ def test_the_inplace_table_covers_every_pandas_callable_that_takes_inplace():
             if any(param["name"] == "inplace" for param in info.get("signature") or []):
                 expected.add(f"{space}.{member}")
 
-    covered = {row[0] for row in INPLACE} | {row[0] for row in INDEX_INPLACE}
-    covered |= {"MultiIndex.rename", "MultiIndex.set_names", "pandas.eval"}
+    # Every case covering the parameter, wherever it lives, rather than the tables
+    # the divergence block happens to build. Index.rename is the one name here that
+    # firepanda honours inplace on rather than refusing, so its case sits with the
+    # ordinary index cases, and a check that only looked at the divergence tables
+    # would read that as the parameter having gone uncovered.
+    covered = {
+        entry.api for entry in cases.registry().values() if "inplace" in (entry.covers or ())
+    }
     assert expected - covered == set(), "pandas callables taking inplace with no case"
     assert covered - expected == set(), "cases claiming an inplace parameter that is gone"

@@ -157,6 +157,33 @@ case(
     frames=SHAPES,
     expr=lambda pd, df: df.copy(),
 )
+case(
+    "basics/copy-shallow",
+    "DataFrame.copy",
+    level="L3",
+    covers=("deep",),
+    frames=("two", "tall"),
+    expr=lambda pd, df: df.copy(deep=False),
+    note="the only parameter the frame's copy has, and the one answer both values of "
+    "it get here. pandas shares the data when it is false and duplicates it when it "
+    "is true, and the difference is only visible to a later write into one of the two "
+    "objects. firepanda has no write into a frame at all, so the two are the same "
+    "frame by every expression that can be written about them",
+)
+case(
+    "basics/series-copy",
+    "Series.copy",
+    frames=("two", "tall"),
+    expr=lambda pd, df: df.iloc[:, 1].copy(),
+)
+case(
+    "basics/series-copy-shallow",
+    "Series.copy",
+    level="L3",
+    covers=("deep",),
+    frames=("two", "tall"),
+    expr=lambda pd, df: df.iloc[:, 1].copy(deep=False),
+)
 
 # ---------------------------------------------------------------------------
 # The reductions, which is where null handling becomes visible

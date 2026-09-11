@@ -58,6 +58,24 @@ KINDS = ("engine", "upstream", "unsupported", "pending")
 # operation. `differs` means it answers, and the answer is not the pandas one.
 EXPECTATIONS = ("raises", "differs")
 
+# The exception classes a `raises` entry is allowed to name, resolved here rather than
+# with `getattr(builtins, name)` so that the registry cannot name something that is
+# not an exception and so that the list of what a deliberate refusal is allowed to
+# look like is visible in one place.
+#
+# `AttributeError` is in the list and it is the interesting one. An entry that names it
+# is saying the divergence is the absence itself, which is what `engine/plotting` means
+# and is a different statement from a method nobody has written yet. The runner reads
+# that difference and nothing else can tell it: both are an `AttributeError` about a
+# name that is not there, and only the registry knows which of the two it is.
+RAISED = {
+    "AttributeError": AttributeError,
+    "KeyError": KeyError,
+    "NotImplementedError": NotImplementedError,
+    "TypeError": TypeError,
+    "ValueError": ValueError,
+}
+
 # The shortest reason anybody has ever written that a user would accept is longer than
 # this. The limit is not a quality check, it is a check that the field was filled in
 # with a sentence rather than with a word.
@@ -111,6 +129,14 @@ class Divergence:
         expect: What happens instead, one of `EXPECTATIONS`.
         instead: What firepanda produces, for a `differs` entry. Differs without
             saying how is not a specification, it is a shrug.
+        raises: The exception class a `raises` entry expects, one of `RAISED`, or
+            empty. It is what `instead` is for the other expectation and it is worth
+            the same argument: an entry that says the operation refuses and does not
+            say how it refuses is satisfied by any failure at all, including the
+            failure of a method nobody has written. It is optional today because the
+            entries that predate it cover cases the driver cannot run, so there is
+            nothing to observe the class of yet, and an entry without it behaves the
+            way every entry did before.
         since: When the entry was added.
         expires: For a `pending` entry, the date it stops being allowed to exist.
         milestone: For an `unsupported` entry, when it is scheduled.
@@ -125,6 +151,7 @@ class Divergence:
     spec: str
     expect: str
     instead: str = ""
+    raises: str = ""
     since: str = ""
     expires: str = ""
     milestone: str = ""
@@ -146,6 +173,14 @@ class Divergence:
         if not any(fnmatch.fnmatchcase(case_id, pattern) for pattern in self.cases):
             return False
         return frame is None or not self.frames or frame in self.frames
+
+    def expected_class(self) -> type[BaseException] | None:
+        """The exception class this entry declares, or None when it names none.
+
+        Returns:
+            The class, or None.
+        """
+        return RAISED.get(self.raises) if self.raises else None
 
     def is_expired(self, today: date | None = None) -> bool:
         """Whether a pending entry has run out of time.
@@ -327,6 +362,23 @@ def parse(document: dict[str, Any], known: dict[str, Any] | None = None) -> list
                 "Leave it out to mean every frame the covered cases run on"
             )
 
+        raises = raw.get("raises", "")
+        if not isinstance(raises, str):
+            raise DivergenceError(f"{entry_id} has a raises field that is not a class name")
+        if raises and raises not in RAISED:
+            raise DivergenceError(
+                f"{entry_id} expects a {raises}, which is not one of {', '.join(RAISED)}. "
+                "The list is short on purpose: a refusal a user is supposed to catch "
+                "has to be a class they would think to write, and a registry that can "
+                "name any word at all can name one that is not an exception"
+            )
+        if raises and expect != "raises":
+            raise DivergenceError(
+                f"{entry_id} says the answer differs and also names a {raises}. Those "
+                "are two different claims and only one of them can be true, so the "
+                "entry has to pick the one it means"
+            )
+
         instead = raw.get("instead", "")
         if expect == "differs" and not instead:
             raise DivergenceError(
@@ -369,6 +421,7 @@ def parse(document: dict[str, Any], known: dict[str, Any] | None = None) -> list
             spec=spec,
             expect=expect,
             instead=instead,
+            raises=raises,
             since=since,
             expires=expires,
             milestone=milestone,
@@ -475,7 +528,11 @@ def page() -> str:
         "| --- | --- | --- |",
     ]
     for entry in entries:
-        instead = "the operation raises" if entry.expect == "raises" else entry.instead
+        instead = entry.instead
+        if entry.expect == "raises":
+            instead = (
+                f"the operation raises {entry.raises}" if entry.raises else "the operation raises"
+            )
         lines.append(f"| [{entry.id}](#{entry.id.replace('/', '')}) | {entry.kind} | {instead} |")
     lines.append("")
 
@@ -486,6 +543,9 @@ def page() -> str:
         lines.append("")
         if entry.expect == "differs":
             lines.append(f"**Instead.** {entry.instead}")
+            lines.append("")
+        elif entry.raises:
+            lines.append(f"**Instead.** The call raises `{entry.raises}`.")
             lines.append("")
         details = [f"Kind `{entry.kind}`", f"since {entry.since}", f"specified in `{entry.spec}`"]
         if entry.milestone:

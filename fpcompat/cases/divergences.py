@@ -294,6 +294,15 @@ INPLACE = (
     ("Series.where", "series-where", NUMERIC, lambda pd, d: d.where(d > 0, inplace=True)),
 )
 
+IN_PROCESS_NOTE = (
+    "every case in this block takes a copy, runs the mutating call on it and hands "
+    "back the object that was mutated, and copy is a Python layer member here rather "
+    "than a core one, so a driver entry could only emit the frame it was handed and "
+    "would be scoring itself. Until copy existed at all these cases were reported "
+    "absent, which meant the registry was asserting the inplace divergence nowhere. "
+    "See spec 44"
+)
+
 for api, suffix, frames, call in INPLACE:
     body = _mutating(call) if api.startswith("DataFrame") else _series(_mutating(call))
     case(
@@ -302,6 +311,8 @@ for api, suffix, frames, call in INPLACE:
         level="L3",
         covers=("inplace",),
         frames=frames,
+        in_process=True,
+        note=IN_PROCESS_NOTE,
         # `body` and not a lambda around it. `_mutating` and `_series` already
         # return a fresh closure per iteration, so there is no late binding here
         # for a trampoline to fix, and the trampoline was not free: it put one more
@@ -313,16 +324,21 @@ for api, suffix, frames, call in INPLACE:
 
 
 def _index_names(pd, index, call):
-    """Applies an inplace rename to an index and returns the names it ended up with."""
+    """Applies an inplace naming call to an index and returns the names it ended up with."""
     copied = index.copy()
     call(copied)
     return list(copied.names)
 
 
+# Only set_names is here, and rename is not, because rename is the one inplace
+# parameter in the library that firepanda honours rather than refusing. An index
+# level name is not data, changing it does not change a single label, and pandas
+# treats it as mutable for that reason, so firepanda does too and the divergence
+# this block registers is not true of it. The two rename cases live with the
+# ordinary index cases instead, as indexing/index-rename-inplace and
+# temporal/index-rename-inplace.
 INDEX_INPLACE = (
-    ("Index.rename", "index-rename", lambda i: i.rename("row", inplace=True)),
     ("Index.set_names", "index-set-names", lambda i: i.set_names("row", inplace=True)),
-    ("DatetimeIndex.rename", "datetime-index-rename", lambda i: i.rename("when", inplace=True)),
     (
         "DatetimeIndex.set_names",
         "datetime-index-set-names",
@@ -350,6 +366,8 @@ for api, suffix, call in INDEX_INPLACE:
         covers=("inplace",),
         frames=frames,
         expr=(lambda made, take: lambda pd, df: _index_names(pd, take(pd, df), made))(call, source),
+        in_process=True,
+        note=IN_PROCESS_NOTE,
     )
 
 case(
@@ -363,6 +381,8 @@ case(
         pd.MultiIndex.from_frame(df[["left", "right"]]),
         lambda index: index.rename(["one", "two"], inplace=True),
     ),
+    in_process=True,
+    note=IN_PROCESS_NOTE,
 )
 case(
     "divergences/inplace/multi-index-set-names",
@@ -375,6 +395,8 @@ case(
         pd.MultiIndex.from_frame(df[["left", "right"]]),
         lambda index: index.set_names(["one", "two"], inplace=True),
     ),
+    in_process=True,
+    note=IN_PROCESS_NOTE,
 )
 
 
@@ -392,8 +414,9 @@ case(
     covers=("inplace",),
     frames=("two",),
     expr=_module_eval,
+    in_process=True,
     note="the only inplace parameter that is not on a method, and the only one where "
-    "the object being mutated is passed in rather than being self",
+    "the object being mutated is passed in rather than being self. " + IN_PROCESS_NOTE,
 )
 
 # ---------------------------------------------------------------------------
