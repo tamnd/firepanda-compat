@@ -159,7 +159,7 @@ expect = "differs"
 instead = "str.startswith and str.endswith answer null on a missing row rather than False, so the mask has three states and a caller can tell a row that did not match from a row that had nothing to match."
 since = "2026-09-11"
 
-# The fourteenth and fifteenth, and the second time after the eighth that firepanda is
+# The thirteenth and fourteenth, and the second time after the eighth that firepanda is
 # the one giving the answer arithmetic gives. They are one difference split into two
 # entries because the registry narrows to frames per entry rather than per case, and the
 # two halves are visible on different frames.
@@ -169,7 +169,7 @@ id = "engine/window-infinity"
 cases = ["windows/rolling-min-periods", "windows/rolling-window-one", "windows/expanding-sum", "windows/expanding-mean", "windows/expanding-min", "windows/expanding-max", "windows/expanding-min-periods"]
 frames = ["float64_no_nulls", "float64_half_null"]
 kind = "engine"
-reason = "pandas cannot get an infinity back out of a window and firepanda can, and there are two separate reasons for that rather than one. A rolling or expanding sum is carried from one row to the next, so pandas' running total goes infinite the moment an infinity enters the window and goes to NaN when that row is subtracted again, and it has no way back. Measured on pandas 3.0.5, the expanding sum over the suite's own float64 frame answers the largest finite double from row five onward, where the window holds both a positive and a negative infinity and the arithmetic says NaN, and it answers that same finite number where the window holds only one of them and the arithmetic says an infinity. The extremes lose the same two values for an unrelated reason: pandas seeds its running maximum with negative infinity and reads a result equal to the seed as an empty window, so an expanding max over a column whose second row is a positive infinity answers the largest finite value it has seen instead, for every row after it. firepanda counts the two infinities beside the finite total and assembles the answer from the three at the end, and its extremes treat an infinity as the ordinary value it is, so both survive the row that carried them leaving the window again. pandas' exact recovery rule could not have been copied even if copying it were the right thing to do, because pandas ships its window kernels compiled and their source is not in the wheel."
+reason = "pandas cannot get an infinity back out of a window and firepanda can, and the reason is one line of Python rather than a property of any kernel. The last thing pandas.core.window.rolling.BaseWindow._prep_values does before handing the column to a kernel is three lines under the comment `Convert inf to nan for C funcs`, which replace every infinity in the column with a NaN. So an infinity in a pandas rolling or expanding window is a missing value, and the window is reduced over the rows either side of it. Measured on pandas 3.0.3, the expanding sum over the suite's own float64 frame answers the largest finite double from row five onward, where the window holds both a positive and a negative infinity and the arithmetic says NaN, and it answers that same finite number where the window holds only one of them and the arithmetic says an infinity. The extremes go the same way for the same reason, so an expanding max over a column whose second row is a positive infinity answers the largest finite value it has seen instead, for every row after it. count is the one reduction of the ten that does not see the replacement, because it reads the presence indicator rather than the values, so pandas will report that a window holds two values and then answer the sum of one of them. This is the window layer and not pandas as a whole: pd.Series([1.0, float('inf')]).sum() is an infinity and .max() is an infinity, and only rolling and expanding lose them. firepanda counts the two infinities beside the finite total and assembles the answer from the three at the end, and its extremes treat an infinity as the ordinary value it is, so both survive the row that carried them leaving the window again."
 spec = "31-a-window-is-a-pair-of-rows.md#why-the-reductions-are-carried-and-what-that-costs"
 expect = "differs"
 instead = "a window that holds an infinity answers that infinity, a window that holds one of each sign answers a NaN, and both are still right after the row that carried the infinity has left the window again. Every window with no infinity in it agrees with pandas to the last bit, which is why this entry names two frames and not the other two the same cases run on."
@@ -186,7 +186,7 @@ expect = "differs"
 instead = "a window that holds an infinity answers that infinity and a window that holds one of each sign answers a NaN, the same as engine/window-infinity. On the half null frame, and on the int64 and tall frames these cases also run on, there is no infinity in reach and the two engines agree exactly."
 since = "2026-09-11"
 
-# The sixteenth, and the first that is about a signature rather than an answer. It is
+# The fifteenth, and the first that is about a signature rather than an answer. It is
 # here because the frame form of a window arrived in firepanda and made this case
 # reachable, and it was absent rather than passing before that.
 
@@ -199,4 +199,33 @@ reason = "pandas declares Rolling.max as (numeric_only=False, *args, engine=None
 spec = "31-a-window-is-a-pair-of-rows.md#the-python-surface-and-the-four-arguments-that-are-declared-and-refused"
 expect = "differs"
 instead = "Rolling.max takes numeric_only, engine and engine_kwargs, the same three the other nine reductions take, and refuses anything else by name. A caller who was relying on the extra parameters was relying on pandas throwing them away."
+since = "2026-09-11"
+
+# The sixteenth and seventeenth, which arrived when var, std and sem landed on rolling
+# and expanding and made six runs reachable that were absent before. They are separate
+# entries because they are separate mechanisms and one of them is not about infinities
+# at all. The rolling one is about whether a carried variance can come back from an
+# overflow. The expanding one is the thirteenth entry again, on a window that never lets
+# go of a row, with pandas' own overflow sitting on top of it.
+
+[[divergence]]
+id = "engine/window-spread-overflow"
+cases = ["windows/rolling-var", "windows/rolling-std", "windows/rolling-sem"]
+frames = ["float64_no_nulls"]
+kind = "engine"
+reason = "A rolling variance is carried from one window to the next in both engines, because recomputing it would cost the width of the window on every row, and a carried sum of squared deviations can overflow. Row five of the suite's float64 frame is the largest finite double, so the first three eight row windows that are full and reach it overflow in both engines, both answer an infinity, and the suite requires them to agree there. Row thirteen is the first window that has let go of that value again. firepanda checks the error bound it carries beside the sum before it answers, an infinite sum fails that check, and it rebuilds from the eight rows in front of it and answers 8.758845844921883e+30. pandas carries the infinity forward and answers an infinity for that row and for the fifty remaining rows of the frame, so 51 of the 64 rows differ and every one of them is a row where the window holds nothing unusual. The bound firepanda carries is not only for this: it fires whenever a value much larger than the rest leaves the window and the running answer has lost its meaning, which happens on ordinary data and not only at the top of the float range."
+spec = "31-a-window-is-a-pair-of-rows.md#a-carried-variance-needs-to-know-when-to-stop-being-carried"
+expect = "differs"
+instead = "a window whose sum of squared deviations overflowed is rebuilt from its own rows once the value that overflowed it has left, so the answer is finite again as soon as the data is. The row that genuinely overflows still answers an infinity, because that is what the arithmetic over those eight values says. On the tall frame these three cases also run on there is nothing near the top of the float range, nothing overflows, and the two engines agree to the last bit."
+since = "2026-09-11"
+
+[[divergence]]
+id = "engine/window-spread-infinity"
+cases = ["windows/expanding-var", "windows/expanding-std", "windows/expanding-sem"]
+frames = ["float64_no_nulls"]
+kind = "engine"
+reason = "An expanding window never lets go of a row, so the positive infinity in row one and the negative infinity in row two are inside every window from row one to the end of the frame and there is no recovery to argue about. firepanda answers NaN for all of them, which is what a spread around a mean that is not a number is. pandas replaces both infinities with missing values before the kernel runs, for the reason engine/window-infinity gives, so it sees a column that is two rows shorter instead. At row four its window holds a negative zero and the smallest denormal and it answers zero where firepanda answers NaN. At row five the largest finite double arrives, pandas' sum of squared deviations overflows, and pandas answers an infinity for the remaining fifty nine rows. So 60 of the 64 rows differ, and only row four is the replacement showing on its own rather than with an overflow on top of it. The replacement is visible in smaller data too: rolling(2, min_periods=1).var(ddof=0) over 1.0, an infinity, 2.0, 3.0 and 4.0 answers zero in the row that holds the infinity, on the reasoning that a window with one value in it has no spread, and firepanda answers NaN there."
+spec = "31-a-window-is-a-pair-of-rows.md#a-carried-variance-needs-to-know-when-to-stop-being-carried"
+expect = "differs"
+instead = "a window that holds an infinity has no mean and therefore no spread, so var, std and sem answer NaN, and they keep answering it for as long as the infinity is in reach. An expanding window never drops a row, so that is every row after the one that carried it. On the tall frame these three cases also run on there is no infinity in the column and the two engines agree to the last bit."
 since = "2026-09-11"
