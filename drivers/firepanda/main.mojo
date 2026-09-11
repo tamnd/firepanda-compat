@@ -2538,6 +2538,19 @@ def main() raises:
         elif case_id == "indexing/loc-column":
             var held = String("b") if frame.has("b") else String("value")
             emit_series(held, frame.column(held), out)
+        elif case_id == "indexing/series-iloc":
+            emit_series("value", sliced(frame, 4, 12).column("value"), out)
+        elif case_id == "indexing/series-getitem":
+            # Square brackets on a series read a slice of numbers as positions
+            # and a single number as a label, so this one is the same call as
+            # the case above it and the one below it is a different call.
+            emit_series("value", sliced(frame, 3, 8).column("value"), out)
+        elif case_id == "indexing/series-loc-after-sort":
+            var moved = shuffled_by_last(frame)
+            emit_scalar(
+                moved.take(positions_of(moved, [Int64(7)])).select(["value"]),
+                out,
+            )
         elif case_id == "indexing/take":
             emit_frame(frame.take([2, 0, 1]), out)
         elif case_id == "indexing/take-negative":
