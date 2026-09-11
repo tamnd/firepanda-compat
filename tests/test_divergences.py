@@ -492,9 +492,16 @@ def test_the_committed_registry_loads():
     NaN there for different reasons, and one row of the sixty four differs. On the half
     null frame there is one infinity and nothing to cancel it, so an exponentially
     weighted window, which never drops a row, carries it to the bottom of the column and
-    sixty two rows differ."""
+    sixty two rows differ.
+
+    `engine/pandas-exception-classes` is the twenty fifth and the first one that is not
+    about an operation at all. pandas defines exception classes of its own and no
+    firepanda exception can be a subclass of one without importing pandas, so a case
+    that asks which class comes out of a refusal gets the right refusal under the wrong
+    class. It covers two cases in two unrelated sections, which is how an entry about
+    the dependency graph looks when it is written down as cases."""
     entries = divergences.registry()
-    assert len(entries) == 24
+    assert len(entries) == 25
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
