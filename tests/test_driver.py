@@ -257,6 +257,32 @@ def test_an_index_answer_of_more_than_one_column_is_broken(tmp_path):
         driver.run("basics/scratch", "two")
 
 
+def test_an_array_is_a_bare_run_of_values_with_no_name(tmp_path):
+    # pandas answers `Index.isin` and `Index.values` with a numpy array, which has no
+    # labels and no name. That is a different kind from an index rather than an index
+    # whose name happens to be missing, and an engine that sent back an index would be
+    # sending back something a caller can ask the name of.
+    driver = fake(
+        tmp_path,
+        {"status": "ok", "kind": "array"},
+        {"schema": [["__value__", "bool"]], "columns": [[True, False]]},
+    )
+    answer = driver.run("basics/scratch", "two")
+    assert answer.kind == "array"
+    assert answer.table.column(0).to_pylist() == [True, False]
+    assert answer.name is None
+
+
+def test_an_array_answer_of_more_than_one_column_is_broken(tmp_path):
+    driver = fake(
+        tmp_path,
+        {"status": "ok", "kind": "array"},
+        {"schema": [["a", "int64"], ["b", "int64"]], "columns": [[1], [2]]},
+    )
+    with pytest.raises(DriverBroken, match="an array answer has one column"):
+        driver.run("basics/scratch", "two")
+
+
 def test_a_tuple_keeps_a_part_per_column_with_its_own_type(tmp_path):
     # This is what `shape` comes back as. The widths are the point: a pair of ints
     # through JSON has no width at all, and an int32 where pandas gives int64 is a
@@ -382,7 +408,8 @@ def test_a_kind_the_protocol_does_not_have_is_broken(tmp_path):
         {"status": "ok", "kind": "panel"},
         {"schema": [["value", "int64"]], "columns": [[1]]},
     )
-    with pytest.raises(DriverBroken, match="not one of scalar, frame, series, index or tuple"):
+    wanted = "not one of scalar, frame, series, index, array or tuple"
+    with pytest.raises(DriverBroken, match=wanted):
         driver.run("basics/scratch", "two")
 
 
