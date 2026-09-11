@@ -391,7 +391,7 @@ def test_an_entry_with_no_expiry_never_expires():
 
 
 def test_the_committed_registry_loads():
-    """Ten, having been eight at the start, then seven, then eight, and now ten.
+    """Seventeen, having been eight at the start, then seven, and up one at a time.
 
     The count is pinned so that an entry cannot appear or disappear without somebody
     saying so here. `engine/index-alignment` is the one that went, because firepanda
@@ -437,9 +437,20 @@ def test_the_committed_registry_loads():
     reductions declaring `*args` and `**kwargs`, its body drops both on the floor
     without reading them, and firepanda declares the same three real parameters on
     all ten. Copying it would mean writing one signature that accepts anything and
-    ignores it."""
+    ignores it.
+
+    `engine/window-spread-overflow` and `engine/window-spread-infinity` are the
+    sixteenth and seventeenth, and they arrived when `var`, `std` and `sem` landed
+    on `rolling` and `expanding`. They are two entries because only the second one
+    is about infinities. The first is about a carried sum of squared deviations
+    that overflowed: firepanda carries an error bound beside the sum, notices the
+    sum has stopped meaning anything, and rebuilds the window once the value that
+    overflowed it has left, where pandas answers an infinity for every later row of
+    the frame. The second is the thirteenth entry on a window that never drops a
+    row, so pandas' replacement of an infinity by a missing value has no chance to
+    stop being visible, and pandas' own overflow sits on top of it."""
     entries = divergences.registry()
-    assert len(entries) == 15
+    assert len(entries) == 17
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
