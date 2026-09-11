@@ -482,9 +482,19 @@ def test_the_committed_registry_loads():
     than degree. There pandas' count fell short and it answered nothing. Here it falls
     short for two rows and then answers every remaining row one place low, because the
     value pandas removed sits below the row it is ranking and taking it away moves
-    everything above it down."""
+    everything above it down.
+
+    `engine/ewm-infinity` and `engine/ewm-infinity-carried` are the twenty third and
+    twenty fourth, and they are the same replacement again on the third window type,
+    which is a `BaseWindow` and therefore sees it. They are two entries for the reason
+    the thirteenth and fourteenth were, which is that an entry narrows to frames as a
+    whole. On the float64 frame the two infinities cancel at row two, both engines answer
+    NaN there for different reasons, and one row of the sixty four differs. On the half
+    null frame there is one infinity and nothing to cancel it, so an exponentially
+    weighted window, which never drops a row, carries it to the bottom of the column and
+    sixty two rows differ."""
     entries = divergences.registry()
-    assert len(entries) == 22
+    assert len(entries) == 24
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
