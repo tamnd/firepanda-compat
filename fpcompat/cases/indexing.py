@@ -181,14 +181,23 @@ case(
     covers=("key", "default"),
     frames=SHAPES,
     expr=lambda pd, df: df.get("not_a_column", "missing"),
+    in_process=True,
     note="get returns the default rather than raising, which is the only difference "
-    "between it and square brackets and the only reason it exists",
+    "between it and square brackets and the only reason it exists. The answer here "
+    "is the default, so a driver entry would have to hold a copy of the value the "
+    "case asked for and hand it back, which is the driver scoring itself. See spec 36",
 )
 case(
     "indexing/squeeze",
     "DataFrame.squeeze",
     frames=("single",),
     expr=lambda pd, df: df[["a"]].squeeze(),
+    in_process=True,
+    note=(
+        "squeeze reads the shape of the frame and decides between three shapes of "
+        "answer, which is the whole method and is above the core. A driver entry "
+        "would have to make that decision itself to know what to emit. See spec 36"
+    ),
 )
 
 # ---------------------------------------------------------------------------
