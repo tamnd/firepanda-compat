@@ -469,9 +469,15 @@ def test_the_committed_registry_loads():
     two entries for the same reason the thirteenth and fourteenth are two: a five row
     window over the half null frame never fills, so the rolling half is only visible on
     the frame with nothing missing, and folding both into one entry would tell the suite
-    that the rolling median has to differ on a frame where it agrees exactly."""
+    that the rolling median has to differ on a frame where it agrees exactly.
+
+    `engine/window-position-count` is the twenty first and it is the nineteenth again on
+    the quantile and the rank, which arrived beside the median and read out of the same
+    sorted window. It is one entry rather than two because both cases ask for an eight
+    row window over the same two frames and both differ on the same one of the two, so
+    there is no line of the kind that split the pairs above."""
     entries = divergences.registry()
-    assert len(entries) == 20
+    assert len(entries) == 21
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
