@@ -62,6 +62,7 @@ from firepanda.frame.series import Series
 from firepanda.frame.groupby import AggSpec
 from firepanda.io import read_arrow, write_arrow
 from firepanda.kernel import AggKind, BinaryOp
+from firepanda.kernel.ewm import EwmOp, EwmSpec, alpha_of
 from firepanda.kernel.window import WindowEdge, WindowOp, WindowSettings
 
 # The exit status is not the protocol, the JSON line is, and this is only here so
@@ -772,6 +773,54 @@ def spread(frame: DataFrame, op: WindowOp) raises -> Series:
         Error: Whatever `expanding` raises.
     """
     return frame.column("value").expanding(op, 1)
+
+
+def decayed(
+    frame: DataFrame,
+    op: EwmOp,
+    com: Optional[Float64] = None,
+    span: Optional[Float64] = None,
+    halflife: Optional[Float64] = None,
+    alpha: Optional[Float64] = None,
+    min_periods: Int = 0,
+    adjust: Bool = True,
+    ignore_na: Bool = False,
+) raises -> Series:
+    """Runs one exponentially weighted reduction down the `value` column.
+
+    The decay goes through `alpha_of` rather than being written out as a
+    smoothing factor, which matters for four of the ten cases arming this. Those
+    four ask for the same window in four spellings, and the note on them says an
+    implementation that converts between them differently is wrong in a way that
+    shows in the last decimal of every row. A driver that did the conversion
+    itself would be checking its own arithmetic against pandas rather than the
+    library's.
+
+    Args:
+        frame: The corpus frame.
+        op: The reduction.
+        com: The decay as a centre of mass.
+        span: The decay as a span.
+        halflife: The decay as a half life in rows.
+        alpha: The decay as a smoothing factor.
+        min_periods: How many values a row waits for.
+        adjust: Whether an arriving row weighs one rather than the factor.
+        ignore_na: Whether a missing row is skipped rather than decayed over.
+
+    Returns:
+        The decayed column.
+
+    Raises:
+        Error: Whatever the conversion or the reduction raises.
+    """
+    var spec = EwmSpec(
+        alpha_of(com, span, halflife, alpha),
+        min_periods,
+        adjust,
+        ignore_na,
+        False,
+    )
+    return frame.column("value").ewm(op, spec)
 
 
 def category_label(column: Series, at: Int) raises -> String:
@@ -2144,6 +2193,68 @@ def main() raises:
         elif case_id == "windows/expanding-min-periods":
             emit_series(
                 "value", frame.column("value").expanding(WindowOp.SUM, 5), out
+            )
+        elif case_id == "windows/ewm-span-mean":
+            emit_series(
+                "value", decayed(frame, EwmOp.MEAN, span=Optional(5.0)), out
+            )
+        elif case_id == "windows/ewm-com-mean":
+            # The same window as the span above, since a span of five and a
+            # centre of mass of two are one number written two ways. The two
+            # cases are separate because the conversion is the thing being
+            # measured and not the recurrence.
+            emit_series(
+                "value", decayed(frame, EwmOp.MEAN, com=Optional(2.0)), out
+            )
+        elif case_id == "windows/ewm-halflife-mean":
+            # The one of the four spellings whose conversion is not a ratio of
+            # whole numbers, so it is the one that would disagree in the last
+            # decimal if the logarithm were folded differently.
+            emit_series(
+                "value", decayed(frame, EwmOp.MEAN, halflife=Optional(3.0)), out
+            )
+        elif case_id == "windows/ewm-alpha-mean":
+            emit_series(
+                "value", decayed(frame, EwmOp.MEAN, alpha=Optional(0.3)), out
+            )
+        elif case_id == "windows/ewm-adjust-false":
+            emit_series(
+                "value",
+                decayed(
+                    frame, EwmOp.MEAN, alpha=Optional(0.3), adjust=False
+                ),
+                out,
+            )
+        elif case_id == "windows/ewm-ignore-na":
+            emit_series(
+                "value",
+                decayed(
+                    frame, EwmOp.MEAN, alpha=Optional(0.3), ignore_na=True
+                ),
+                out,
+            )
+        elif case_id == "windows/ewm-min-periods":
+            # A count of three against a frame whose nulls alternate, which is
+            # where counting values rather than rows is visible: every second
+            # row holds nothing, so the third value arrives at row four.
+            emit_series(
+                "value",
+                decayed(
+                    frame, EwmOp.MEAN, span=Optional(5.0), min_periods=3
+                ),
+                out,
+            )
+        elif case_id == "windows/ewm-std":
+            emit_series(
+                "value", decayed(frame, EwmOp.STD, span=Optional(5.0)), out
+            )
+        elif case_id == "windows/ewm-var":
+            emit_series(
+                "value", decayed(frame, EwmOp.VAR, span=Optional(5.0)), out
+            )
+        elif case_id == "windows/ewm-sum":
+            emit_series(
+                "value", decayed(frame, EwmOp.SUM, span=Optional(5.0)), out
             )
         else:
             print('{"status":"absent"}')
