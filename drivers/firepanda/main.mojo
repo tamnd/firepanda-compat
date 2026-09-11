@@ -2624,6 +2624,17 @@ def main() raises:
             # core takes the two through different overloads, one of which
             # resolves the default and one of which does not.
             emit_frame(frame.drop_duplicates(), out)
+        elif case_id == "indexing/nlargest":
+            # pandas writes the count first and the column second, and the core
+            # writes them the other way round, because the column is the thing
+            # being asked about and the count is how much of it is wanted.
+            emit_frame(frame.nlargest("value", 5), out)
+        elif case_id == "indexing/nsmallest":
+            emit_frame(frame.nsmallest("value", 5), out)
+        elif case_id == "indexing/nlargest-keep-last":
+            # Ten keys over sixty four rows, so the fourth largest is a tie and
+            # the rule is what decides the answer rather than the values.
+            emit_frame(frame.nlargest("key", 4, "last"), out)
         else:
             print('{"status":"absent"}')
     except error:
