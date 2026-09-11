@@ -278,3 +278,20 @@ spec = "31-a-window-is-a-pair-of-rows.md#the-median-is-a-count-of-ranks-and-the-
 expect = "differs"
 instead = "an infinity is an ordinary value with an ordinary place in the sorted window, so it counts towards min_periods and it holds a position, and the median of a window that holds one is whichever value sits in the middle of it. On the int64 and tall frames this case also runs on there is no infinity in the column and the two engines agree to the last bit."
 since = "2026-09-11"
+
+# The twenty first, which is the nineteenth entry again on the two reductions that
+# arrived beside the median and read out of the same sorted window. One entry this time
+# rather than two, because both cases ask for an eight row window over the same two
+# frames and the difference shows on the same one of the two, so there is no line to
+# split them along.
+
+[[divergence]]
+id = "engine/window-position-count"
+cases = ["windows/rolling-quantile", "windows/rolling-rank"]
+frames = ["float64_no_nulls"]
+kind = "engine"
+reason = "A quantile and a rank read a position in the sorted window rather than folding the window into a number, so the infinities pandas replaces with missing values before the kernel runs cannot poison a running answer here. What they do instead is change how many values pandas thinks the window holds, and both of these cases ask for an eight row window with no min_periods set, so a window has to hold all eight of its rows before it answers anything. Measured on pandas 3.0.3 over the suite's float64 frame, rows eight and nine are the only two windows this shows in. Row eight covers rows one to eight, which are a positive infinity, a negative infinity, a negative zero, the smallest denormal, the largest finite double and three ordinary values near ten to the fifteen, so firepanda sees eight values and pandas sees six. Row nine covers rows two to nine and has left the positive infinity behind, so firepanda sees eight and pandas sees seven. Both are short of eight, so pandas answers NaN in both rows. The quantile case asks for a fraction of a half, so firepanda answers the middle of the window it has, which is 2599373083261376.5 in both rows and is the mean of 789697162726961.0 and 4409049003795792.0, the fourth and fifth values of the sorted window in each of them. The rank case answers 5.0 at row eight and 6.0 at row nine, which is where the value in the window's last row sits among the eight. Row seven is not one of the two, because the frame's first row is a genuine NaN and neither engine has eight values there. From row ten on the window has left both infinities behind and the two engines agree to the last bit for the remaining fifty four rows."
+spec = "31-a-window-is-a-pair-of-rows.md#the-quantile-is-a-position-and-the-rank-is-a-row"
+expect = "differs"
+instead = "an infinity is an ordinary value with an ordinary place in the sorted window, so it counts towards min_periods and it takes a position like anything else. The quantile of a window that holds one reads between whichever two values the fraction lands between, and the rank of a row is its place among every value the window holds. Two windows of the sixty four differ and both of them are windows pandas declined to answer at all. On the tall frame these two cases also run on there is no infinity in the column and the two engines agree everywhere."
+since = "2026-09-11"
