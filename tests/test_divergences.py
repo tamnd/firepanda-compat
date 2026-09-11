@@ -458,9 +458,20 @@ def test_the_committed_registry_loads():
     pandas answers NaN for the whole frame where firepanda rebuilds and answers from
     row thirteen on. The expanding forms need no entry of their own, because an
     expanding window never drops the two infinities near the top of the frame and both
-    engines answer NaN for every row."""
+    engines answer NaN for every row.
+
+    `engine/window-median-count` and `engine/window-median-middle` are the nineteenth
+    and twentieth and they are the thirteenth entry on the one reduction that reads a
+    position rather than accumulating. A median cannot be poisoned by an infinity
+    because there is nothing carried for an infinity to get into, so what pandas'
+    replacement does instead is change how many values the window holds, which decides
+    whether min_periods is met and where the middle of the sorted window sits. They are
+    two entries for the same reason the thirteenth and fourteenth are two: a five row
+    window over the half null frame never fills, so the rolling half is only visible on
+    the frame with nothing missing, and folding both into one entry would tell the suite
+    that the rolling median has to differ on a frame where it agrees exactly."""
     entries = divergences.registry()
-    assert len(entries) == 18
+    assert len(entries) == 20
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

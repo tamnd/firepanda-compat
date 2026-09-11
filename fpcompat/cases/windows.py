@@ -221,7 +221,7 @@ case(
 # Expanding
 # ---------------------------------------------------------------------------
 
-for name in ("sum", "mean", "min", "max", "count"):
+for name in ("sum", "mean", "min", "max", "count", "median"):
     case(
         f"windows/expanding-{name}",
         f"Expanding.{name}",

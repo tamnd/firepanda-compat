@@ -249,3 +249,32 @@ spec = "31-a-window-is-a-pair-of-rows.md#the-third-and-fourth-moments-are-sectio
 expect = "differs"
 instead = "a window whose moments overflowed is rebuilt from its own rows once the value that overflowed them has left, so the shape is a number again as soon as the data is. The rows that genuinely hold the largest finite double still answer NaN, because a fourth moment over those eight values is an infinity whichever way it is computed. On the tall frame these two cases also run on there is nothing near the top of the float range and the two engines agree to within the suite's statistical tolerance."
 since = "2026-09-11"
+
+# The nineteenth and twentieth, which are the thirteenth entry again on the one
+# reduction that reads a position in the window rather than folding the window into a
+# number. The mechanism is pandas' replacement of every infinity with a missing value,
+# the same three lines as before, but what the replacement does to a median is not what
+# it does to a total, and the two entries below are split along the same line as the
+# thirteenth and fourteenth because the two halves show on different frames.
+
+[[divergence]]
+id = "engine/window-median-count"
+cases = ["windows/rolling-median"]
+frames = ["float64_no_nulls"]
+kind = "engine"
+reason = "A median does not accumulate, so the infinities pandas replaces before the kernel runs cannot poison a running answer here the way they poison a running total. What they do instead is change how many values pandas thinks the window holds, and a five row window with no min_periods set needs all five before it answers anything. Rows five and six of the suite's float64 frame are the only two windows this shows in. Row five covers rows one to five, which are a positive infinity, a negative infinity, a negative zero, the smallest denormal and the largest finite double, so firepanda sees five values and answers the smallest denormal, which is the middle one once they are sorted, and pandas sees three and answers NaN. Row six covers rows two to six, firepanda sees five values and answers the smallest denormal again, and pandas sees four and answers NaN. From row seven on the window has left both infinities behind and the two engines agree to the last bit for the remaining fifty seven rows. On the half null frame this case also runs on, every other row is missing, a five row window never holds five values, both engines answer NaN everywhere and the suite requires them to agree there, which is why this entry names one frame and its case list has one case in it."
+spec = "31-a-window-is-a-pair-of-rows.md#the-median-is-a-count-of-ranks-and-the-other-two-order-statistics-read-out-of-the-same-count"
+expect = "differs"
+instead = "an infinity is an ordinary value with an ordinary place in the sorted window, so it counts towards min_periods and it takes a position like anything else. Two windows of the sixty four differ and both of them are windows pandas declined to answer at all."
+since = "2026-09-11"
+
+[[divergence]]
+id = "engine/window-median-middle"
+cases = ["windows/expanding-median"]
+frames = ["float64_no_nulls", "float64_half_null"]
+kind = "engine"
+reason = "An expanding window never drops a row, so the infinities near the top of the suite's float frames are inside every later window and the replacement pandas makes is visible for the rest of the column. How visible depends on how many of them are in reach, and that is the part worth writing down, because a median is a position and removing a value from one end of a sorted window moves the middle by half a place while removing one from each end does not move it at all. The float64 frame has a positive infinity in row one and a negative infinity in row two, one at each end of every sorted window that holds both, so only one row of the sixty four differs: row one, where firepanda has one value and answers the infinity and pandas has none and answers NaN under an expanding window's min_periods of one. The half null frame nulls the positive infinity and keeps the negative one, so every window from row two on is missing a value off its low end in pandas and not in firepanda, the middle sits half a place apart, and 62 of the 64 rows differ. Neither of those numbers says anything about how large the difference is: at row eight firepanda answers 2204524501897896.0 and pandas answers 4409049003795792.0, which are two different values out of the same window and not a rounding of each other."
+spec = "31-a-window-is-a-pair-of-rows.md#the-median-is-a-count-of-ranks-and-the-other-two-order-statistics-read-out-of-the-same-count"
+expect = "differs"
+instead = "an infinity is an ordinary value with an ordinary place in the sorted window, so it counts towards min_periods and it holds a position, and the median of a window that holds one is whichever value sits in the middle of it. On the int64 and tall frames this case also runs on there is no infinity in the column and the two engines agree to the last bit."
+since = "2026-09-11"
