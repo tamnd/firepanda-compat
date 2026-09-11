@@ -5,12 +5,12 @@
     "categorical": 3,
     "errors": 0,
     "groupby": 0,
-    "indexing": 18,
+    "indexing": 19,
     "nested": 0,
     "reshape": 0,
     "stats": 6,
     "strings": 14,
-    "temporal": 16,
+    "temporal": 17,
     "windows": 1
   }
 }
