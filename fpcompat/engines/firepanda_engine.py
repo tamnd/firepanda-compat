@@ -45,6 +45,24 @@ Python class at the boundary, so `except KeyError` fires on a missing column and
 question the level exists to ask, and a wrong answer is now a failure with a reason in
 it rather than a gap with the harness's name on it.
 
+There is one exception to the routing rule, and it is per case rather than per level.
+A case may declare `in_process=True`, which says that its answer can only be reached
+through firepanda's own Python module. `DataFrame.select_dtypes` is why the escape
+exists. It matches column types against numpy's type tree, a tree where a duration is
+a signed integer and a timestamp is not a number, and the whole of that tree lives in
+`python/firepanda/_pandas.py` because it is a pandas compatibility rule and not a
+dataframe operation. For the driver to answer the case it would have had to carry a
+copy of the tree in Mojo, and `drivers/README.md` forbids exactly that: the driver
+writes down what firepanda does and never what pandas does, and a driver that
+reimplements the operation it is testing is scoring itself.
+
+The flag is deliberately a narrow door. It needs a note saying what the driver cannot
+reach, because a case that quietly skipped the driver would be indistinguishable from
+a case somebody rerouted to make it stop failing, and `describe()` carries it into
+every result file so the declaration is visible where the outcome is. When there is no
+importable firepanda, an `in_process` case is scored unimplemented like any other
+reflection case, which is the truthful reading rather than a fallback to the driver.
+
 An engine with only one form uses it for everything it can and reports the rest as
 unimplemented, which is the truthful reading: a firepanda with no extension built has
 not answered the reflection questions, and a firepanda with no driver has not answered
@@ -143,6 +161,15 @@ class FirepandaEngine:
         there is one, because the driver is where the firepanda spelling of each hand
         written case lives.
 
+        A case may also say `in_process=True` for itself, which is the escape for a
+        method that lives only in firepanda's Python layer. `select_dtypes` is the one
+        that forced it: the rules it follows are numpy's type tree, and the driver
+        would have had to reimplement that tree in Mojo to answer the case at all,
+        which is the one thing `drivers/README.md` forbids, because a driver that
+        reimplements the operation it is testing is scoring itself. The flag is a
+        narrow door and it needs a note saying what the driver cannot reach, since
+        skipping the driver silently is also how a failing case would be made to pass.
+
         The runner asks this per case rather than reading a property once per run,
         which is the change that let the two forms coexist. While it was a property the
         two were mutually exclusive across the whole board, so an importable firepanda
@@ -157,7 +184,7 @@ class FirepandaEngine:
         Returns:
             True when the driver should run it.
         """
-        if case.level in IN_PROCESS:
+        if case.level in IN_PROCESS or case.in_process:
             return False
         return self._runner is not None
 

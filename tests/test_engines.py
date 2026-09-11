@@ -56,6 +56,23 @@ def fake(**names) -> types.ModuleType:
     return module
 
 
+def asked(level: str, in_process: bool = False) -> types.SimpleNamespace:
+    """A stand in for the case the routing question is about.
+
+    Only the two fields the routing reads, because a real `Case` needs a frame from
+    the corpus and a name from the inventory and neither has anything to do with which
+    form of the subject answers it.
+
+    Args:
+        level: What the case claims.
+        in_process: Whether the case says the driver cannot reach its answer.
+
+    Returns:
+        The stand in.
+    """
+    return types.SimpleNamespace(level=level, in_process=in_process)
+
+
 @pytest.fixture
 def module_form(monkeypatch):
     """Builds an engine around a module of the caller's choosing.
@@ -123,7 +140,7 @@ def test_the_module_form_evaluates_the_case_expression_in_this_process(module_fo
 
     assert engine.available
     assert engine.form == "module"
-    assert not engine.out_of_process_for(types.SimpleNamespace(level="L2"))
+    assert not engine.out_of_process_for(asked("L2"))
     assert engine.module().from_arrow is not None
 
 
@@ -144,9 +161,30 @@ def test_both_forms_present_is_a_split_and_not_a_contest(monkeypatch, tmp_path):
     engine = FirepandaEngine()
 
     assert engine.form == "module+driver"
-    assert not engine.out_of_process_for(types.SimpleNamespace(level="L0"))
-    assert not engine.out_of_process_for(types.SimpleNamespace(level="L1"))
-    assert engine.out_of_process_for(types.SimpleNamespace(level="L2"))
+    assert not engine.out_of_process_for(asked("L0"))
+    assert not engine.out_of_process_for(asked("L1"))
+    assert engine.out_of_process_for(asked("L2"))
+
+
+def test_a_case_can_say_the_driver_cannot_reach_its_answer(monkeypatch, tmp_path):
+    """The escape for a method that lives only in firepanda's Python layer.
+
+    `select_dtypes` matches column types against numpy's type tree, and that tree is a
+    pandas compatibility rule rather than a dataframe operation, so it lives in the
+    Python layer and the driver would have had to carry a copy of it in Mojo to answer
+    the case. `drivers/README.md` forbids that, because a driver that reimplements the
+    operation it is testing is scoring itself. So the case says so and the engine
+    routes it to the module even though its level would otherwise send it out.
+    """
+    binary = tmp_path / "firepanda-compat-driver"
+    binary.write_text("not a real driver, only a file that exists")
+    monkeypatch.setitem(sys.modules, "firepanda", fake(from_arrow=lambda table: "frame"))
+    monkeypatch.setattr(firepanda_engine, "DRIVER", binary)
+    engine = FirepandaEngine()
+
+    assert engine.out_of_process_for(asked("L2"))
+    assert not engine.out_of_process_for(asked("L2", in_process=True))
+    assert not engine.out_of_process_for(asked("L3", in_process=True))
 
 
 def test_a_result_file_says_which_firepanda_produced_it(module_form):
