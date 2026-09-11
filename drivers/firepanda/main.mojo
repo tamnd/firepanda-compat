@@ -1975,6 +1975,12 @@ def main() raises:
             # the one that tests `min_periods` against how many rows the window
             # covers rather than how many of them hold a value.
             emit_series("value", rolled(frame, WindowOp.COUNT), out)
+        elif case_id == "windows/rolling-median":
+            # The sixth of the plain reductions and the first that reads a
+            # position in the sorted window rather than folding it into a
+            # number, which is why it is here beside the five and not beside the
+            # spreads: it takes the same width and the same arguments.
+            emit_series("value", rolled(frame, WindowOp.MEDIAN), out)
         elif case_id == "windows/rolling-var":
             emit_series("value", measured(frame, WindowOp.VAR), out)
         elif case_id == "windows/rolling-std":
@@ -2069,6 +2075,8 @@ def main() raises:
             emit_series("value", spread(frame, WindowOp.MAX), out)
         elif case_id == "windows/expanding-count":
             emit_series("value", spread(frame, WindowOp.COUNT), out)
+        elif case_id == "windows/expanding-median":
+            emit_series("value", spread(frame, WindowOp.MEDIAN), out)
         elif case_id == "windows/expanding-var":
             emit_series("value", spread(frame, WindowOp.VAR), out)
         elif case_id == "windows/expanding-std":
