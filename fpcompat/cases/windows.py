@@ -272,6 +272,14 @@ case(
     rules=Rules(tolerance=Tolerance.SINGLE, reason="an interpolated quantile"),
 )
 case(
+    "windows/expanding-rank",
+    "Expanding.rank",
+    frames=("float64_no_nulls", "tall"),
+    expr=lambda pd, df: df["value"].expanding(10).rank(),
+    note="the rank of a row that never leaves the window again, so the number it "
+    "answers climbs as the window grows under it",
+)
+case(
     "windows/expanding-apply",
     "Expanding.apply",
     level="L3",
