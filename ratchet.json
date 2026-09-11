@@ -1,11 +1,11 @@
 {
   "fail": 7,
   "l3": {
-    "basics": 0,
+    "basics": 1,
     "categorical": 3,
     "errors": 0,
     "groupby": 0,
-    "indexing": 4,
+    "indexing": 6,
     "nested": 0,
     "reshape": 0,
     "stats": 2,

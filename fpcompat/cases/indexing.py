@@ -390,6 +390,11 @@ case(
     covers=("like",),
     frames=("wide",),
     expr=lambda pd, df: df.filter(like="01"),
+    in_process=True,
+    note=(
+        "filter matches on the column names rather than on the columns, so the whole "
+        "of it is above the core and the driver has nothing to call. See spec 36"
+    ),
 )
 case(
     "indexing/filter-regex",
@@ -398,6 +403,11 @@ case(
     covers=("regex",),
     frames=("wide",),
     expr=lambda pd, df: df.filter(regex=r"^c00[0-4]$"),
+    in_process=True,
+    note=(
+        "the regex rule is Python's re module applied to the column names, and Mojo "
+        "has no regex engine for the driver to be wrong with. See spec 36"
+    ),
 )
 case(
     "indexing/filter-items",
@@ -406,6 +416,11 @@ case(
     covers=("items",),
     frames=("two",),
     expr=lambda pd, df: df.filter(items=["c", "a"]),
+    in_process=True,
+    note=(
+        "the same rule as the other two filter cases, and the one that keeps the "
+        "frame's order rather than the caller's. See spec 36"
+    ),
 )
 case(
     "indexing/select-dtypes",
@@ -414,6 +429,12 @@ case(
     covers=("include",),
     frames=("two", "tall", "temporal_range"),
     expr=lambda pd, df: df.select_dtypes(include="number"),
+    in_process=True,
+    note=(
+        "the numpy type tree this matches against is a pandas compatibility rule and "
+        "not a dataframe operation, so it lives in the Python layer and a driver "
+        "branch would have to carry a second copy of it in Mojo. See spec 36"
+    ),
 )
 case(
     "indexing/truncate",
@@ -423,6 +444,12 @@ case(
     frames=("tall",),
     expr=lambda pd, df: df.truncate(before=10, after=20),
     rules=STRICT,
+    in_process=True,
+    note=(
+        "truncate turns its two bounds into a slice through Index.slice_indexer, "
+        "which is a Python layer method, so the core has no truncate to call. "
+        "See spec 36"
+    ),
 )
 case(
     "indexing/index-unique",

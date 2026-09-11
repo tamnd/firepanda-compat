@@ -172,7 +172,7 @@ def test_a_case_can_say_the_driver_cannot_reach_its_answer(monkeypatch, tmp_path
     `select_dtypes` matches column types against numpy's type tree, and that tree is a
     pandas compatibility rule rather than a dataframe operation, so it lives in the
     Python layer and the driver would have had to carry a copy of it in Mojo to answer
-    the case. `drivers/README.md` forbids that, because a driver that reimplements the
+    the case. `drivers/firepanda/README.md` forbids that, because a driver that reimplements the
     operation it is testing is scoring itself. So the case says so and the engine
     routes it to the module even though its level would otherwise send it out.
     """
