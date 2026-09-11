@@ -1987,6 +1987,36 @@ def main() raises:
             # number, which is why it is here beside the five and not beside the
             # spreads: it takes the same width and the same arguments.
             emit_series("value", rolled(frame, WindowOp.MEDIAN), out)
+        elif case_id == "windows/rolling-quantile":
+            var quantile_settings = WindowSettings()
+            quantile_settings.fraction = 0.5
+            emit_series(
+                "value",
+                frame.column("value").rolling(
+                    WindowOp.QUANTILE,
+                    8,
+                    None,
+                    False,
+                    WindowEdge.RIGHT,
+                    None,
+                    quantile_settings,
+                ),
+                out,
+            )
+        elif case_id == "windows/rolling-rank":
+            emit_series(
+                "value",
+                frame.column("value").rolling(
+                    WindowOp.RANK,
+                    8,
+                    None,
+                    False,
+                    WindowEdge.RIGHT,
+                    None,
+                    WindowSettings(),
+                ),
+                out,
+            )
         elif case_id == "windows/rolling-var":
             emit_series("value", measured(frame, WindowOp.VAR), out)
         elif case_id == "windows/rolling-std":
@@ -2083,6 +2113,16 @@ def main() raises:
             emit_series("value", spread(frame, WindowOp.COUNT), out)
         elif case_id == "windows/expanding-median":
             emit_series("value", spread(frame, WindowOp.MEDIAN), out)
+        elif case_id == "windows/expanding-quantile":
+            var expanding_settings = WindowSettings()
+            expanding_settings.fraction = 0.75
+            emit_series(
+                "value",
+                frame.column("value").expanding(
+                    WindowOp.QUANTILE, 10, expanding_settings
+                ),
+                out,
+            )
         elif case_id == "windows/expanding-var":
             emit_series("value", spread(frame, WindowOp.VAR), out)
         elif case_id == "windows/expanding-std":
