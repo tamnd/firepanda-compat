@@ -2624,6 +2624,36 @@ def main() raises:
             # core takes the two through different overloads, one of which
             # resolves the default and one of which does not.
             emit_frame(frame.drop_duplicates(), out)
+        elif case_id == "indexing/reindex":
+            # Two labels the frame has and one it does not, which is the whole
+            # case: the missing row has to arrive as nulls and the integer
+            # column has to come back as float on the way out.
+            emit_frame(
+                frame.set_index("key").reindex(
+                    AnyArray(from_list[DType.int64]([Int64(0), 2, 999]))
+                ),
+                out,
+            )
+        elif case_id == "indexing/reindex-fill":
+            # The same labels with something to put in the row that is not
+            # there, which is also what stops the widening.
+            emit_frame(
+                frame.set_index("key").reindex(
+                    AnyArray(from_list[DType.int64]([Int64(0), 2, 999])),
+                    Value(Int64(0)).weakened(),
+                ),
+                out,
+            )
+        elif case_id == "indexing/reindex-columns":
+            # The other half of the method. Two of these are columns the frame
+            # has, in an order it does not have them in, and the third is made
+            # out of nothing.
+            emit_frame(
+                frame.reindex_columns(
+                    [String("c"), String("a"), String("missing")]
+                ),
+                out,
+            )
         elif case_id == "indexing/nlargest":
             # pandas writes the count first and the column second, and the core
             # writes them the other way round, because the column is the thing
