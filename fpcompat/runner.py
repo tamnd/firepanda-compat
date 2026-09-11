@@ -89,7 +89,18 @@ def _check_divergence(
     record["divergence"] = entry.id
 
     if entry.expect == "raises":
+        declared = entry.expected_class()
         if actual_error is not None:
+            if declared is not None and not isinstance(actual_error, declared):
+                record["outcome"] = FAIL
+                record["detail"] = (
+                    f"{entry.id} says the operation raises {entry.raises} and a "
+                    f"{type(actual_error).__name__} came out instead: {actual_error}. "
+                    "A refusal the entry did not describe is not the refusal it "
+                    "registered, so either the library changed how it refuses or the "
+                    "case is reaching something the entry is not about"
+                )
+                return record
             record["outcome"] = DIVERGENT
             record["detail"] = f"{entry.id}: {type(actual_error).__name__}: {actual_error}"
             return record
@@ -134,6 +145,35 @@ def _check_divergence(
     return record
 
 
+def _name_is_not_there(error: BaseException) -> bool:
+    """Whether an `AttributeError` is a name that does not exist rather than a bug.
+
+    Python fills in `obj` and `name` on every `AttributeError` that comes out of an
+    ordinary attribute lookup, so the question the depth check below approximates can
+    be asked directly: reach for the same name on the same object again and see
+    whether it is there. That is the question itself rather than a guess about how
+    deep the failure happened, and it is what the depth check cannot do once the case
+    expression has a closure or two under it.
+
+    An `AttributeError` raised by hand inside a half written method carries neither
+    field, so it falls through to the depth check, which is the case the depth check
+    was written for.
+
+    Args:
+        error: What was raised.
+
+    Returns:
+        Whether the name really is absent from the object it was wanted on.
+    """
+    if not isinstance(error, AttributeError):
+        return False
+    name = getattr(error, "name", None)
+    obj = getattr(error, "obj", None)
+    if not isinstance(name, str) or obj is None:
+        return False
+    return not hasattr(obj, name)
+
+
 def _unimplemented(error: BaseException) -> bool:
     """Whether an exception means the name does not exist yet.
 
@@ -148,6 +188,13 @@ def _unimplemented(error: BaseException) -> bool:
     body whose whole content is `raise NotImplementedError` has two. Anything deeper
     got somewhere before it gave up.
 
+    Depth is a proxy and it has a floor. A case whose expression is built by a helper
+    that takes a copy, calls a lambda from a table and hands the object back has three
+    frames under it before the subject is reached at all, and no way of writing it has
+    fewer, so an absent method in that shape was being counted past the allowance and
+    scored as something other than a gap. `_name_is_not_there` is the question the
+    depth was standing in for, asked directly, and it is checked first for that reason.
+
     The out of process form is recognised by type instead. `Absent` comes from the
     driver saying it has no entry for a case, it is raised from inside this package
     rather than from inside the subject, and its depth is a fact about how many
@@ -161,6 +208,8 @@ def _unimplemented(error: BaseException) -> bool:
         Whether this counts as unimplemented rather than as a failure.
     """
     if isinstance(error, Absent):
+        return True
+    if _name_is_not_there(error):
         return True
     depth = len(traceback.extract_tb(error.__traceback__))
     if isinstance(error, AttributeError):
@@ -311,12 +360,31 @@ def run_case(
     # marks a name divergent when any record on it carries an entry id, and a name
     # that does not exist has not diverged from anything, so writing the id would
     # move the excusing from the outcome into the column beside it.
-    if actual_error is not None and _unimplemented(actual_error):
+    #
+    # The one thing that steps aside here is an entry that names the class that came
+    # out. `engine/plotting` says firepanda has no plotting and never will, so the
+    # absence is the divergence rather than a gap in front of it, and an entry naming
+    # `AttributeError` is how that gets said. Nothing else can tell the two apart,
+    # because a name that was removed on purpose and a name nobody has written yet
+    # raise the same exception about the same missing attribute.
+    # `Absent` is never what an entry declared, whatever it declared. It is a
+    # `NotImplementedError` subclass so that the type check above recognises it, which
+    # means an entry naming `NotImplementedError` would otherwise match the driver
+    # saying it has no entry for the case and tick the divergence on the strength of a
+    # harness message. It is raised by this package rather than by the subject, so
+    # there is nothing for a statement about the subject to be true of.
+    entry = None if oracle_mode else divergence_for(case.id, frame_name)
+    declared = entry.expected_class() if entry is not None else None
+    as_declared = (
+        declared is not None
+        and not isinstance(actual_error, Absent)
+        and isinstance(actual_error, declared)
+    )
+    if actual_error is not None and not as_declared and _unimplemented(actual_error):
         record["outcome"] = UNIMPLEMENTED
         record["detail"] = f"{type(actual_error).__name__}: {actual_error}"
         return record
 
-    entry = None if oracle_mode else divergence_for(case.id, frame_name)
     if entry is not None:
         return _check_divergence(entry, case, expected, actual, actual_error, record)
 

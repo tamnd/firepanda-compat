@@ -666,3 +666,65 @@ case(
     in_process=True,
     note=IN_ORDER,
 )
+
+A_COPY = (
+    "the renaming firepanda copies an index with is a Python layer call, so a driver "
+    "entry would have to write the method it is scoring. See spec 44"
+)
+
+case(
+    "temporal/index-copy",
+    "DatetimeIndex.copy",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).copy(),
+    in_process=True,
+    note="what comes back is still an index of instants, which is worth a case of its "
+    "own because Index.copy used to answer a plain index here and the calendar members "
+    "stopped resolving on it. " + A_COPY,
+)
+case(
+    "temporal/index-copy-named",
+    "DatetimeIndex.copy",
+    level="L3",
+    covers=("name",),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).copy(name="when").name,
+    in_process=True,
+    note=A_COPY,
+)
+case(
+    "temporal/index-copy-deep",
+    "DatetimeIndex.copy",
+    level="L3",
+    covers=("deep",),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).copy(deep=True),
+    in_process=True,
+    note=A_COPY,
+)
+
+
+def _renamed_in_place(index, wanted):
+    """Renames a level in place and answers what came back along with the name left behind.
+
+    Returns:
+        A two item list of the return value, which is None in both libraries,
+        and the name the index was left holding afterwards.
+    """
+    answered = index.rename(wanted, inplace=True)
+    return [answered, index.name]
+
+
+case(
+    "temporal/index-rename-inplace",
+    "DatetimeIndex.rename",
+    level="L3",
+    covers=("inplace",),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _renamed_in_place(_instants(pd, df).copy(), "when"),
+    in_process=True,
+    note="the same call the flat index takes in indexing/index-rename-inplace, asked "
+    "of an index of instants so that the calendar is carried through a rename rather "
+    "than quietly turning back into a plain index. It is not in the inplace divergence "
+    "block because renaming a level is the one inplace parameter firepanda honours. " + A_COPY,
+)

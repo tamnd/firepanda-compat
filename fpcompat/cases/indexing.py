@@ -818,6 +818,89 @@ case(
     note=IN_ORDER,
 )
 
+A_COPY = (
+    "the index is the one thing in the library a copy of can be told from its "
+    "original, with is_, so firepanda builds a new index here rather than handing "
+    "back another wrapper on the same one the way the frame and the column do. The "
+    "renaming that does it is a Python layer call, so a driver entry would have to "
+    "write the method it is scoring. See spec 44"
+)
+
+case(
+    "indexing/index-copy",
+    "Index.copy",
+    frames=("keys_unique", "keys_awkward"),
+    expr=lambda pd, df: df.set_index("value").index.copy(),
+    in_process=True,
+    note=A_COPY,
+)
+case(
+    "indexing/index-copy-named",
+    "Index.copy",
+    level="L3",
+    covers=("name",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("value").index.copy(name="row").name,
+    in_process=True,
+    note="the name rather than the labels, because renaming on the way out is the "
+    "only thing this parameter does and the labels would be the same either way. " + A_COPY,
+)
+case(
+    "indexing/index-copy-deep",
+    "Index.copy",
+    level="L3",
+    covers=("deep",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("value").index.copy(deep=True),
+    in_process=True,
+    note="pandas documents deep as having no effect on an index, because an index is "
+    "immutable once built and there is no later write for a deep copy to protect the "
+    "original from. firepanda accepts it and does not read it for the same reason, so "
+    "this asks both libraries for the answer they both say is the same one. " + A_COPY,
+)
+case(
+    "indexing/index-copy-is-not-the-original",
+    "Index.is_",
+    frames=("keys_unique",),
+    expr=lambda pd, df: (lambda index: [index.is_(index), index.copy().is_(index)])(
+        df.set_index("value").index
+    ),
+    in_process=True,
+    note="the one question in either library that can tell a copy from the object it "
+    "was taken from, asked both ways round so that a method answering False to "
+    "everything would not pass. It is here rather than beside the copy cases because "
+    "the board scores the name being called and this one calls is_",
+)
+
+
+def _renamed_in_place(index, wanted):
+    """Renames a level in place and answers what came back along with the name left behind.
+
+    Returns:
+        A two item list of the return value, which is None in both libraries
+        because the whole point of inplace is that there is nothing to assign,
+        and the name the index was left holding afterwards.
+    """
+    answered = index.rename(wanted, inplace=True)
+    return [answered, index.name]
+
+
+case(
+    "indexing/index-rename-inplace",
+    "Index.rename",
+    level="L3",
+    covers=("inplace",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: _renamed_in_place(df.set_index("value").index.copy(), "row"),
+    in_process=True,
+    note="the one inplace parameter firepanda honours rather than refusing, which is "
+    "why this case is here and not in the inplace divergence block with the other "
+    "forty two. A level name is not data, renaming one does not move a single label, "
+    "and pandas treats an index as mutable in that one respect for the same reason. "
+    "The copy first is so that the frame the case was handed is not renamed underneath "
+    "it. " + A_COPY,
+)
+
 case(
     "indexing/series-sort-values-na-first",
     "Series.sort_values",
