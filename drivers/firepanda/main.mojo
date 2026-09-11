@@ -2123,6 +2123,14 @@ def main() raises:
                 ),
                 out,
             )
+        elif case_id == "windows/expanding-rank":
+            emit_series(
+                "value",
+                frame.column("value").expanding(
+                    WindowOp.RANK, 10, WindowSettings()
+                ),
+                out,
+            )
         elif case_id == "windows/expanding-var":
             emit_series("value", spread(frame, WindowOp.VAR), out)
         elif case_id == "windows/expanding-std":
