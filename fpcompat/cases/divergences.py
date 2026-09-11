@@ -330,45 +330,16 @@ def _index_names(pd, index, call):
     return list(copied.names)
 
 
-# Only set_names is here, and rename is not, because rename is the one inplace
-# parameter in the library that firepanda honours rather than refusing. An index
-# level name is not data, changing it does not change a single label, and pandas
-# treats it as mutable for that reason, so firepanda does too and the divergence
-# this block registers is not true of it. The two rename cases live with the
-# ordinary index cases instead, as indexing/index-rename-inplace and
-# temporal/index-rename-inplace.
-INDEX_INPLACE = (
-    ("Index.set_names", "index-set-names", lambda i: i.set_names("row", inplace=True)),
-    (
-        "DatetimeIndex.set_names",
-        "datetime-index-set-names",
-        lambda i: i.set_names("when", inplace=True),
-    ),
-)
-
-for api, suffix, call in INDEX_INPLACE:
-    if api.startswith("DatetimeIndex"):
-        frames = ("temporal_resolutions",)
-
-        def source(pd, df):
-            return pd.DatetimeIndex(df["s"])
-
-    else:
-        frames = ("two",)
-
-        def source(pd, df):
-            return pd.Index(df["a"])
-
-    case(
-        f"divergences/inplace/{suffix}",
-        api,
-        level="L3",
-        covers=("inplace",),
-        frames=frames,
-        expr=(lambda made, take: lambda pd, df: _index_names(pd, take(pd, df), made))(call, source),
-        in_process=True,
-        note=IN_PROCESS_NOTE,
-    )
+# There is no flat index block here any more. Renaming a level and setting its
+# names are the four places in the library where firepanda honours inplace rather
+# than refusing it, on Index and DatetimeIndex for each of rename and set_names.
+# A level name is not data, changing one does not move a single label, and pandas
+# treats an index as mutable in that one respect for the same reason, so the
+# divergence this file registers is simply not true of them. Their cases live with
+# the ordinary index cases instead, as indexing/index-rename-inplace,
+# indexing/index-set-names-inplace, temporal/index-rename-inplace and
+# temporal/index-set-names-inplace. What is left below is the MultiIndex, which
+# has no implementation to honour anything yet.
 
 case(
     "divergences/inplace/multi-index-rename",

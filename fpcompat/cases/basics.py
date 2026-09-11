@@ -672,6 +672,85 @@ case(
     frames=("two", "tall"),
     expr=lambda pd, df: df.rename(columns={df.columns[0]: "renamed"}),
 )
+
+A_SCHEMA = (
+    "renaming a column edits one field of a schema and reads no values, which is the "
+    "half of pandas' rename that is here. The other half maps every row label through "
+    "a dictionary or a callable, which is a pass over the index rather than a change "
+    "to a schema, and it refuses. See spec 45"
+)
+
+case(
+    "basics/rename-callable",
+    "DataFrame.rename",
+    level="L3",
+    covers=("columns",),
+    frames=("two", "tall"),
+    expr=lambda pd, df: df.rename(columns=str.upper),
+    in_process=True,
+    note="a callable rather than a mapping. firepanda calls it in the Python layer and "
+    "hands the core the two lists of names it worked out, so a driver entry would have "
+    "to apply str.upper itself. " + A_SCHEMA,
+)
+case(
+    "basics/rename-axis-columns",
+    "DataFrame.rename",
+    level="L3",
+    covers=("mapper", "axis"),
+    frames=("two", "tall"),
+    expr=lambda pd, df: df.rename({df.columns[0]: "renamed"}, axis=1),
+    note="the same door as basics/rename with the mapping passed positionally and the "
+    "axis named, which is the spelling pandas puts first in its own signature. " + A_SCHEMA,
+)
+case(
+    "basics/rename-swap",
+    "DataFrame.rename",
+    level="L3",
+    covers=("columns",),
+    frames=("two", "tall"),
+    expr=lambda pd, df: df.rename(
+        columns={df.columns[0]: df.columns[1], df.columns[1]: df.columns[0]}
+    ),
+    note="two columns trading names, which is the case that needs the whole rename to "
+    "happen in one pass, because each half of a swap collides with a name the frame "
+    "still has. " + A_SCHEMA,
+)
+case(
+    "basics/rename-missing-ignored",
+    "DataFrame.rename",
+    level="L3",
+    covers=("errors",),
+    frames=("two",),
+    expr=lambda pd, df: df.rename(columns={"not_a_column": "renamed"}),
+    in_process=True,
+    note="the default, which is that a name in the mapping that is not a column is "
+    "skipped in silence and the caller is told nothing. What is being scored is the "
+    "filtering, and that happens in the Python layer before the core is reached, so a "
+    "driver entry would answer the frame unchanged without exercising anything. " + A_SCHEMA,
+)
+case(
+    "basics/rename-missing-raised",
+    "DataFrame.rename",
+    level="L4",
+    covers=("errors",),
+    frames=("two",),
+    expr=lambda pd, df: df.rename(columns={"not_a_column": "renamed"}, errors="raise"),
+    raises=("KeyError", "not_a_column"),
+    note="errors='raise' is the only way a caller finds out, and both libraries name "
+    "what was missing in the message, which is what makes it worth raising. " + A_SCHEMA,
+)
+case(
+    "basics/series-rename",
+    "Series.rename",
+    frames=("two", "tall"),
+    expr=lambda pd, df: df[df.columns[0]].rename("renamed"),
+    in_process=True,
+    note="a scalar names the column, which is metadata and is here. A mapping or a "
+    "callable in the same parameter maps the row labels instead and refuses, so the "
+    "two doors of one pandas method land on opposite sides of the line spec 45 draws. "
+    "firepanda reaches this through the same core call that sets Series.name, and a "
+    "driver entry would be asserting the emitter rather than the rename",
+)
 case(
     "basics/drop-column",
     "DataFrame.drop",

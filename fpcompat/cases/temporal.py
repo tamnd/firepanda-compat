@@ -728,3 +728,51 @@ case(
     "than quietly turning back into a plain index. It is not in the inplace divergence "
     "block because renaming a level is the one inplace parameter firepanda honours. " + A_COPY,
 )
+
+case(
+    "temporal/index-names",
+    "DatetimeIndex.names",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: list(_instants(pd, df).rename("when").names),
+    in_process=True,
+    note="the same property indexing/index-names reads, asked of an index of instants, "
+    "because the board scores a name and DatetimeIndex.names is a different name from "
+    "Index.names even though one class inherits the other. The rename first is so that "
+    "there is a name to read rather than the empty level both libraries start with. " + AS_A_COLUMN,
+)
+case(
+    "temporal/index-set-names",
+    "DatetimeIndex.set_names",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).set_names("when"),
+    in_process=True,
+    note="the returning form, and what it has to answer is still an index of instants, "
+    "which is the same thing temporal/index-copy watches for. The inplace form is in "
+    "the divergence block. " + AS_A_COLUMN,
+)
+
+
+def _set_names_in_place(index, wanted):
+    """Sets a level name in place and answers what came back along with the names left.
+
+    Returns:
+        A two item list of the return value, which is None in both libraries,
+        and the level names the index was left holding afterwards.
+    """
+    answered = index.set_names(wanted, inplace=True)
+    return [answered, list(index.names)]
+
+
+case(
+    "temporal/index-set-names-inplace",
+    "DatetimeIndex.set_names",
+    level="L3",
+    covers=("inplace",),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _set_names_in_place(_instants(pd, df).copy(), "when"),
+    in_process=True,
+    note="the same call the flat index takes in indexing/index-set-names-inplace, asked "
+    "of an index of instants. It is not in the inplace divergence block because naming "
+    "a level is one of the four inplace parameters firepanda honours rather than "
+    "refusing. " + A_COPY,
+)

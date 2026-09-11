@@ -1194,6 +1194,21 @@ def main() raises:
             emit_frame(frame.drop([frame.names()[0]]), out)
         elif case_id == "basics/rename":
             emit_frame(frame.rename(frame.names()[0], "renamed"), out)
+        elif case_id == "basics/rename-axis-columns":
+            # pandas decides between naming a column and mapping a row label
+            # from which keyword it was handed. The core has one call per
+            # operation instead, so the door the axis picked is written here.
+            emit_frame(frame.rename(frame.names()[0], "renamed"), out)
+        elif case_id == "basics/rename-swap":
+            # Both names change in one pass, because either half on its own
+            # would land on a name the frame still has.
+            var before = frame.names()
+            emit_frame(
+                frame.renamed_columns(
+                    [before[0], before[1]], [before[1], before[0]]
+                ),
+                out,
+            )
         elif case_id == "basics/boolean-mask":
             emit_frame(
                 frame.filter(frame.column("flag").as_typed[DType.bool]()),
@@ -2609,6 +2624,14 @@ def main() raises:
             emit_frame(frame.take([height - 1, height - 2]), out)
         elif case_id == "indexing/set-index":
             emit_frame(frame.set_index("key"), out)
+        elif case_id == "indexing/rename-axis":
+            emit_frame(frame.set_index("key").rename_axis(String("row")), out)
+        elif case_id == "indexing/rename-axis-cleared":
+            # None as a name to clear, which the core spells as an empty
+            # optional rather than as a string nobody would want.
+            emit_frame(
+                frame.set_index("key").rename_axis(Optional[String](None)), out
+            )
         elif case_id == "indexing/set-index-drop-false":
             emit_frame(frame.set_index("key", drop=False), out)
         elif case_id == "indexing/reset-index":

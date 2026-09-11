@@ -901,6 +901,124 @@ case(
     "it. " + A_COPY,
 )
 
+A_LEVEL_NAME = (
+    "the name an index level is under, which is metadata and not data. Changing it "
+    "moves no labels, invalidates no lookup and reads no values, which is why it is "
+    "here while mapping the labels themselves is not. See spec 45"
+)
+
+case(
+    "indexing/rename-axis",
+    "DataFrame.rename_axis",
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key").rename_axis("row"),
+    rules=STRICT,
+    note="the whole frame rather than just the name it was given, so that a rename_axis "
+    "which quietly dropped a column or reordered the rows would not pass. " + A_LEVEL_NAME,
+)
+case(
+    "indexing/rename-axis-cleared",
+    "DataFrame.rename_axis",
+    level="L3",
+    covers=("mapper",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key").rename_axis(None),
+    rules=STRICT,
+    note="None is a name to clear and a missing argument is not, which is why the "
+    "parameter defaults to a sentinel in both libraries rather than to None. " + A_LEVEL_NAME,
+)
+case(
+    "indexing/rename-axis-keyword",
+    "DataFrame.rename_axis",
+    level="L3",
+    covers=("index",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key").rename_axis(index=["row"]),
+    rules=STRICT,
+    in_process=True,
+    note="the keyword spelling, and the sequence form of the name with it, because "
+    "pandas takes both a name and a sequence of names here and the sequence is the one "
+    "that generalises to a multi level index. Working out which of the two shapes was "
+    "given is the Python layer's, so a driver entry would have to unwrap the list "
+    "itself. " + A_LEVEL_NAME,
+)
+case(
+    "indexing/series-rename-axis",
+    "Series.rename_axis",
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key")["value"].rename_axis("row"),
+    rules=STRICT,
+    in_process=True,
+    note="a column carries its frame's labels, so naming them is the same operation "
+    "one level down. Reaching the column of a keyed frame is a Python layer walk here, "
+    "so a driver entry would have to write it. " + A_LEVEL_NAME,
+)
+case(
+    "indexing/index-names",
+    "Index.names",
+    frames=("keys_unique",),
+    expr=lambda pd, df: list(df.set_index("key").index.names),
+    in_process=True,
+    note="the level names as a list, which for a flat index is one long. It is the "
+    "property set_names is the setter for, and four of the cases in the inplace "
+    "divergence block reported a missing attribute rather than the refusal they were "
+    "registered for until it existed. " + A_LEVEL_NAME,
+)
+case(
+    "indexing/index-set-names",
+    "Index.set_names",
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key").index.set_names("row"),
+    in_process=True,
+    note="the returning form, which is the one a caller should use. The inplace form is "
+    "in the divergence block, because it is one of the two places in the library where "
+    "inplace is honoured rather than refused. " + A_LEVEL_NAME + ". " + A_COPY,
+)
+case(
+    "indexing/index-set-names-sequence",
+    "Index.set_names",
+    level="L3",
+    covers=("names",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: list(df.set_index("key").index.set_names(["row"]).names),
+    in_process=True,
+    note="a one element sequence rather than a bare name, which pandas accepts and "
+    "which is the shape that generalises to more than one level. The names read back "
+    "rather than the index, because what this is checking is that the sequence was "
+    "unwrapped and not stored whole. " + A_LEVEL_NAME,
+)
+
+
+def _set_names_in_place(index, wanted):
+    """Sets a level name in place and answers what came back along with the names left.
+
+    Returns:
+        A two item list of the return value, which is None in both libraries
+        because the whole point of inplace is that there is nothing to assign,
+        and the level names the index was left holding afterwards.
+    """
+    answered = index.set_names(wanted, inplace=True)
+    return [answered, list(index.names)]
+
+
+case(
+    "indexing/index-set-names-inplace",
+    "Index.set_names",
+    level="L3",
+    covers=("inplace",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: _set_names_in_place(df.set_index("key").index.copy(), "row"),
+    in_process=True,
+    note="the second of the four inplace parameters firepanda honours rather than "
+    "refusing, which is why this is here and not in the inplace divergence block. It "
+    "goes through the same door as indexing/index-rename-inplace and is checked the "
+    "same way, by asking for what came back as well as the names left behind, because "
+    "a method that returned the index rather than None would otherwise look right. "
+    + A_LEVEL_NAME
+    + ". "
+    + A_COPY,
+)
+
 case(
     "indexing/series-sort-values-na-first",
     "Series.sort_values",
