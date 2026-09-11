@@ -852,3 +852,53 @@ case(
     frames=("float64_no_nulls",),
     expr=lambda pd, df: _top(df).align(_bottom(df), join="outer")[0],
 )
+
+
+# ---------------------------------------------------------------------------
+# The series members that read as a frame
+# ---------------------------------------------------------------------------
+
+AS_A_FRAME = (
+    "the series members that read as a frame are firepanda's Python layer on top of "
+    "one door, and the core has no call for any of them, so a driver entry would have "
+    "to build the frame of one column and then write the method itself. See spec 36"
+)
+
+case(
+    "basics/series-duplicated",
+    "Series.duplicated",
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].duplicated(),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "basics/series-duplicated-keep",
+    "Series.duplicated",
+    level="L3",
+    covers=("keep",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].duplicated(keep="last"),
+    in_process=True,
+    note="ten distinct keys over ten thousand rows, so which end the rule keeps decides "
+    "almost every row of this answer. " + AS_A_FRAME,
+)
+case(
+    "basics/series-drop-duplicates",
+    "Series.drop_duplicates",
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].drop_duplicates(),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "basics/series-drop-duplicates-keep",
+    "Series.drop_duplicates",
+    level="L3",
+    covers=("keep", "ignore_index"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].drop_duplicates(keep="last", ignore_index=True),
+    in_process=True,
+    note="the labels a drop leaves behind are the positions the rows held before it, so "
+    "numbering them again is the parameter worth covering beside the rule. " + AS_A_FRAME,
+)

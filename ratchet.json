@@ -1,16 +1,16 @@
 {
   "fail": 7,
   "l3": {
-    "basics": 2,
+    "basics": 3,
     "categorical": 3,
     "errors": 0,
     "groupby": 0,
-    "indexing": 10,
+    "indexing": 14,
     "nested": 0,
     "reshape": 0,
-    "stats": 4,
+    "stats": 6,
     "strings": 14,
-    "temporal": 11,
+    "temporal": 13,
     "windows": 1
   }
 }

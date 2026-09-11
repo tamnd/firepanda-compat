@@ -300,6 +300,10 @@ case(
     frames=("tall", "keys_1000"),
     expr=lambda pd, df: df["value"].nlargest(10),
     rules=Rules(strict_index=True),
+    in_process=True,
+    note="written before the column had this method at all and routed through the "
+    "driver, which never grew an entry for it. It is the Python layer on one door into "
+    "the frame now, so it runs where that layer is. See spec 36",
 )
 case(
     "stats/nsmallest-series",
@@ -309,6 +313,8 @@ case(
     frames=("tall",),
     expr=lambda pd, df: df["value"].nsmallest(10),
     rules=Rules(strict_index=True),
+    in_process=True,
+    note="the same as the case above, and for the same reason. See spec 36",
 )
 case(
     "stats/rank-pct",
@@ -394,4 +400,53 @@ case(
     covers=("value",),
     frames=("keys_unique",),
     expr=lambda pd, df: df["key"].sort_values().searchsorted([0, 5, 1000]),
+)
+
+
+# ---------------------------------------------------------------------------
+# The ends of a column, which are a frame's method underneath
+# ---------------------------------------------------------------------------
+
+AS_A_FRAME = (
+    "nlargest and nsmallest are firepanda's Python layer on top of one door into the "
+    "frame, and the core has no call for either on a column, so a driver entry would "
+    "have to build the frame of one column and then write the method itself. See spec 36"
+)
+
+case(
+    "stats/series-nlargest",
+    "Series.nlargest",
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df["value"].nlargest(),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "stats/series-nlargest-n-keep",
+    "Series.nlargest",
+    level="L3",
+    covers=("n", "keep"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].nlargest(3, keep="last"),
+    in_process=True,
+    note="ten distinct keys over ten thousand rows, so every row of this answer is a tie "
+    "and the rule is the whole of it. " + AS_A_FRAME,
+)
+case(
+    "stats/series-nsmallest",
+    "Series.nsmallest",
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df["value"].nsmallest(),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "stats/series-nsmallest-n-keep",
+    "Series.nsmallest",
+    level="L3",
+    covers=("n", "keep"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].nsmallest(3, keep="last"),
+    in_process=True,
+    note=AS_A_FRAME,
 )

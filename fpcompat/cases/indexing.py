@@ -620,3 +620,141 @@ case(
     "of the column landing at the top. This is the one that surprises people who have "
     "used pandas for years. It was a divergence case until firepanda started aligning",
 )
+
+
+# ---------------------------------------------------------------------------
+# The members that read as a frame, on the column and on the index
+# ---------------------------------------------------------------------------
+
+AS_A_FRAME = (
+    "the members that read as a frame are firepanda's Python layer on top of one door, "
+    "and the core has no call for any of them on a column, so a driver entry would have "
+    "to build the frame of one column and then write the method itself. See spec 36"
+)
+
+case(
+    "indexing/series-take",
+    "Series.take",
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].take([0, 5, 2]),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "indexing/series-sort-index",
+    "Series.sort_index",
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("value")["key"].sort_index(),
+    in_process=True,
+    note="the labels are the value column of the unique frame, which arrives in no order "
+    "and has no two labels the same, so the sort has real work and no tie for the two "
+    "libraries to settle differently. Sorting a column by its own values rather than by "
+    "its labels would read better here and is not written yet, on the column or on the "
+    "frame. " + AS_A_FRAME,
+)
+case(
+    "indexing/series-sort-index-descending",
+    "Series.sort_index",
+    level="L3",
+    covers=("ascending",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("value")["key"].sort_index(ascending=False),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "indexing/series-reset-index",
+    "Series.reset_index",
+    frames=("keys_10",),
+    expr=lambda pd, df: df.set_index("key")["value"].reset_index(),
+    in_process=True,
+    note="the labels kept, which makes a frame of two columns rather than a column, "
+    "because the labels have become values. " + AS_A_FRAME,
+)
+case(
+    "indexing/series-reset-index-drop",
+    "Series.reset_index",
+    level="L3",
+    covers=("drop",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.set_index("key")["value"].reset_index(drop=True),
+    in_process=True,
+    note="the same call with the labels dropped, which answers a column, and the two "
+    "answers being different types is pandas rather than an invention here. " + AS_A_FRAME,
+)
+case(
+    "indexing/series-truncate",
+    "Series.truncate",
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].truncate(),
+    in_process=True,
+    note="no bounds at all, which keeps every row and is the default this level is for. "
+    + AS_A_FRAME,
+)
+case(
+    "indexing/series-truncate-between",
+    "Series.truncate",
+    level="L3",
+    covers=("before", "after"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].truncate(10, 20),
+    in_process=True,
+    note="both ends are kept, which is the one thing about this method that surprises "
+    "people who read it as a slice. " + AS_A_FRAME,
+)
+case(
+    "indexing/index-to-frame",
+    "Index.to_frame",
+    frames=("keys_10",),
+    expr=lambda pd, df: df.set_index("key").index.to_frame(),
+    in_process=True,
+    note="two doors end to end, the labels into a column and the column into a frame. "
+    + AS_A_FRAME,
+)
+case(
+    "indexing/index-to-frame-given-both",
+    "Index.to_frame",
+    level="L3",
+    covers=("index", "name"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.set_index("key").index.to_frame(index=False, name="labels"),
+    in_process=True,
+    note="whether the labels stay on as labels as well is the choice this method exists "
+    "to offer. " + AS_A_FRAME,
+)
+case(
+    "indexing/index-duplicated",
+    "Index.duplicated",
+    frames=("keys_10",),
+    expr=lambda pd, df: list(df.set_index("key").index.duplicated()),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "indexing/index-duplicated-keep",
+    "Index.duplicated",
+    level="L3",
+    covers=("keep",),
+    frames=("keys_10",),
+    expr=lambda pd, df: list(df.set_index("key").index.duplicated(keep="last")),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "indexing/index-drop-duplicates",
+    "Index.drop_duplicates",
+    frames=("keys_10",),
+    expr=lambda pd, df: df.set_index("key").index.drop_duplicates(),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "indexing/index-drop-duplicates-keep",
+    "Index.drop_duplicates",
+    level="L3",
+    covers=("keep",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.set_index("key").index.drop_duplicates(keep="last"),
+    in_process=True,
+    note=AS_A_FRAME,
+)

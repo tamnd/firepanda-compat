@@ -407,3 +407,35 @@ case(
     expr=lambda pd, df: df.compare(df.fillna(0.0)),
     rules=Rules(strict_index=True),
 )
+
+
+# ---------------------------------------------------------------------------
+# A column that becomes a frame
+# ---------------------------------------------------------------------------
+
+AS_A_FRAME = (
+    "to_frame is firepanda's Python layer on top of one door into the frame, and the "
+    "core has no call for it, so a driver entry would have to build the frame of one "
+    "column and then write the naming rule itself. See spec 36"
+)
+
+case(
+    "reshape/series-to-frame",
+    "Series.to_frame",
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df["value"].to_frame(),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "reshape/series-to-frame-named",
+    "Series.to_frame",
+    level="L3",
+    covers=("name",),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df["value"].to_frame("other"),
+    in_process=True,
+    note="a name in the call rather than the column's own, which is the only parameter "
+    "this method has and the one place the two libraries disagree when it is left out. "
+    + AS_A_FRAME,
+)
