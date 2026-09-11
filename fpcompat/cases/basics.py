@@ -491,6 +491,28 @@ case(
     "builds",
 )
 case(
+    "basics/sort-values-default",
+    "DataFrame.sort_values",
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.sort_values("value"),
+    note="the plain call, with by the only argument given because by is the one this "
+    "method requires. On the unique frame rather than one of the others, because a "
+    "single key over a column with ties in it returns a permutation pandas does not "
+    "promise, which is the reason every other case in this group names a second key",
+)
+case(
+    "basics/sort-values-ignore-index",
+    "DataFrame.sort_values",
+    level="L3",
+    covers=("by", "ignore_index"),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.sort_values("value", ignore_index=True),
+    in_process=True,
+    note="numbering the rows again after the sort, which in firepanda is a reset_index "
+    "on the answer and lives in the Python layer rather than in the core, so a driver "
+    "entry would have to write it. See spec 43",
+)
+case(
     "basics/sort-values-descending",
     "DataFrame.sort_values",
     level="L3",

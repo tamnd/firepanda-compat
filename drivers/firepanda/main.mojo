@@ -1273,6 +1273,11 @@ def main() raises:
                 ),
                 out,
             )
+        # The plain call, on the frame whose value column is unique, which
+        # is the only frame where sorting on one column has a specified
+        # answer. Every other entry in this group names a second key for that.
+        elif case_id == "basics/sort-values-default":
+            emit_frame(frame.sort_values(["value"], [False], [False]), out)
         elif case_id == "basics/sort-values-descending":
             emit_frame(
                 frame.sort_values(
@@ -2085,6 +2090,41 @@ def main() raises:
                 .cast(LogicalType.dictionary(DType.int32, False))
                 .cat_categories(),
                 out,
+            )
+        elif (
+            case_id == "categorical/sort-ordered"
+            or case_id == "categorical/sort-unordered"
+        ):
+            # Three entries for a sort, all reaching the same core method, and
+            # they are late because nothing here was missing. The core has had
+            # `Series.sort_values` the whole time and no case had ever asked it
+            # for one, which is the same finding spec 43 records about the
+            # Python surface: an operation that is finished and unreachable
+            # does not fail, it is simply absent, and only something that goes
+            # looking ever notices.
+            emit_series("value", frame.column("value").sort_values(), out)
+        elif case_id == "categorical/sort-descending":
+            emit_series(
+                "value",
+                frame.column("value").sort_values(descending=True),
+                out,
+            )
+        elif case_id == "indexing/series-sort-values-na-first":
+            emit_series(
+                "key", frame.column("key").sort_values(nulls_first=True), out
+            )
+        elif case_id == "strings/sort":
+            # Code point order, which is what the kernel compares on and what
+            # pandas compares on. Any locale aware order would disagree with
+            # both, and the unicode frame is where that difference shows.
+            emit_series("value", frame.column("value").sort_values(), out)
+        elif case_id == "stats/argsort-axis":
+            # The same call as `stats/argsort-ties` with the axis and the kind
+            # both named, which are the two parameters of this method that have
+            # a specified answer. The sort here is stable however it is asked,
+            # so the two entries are the same call and that is the point.
+            emit_series(
+                "key", Series("key", frame.column("key").argsort()), out
             )
         elif case_id == "strings/len":
             # The case the unicode frame exists for. A byte count would pass this
