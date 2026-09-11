@@ -502,6 +502,112 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.set_index("key").index.isin([1, 2, 3]),
 )
+# An index and a column hold the same thing in firepanda, so `Index.to_series` is the
+# door between them and the eight names under it are that door plus a column method.
+# Every one of them lives in firepanda's Python layer, which is what the flag on each
+# of them is about: the core has no `to_series` to call, so a driver entry would have
+# to compose the same series itself out of the labels and then go on to compose the
+# answer, which is the driver writing the method it is scoring.
+AS_A_COLUMN = (
+    "the index members that read as a column are firepanda's Python layer on top of "
+    "one door, and the core has no call for any of them, so a driver entry would have "
+    "to build the column and then write the method itself. See spec 36"
+)
+case(
+    "indexing/index-to-series",
+    "Index.to_series",
+    frames=("keys_10",),
+    expr=lambda pd, df: df.set_index("key").index.to_series(),
+    in_process=True,
+    note=AS_A_COLUMN,
+)
+case(
+    "indexing/index-to-series-given-both",
+    "Index.to_series",
+    level="L3",
+    covers=("index", "name"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.set_index("key").index.to_series(
+        index=list(range(len(df))), name="labels"
+    ),
+    in_process=True,
+    note="the labels come back twice unless the caller says otherwise, which is what "
+    "these two parameters are for. " + AS_A_COLUMN,
+)
+case(
+    "indexing/index-isna",
+    "Index.isna",
+    frames=("int64_half_null",),
+    expr=lambda pd, df: list(df.set_index("value").index.isna()),
+    in_process=True,
+    note=AS_A_COLUMN,
+)
+case(
+    "indexing/index-isnull",
+    "Index.isnull",
+    frames=("int64_half_null",),
+    expr=lambda pd, df: list(df.set_index("value").index.isnull()),
+    in_process=True,
+    note="the older spelling of isna, which pandas keeps and so does this. " + AS_A_COLUMN,
+)
+case(
+    "indexing/index-notna",
+    "Index.notna",
+    frames=("int64_half_null",),
+    expr=lambda pd, df: list(df.set_index("value").index.notna()),
+    in_process=True,
+    note=AS_A_COLUMN,
+)
+case(
+    "indexing/index-notnull",
+    "Index.notnull",
+    frames=("int64_half_null",),
+    expr=lambda pd, df: list(df.set_index("value").index.notnull()),
+    in_process=True,
+    note="the older spelling of notna. " + AS_A_COLUMN,
+)
+case(
+    "indexing/index-dropna",
+    "Index.dropna",
+    level="L3",
+    covers=("how",),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df.set_index("value").index.dropna(how="any"),
+    in_process=True,
+    note="how is any or all and on a flat index the two mean the same thing, since a "
+    "label is one value. The frame here is the float one where the others are the "
+    "integer one, because this is the only one of them that hands back labels and "
+    "therefore a dtype, and a half null integer column is read as int64 by one engine "
+    "and as float64 by the other before dropna is reached, so the integer frame would "
+    "be scoring the read path under this name. " + AS_A_COLUMN,
+)
+case(
+    "indexing/index-min",
+    "Index.min",
+    frames=KEYED,
+    expr=lambda pd, df: df.set_index("key").index.min(),
+    in_process=True,
+    note=AS_A_COLUMN,
+)
+case(
+    "indexing/index-max",
+    "Index.max",
+    frames=KEYED,
+    expr=lambda pd, df: df.set_index("key").index.max(),
+    in_process=True,
+    note=AS_A_COLUMN,
+)
+case(
+    "indexing/index-nunique",
+    "Index.nunique",
+    level="L3",
+    covers=("dropna",),
+    frames=("int64_half_null",),
+    expr=lambda pd, df: df.set_index("value").index.nunique(dropna=False),
+    in_process=True,
+    note="a missing label counts as one more distinct label here, which is the "
+    "parameter the column underneath still refuses. " + AS_A_COLUMN,
+)
 case(
     "indexing/assign-misaligned-column",
     "DataFrame.__setitem__",
