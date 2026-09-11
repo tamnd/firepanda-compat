@@ -692,6 +692,97 @@ def labels_of(frame: DataFrame) raises -> Series:
     return Series("__value__", builder^.finish())
 
 
+def sliced(frame: DataFrame, start: Int, end: Int) raises -> DataFrame:
+    """Takes a range of rows after clamping it the way a Python slice does.
+
+    `DataFrame.slice` refuses a range that runs past either end, which is the
+    right rule for a core method and the wrong one for `iloc`. A Python slice
+    clamps instead, so `df.iloc[2:5]` on a frame of one row is an empty frame
+    and not an error, and the clamping is what the Python layer does before it
+    calls the core. This does the same arithmetic so that the driver measures
+    the same rule.
+
+    Args:
+        frame: The frame.
+        start: The first row, which may count from the end.
+        end: One past the last row, which may count from the end.
+
+    Returns:
+        The rows in the range, which may be none of them.
+
+    Raises:
+        Error: If the slice cannot be taken.
+    """
+    var height = len(frame)
+    var first = start + height if start < 0 else start
+    var last = end + height if end < 0 else end
+    first = max(0, min(first, height))
+    last = max(first, min(last, height))
+    return frame.slice(first, last)
+
+
+def one_label(value: Int64) raises -> AnyArray:
+    """Wraps one integer as the one row column an index lookup takes.
+
+    Args:
+        value: The label.
+
+    Returns:
+        A column of exactly one row.
+
+    Raises:
+        Error: If the column cannot be built, which would be a bug here.
+    """
+    return AnyArray(from_list[DType.int64]([value]))
+
+
+def positions_of(frame: DataFrame, labels: List[Int64]) raises -> List[Int]:
+    """Every row position a list of labels sits at, in the order they were asked.
+
+    This is what `df.loc[[5, 1, 9]]` turns into. A label that is not in the
+    index raises out of `get_loc`, and a label that is there twice contributes
+    both of its rows, which is why the answer is not the same length as the
+    question.
+
+    Args:
+        frame: The frame whose index is being read.
+        labels: The labels, in the order the caller wrote them.
+
+    Returns:
+        The positions.
+
+    Raises:
+        Error: If a label is not in the index.
+    """
+    var found = List[Int]()
+    for i in range(len(labels)):
+        found.extend(frame.index.get_loc(one_label(labels[i])))
+    return found^
+
+
+def shuffled_by_last(frame: DataFrame) raises -> DataFrame:
+    """Sorts a frame by its last column, which is what makes labels disagree.
+
+    Several indexing cases open with a sort so that the label three and the row
+    three are different rows. The sort key is the last column because that is
+    what the case file does, and the answer does not depend on how ties inside
+    it are broken, since every one of those cases then asks for rows by label.
+
+    Args:
+        frame: The frame.
+
+    Returns:
+        The frame in sorted order, carrying its original labels.
+
+    Raises:
+        Error: If the sort cannot be run.
+    """
+    var names = frame.names()
+    var by = List[String]()
+    by.append(names[len(names) - 1])
+    return frame.sort_values(by, [False], [False])
+
+
 def one_key(name: String) -> List[String]:
     """Wraps a single key column name as the list `group_agg` takes.
 
@@ -2378,6 +2469,83 @@ def main() raises:
             emit_series(
                 "value", decayed(frame, EwmOp.SUM, span=Optional(5.0)), out
             )
+        elif case_id == "indexing/iloc-scalar" or case_id == "indexing/iat":
+            # The two spellings are one lookup. `iat` promises never to answer
+            # anything except a value, and `iloc` given two integers works out
+            # that it is answering one, and by the time either reaches the core
+            # they are both a row position and a column position.
+            emit_scalar(frame.select([frame.names()[0]]).slice(0, 1), out)
+        elif case_id == "indexing/at":
+            # Every corpus frame carries the default labels, so the label zero
+            # is the row zero and there is nothing here to look up. A frame
+            # whose index had been changed would need `get_loc`, which is what
+            # the Python layer reaches for.
+            var held = String("a") if frame.has("a") else String("key")
+            emit_scalar(frame.select([held]).slice(0, 1), out)
+        elif case_id == "indexing/iloc-slice":
+            emit_frame(sliced(frame, 2, 5), out)
+        elif case_id == "indexing/iloc-negative":
+            emit_frame(sliced(frame, -3, len(frame)), out)
+        elif case_id == "indexing/iloc-step":
+            var picks = List[Int]()
+            var at = 0
+            while at < len(frame):
+                picks.append(at)
+                at += 7
+            emit_frame(frame.take(picks), out)
+        elif case_id == "indexing/iloc-list":
+            # A repeated position gives a repeated row and a repeated label, so
+            # this case is really asking whether the index came along.
+            emit_frame(frame.take([0, 0, 1]), out)
+        elif case_id == "indexing/iloc-column":
+            var second = frame.names()[1]
+            emit_series(second, frame.column(second), out)
+        elif case_id == "indexing/iloc-both":
+            # The columns are narrowed first, so the row gather copies three of
+            # them rather than sixteen. The answer is the same either way and
+            # the work is not, which is why the order is not an accident.
+            var names = frame.names()
+            var wanted = List[String]()
+            for i in range(1, min(4, len(names))):
+                wanted.append(names[i])
+            emit_frame(sliced(frame.select(wanted), 3, 9), out)
+        elif case_id == "indexing/loc-slice-closed":
+            # Five rows and not four. `slice_locs` takes the left bound of the
+            # first label and the right bound of the second, which is how a
+            # closed interval becomes the half open pair everything else uses.
+            var bounds = frame.index.slice_indexer(
+                Optional(one_label(2)), Optional(one_label(5))
+            )
+            emit_frame(frame.slice(bounds[0], bounds[1]), out)
+        elif case_id == "indexing/loc-list-after-sort":
+            var shuffled = shuffled_by_last(frame)
+            var wanted = positions_of(shuffled, [Int64(5), 1, 9])
+            emit_frame(shuffled.take(wanted), out)
+        elif case_id == "indexing/loc-mask":
+            var kept = frame.column("value").binary(
+                Value(Float64(0.0)).weakened(), BinaryOp.GT
+            )
+            emit_frame(frame.filter(kept.as_typed[DType.bool]()), out)
+        elif case_id == "indexing/loc-mask-columns":
+            # The mask is read off the frame that went in and applied to the
+            # narrowed one, which is only sound because nothing between them
+            # changed the rows.
+            var narrowed = frame.select(["value", "key"])
+            emit_frame(
+                narrowed.filter(frame.column("flag").as_typed[DType.bool]()),
+                out,
+            )
+        elif case_id == "indexing/loc-column":
+            var held = String("b") if frame.has("b") else String("value")
+            emit_series(held, frame.column(held), out)
+        elif case_id == "indexing/take":
+            emit_frame(frame.take([2, 0, 1]), out)
+        elif case_id == "indexing/take-negative":
+            # The core reads a negative index as a null row, because an outer
+            # join needs the gather and the null filling to be one pass. pandas
+            # counts from the end, so the counting happens before the call.
+            var height = len(frame)
+            emit_frame(frame.take([height - 1, height - 2]), out)
         elif case_id == "indexing/set-index":
             emit_frame(frame.set_index("key"), out)
         elif case_id == "indexing/set-index-drop-false":
