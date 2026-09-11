@@ -450,3 +450,21 @@ case(
     in_process=True,
     note=AS_A_FRAME,
 )
+
+case(
+    "stats/argsort-axis",
+    "Series.argsort",
+    level="L3",
+    covers=("axis", "kind"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].argsort(axis=0, kind="stable"),
+    note="the only two parameters of this method whose value has a specified answer. "
+    "Run on the ten key column for the reason argsort-ties gives, which is that almost "
+    "every position in the answer is decided by the tie break rather than by a "
+    "comparison. The third parameter, stable, is deliberately not covered: pandas hands "
+    "kind and stable both to numpy and leaves kind at quicksort, so stable=True on its "
+    "own comes back unstable and there is no specified answer for a case to measure. "
+    "argsort(kind='stable') and argsort(stable=True) disagree in pandas 3.0.3 on any "
+    "column with a tie in it, which is worth knowing and is not something firepanda "
+    "should copy",
+)

@@ -628,3 +628,41 @@ case(
     note="what comes back is still an index of instants, the same way dropna says so. "
     + AS_A_FRAME,
 )
+
+# ---------------------------------------------------------------------------
+# The index of instants put in order
+# ---------------------------------------------------------------------------
+
+IN_ORDER = (
+    "an index in the core has no sort of its own and firepanda's is the column's sort "
+    "with a door on each end, so a driver entry would have to write the method it is "
+    "scoring. See spec 43"
+)
+
+case(
+    "temporal/index-sort-values",
+    "DatetimeIndex.sort_values",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).sort_values(),
+    in_process=True,
+    note=IN_ORDER,
+)
+case(
+    "temporal/index-sort-values-descending",
+    "DatetimeIndex.sort_values",
+    level="L3",
+    covers=("ascending",),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).sort_values(ascending=False),
+    in_process=True,
+    note="what comes back is still an index of instants, the same way drop_duplicates "
+    "says so. " + IN_ORDER,
+)
+case(
+    "temporal/index-argsort",
+    "DatetimeIndex.argsort",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: list(_instants(pd, df).argsort()),
+    in_process=True,
+    note=IN_ORDER,
+)

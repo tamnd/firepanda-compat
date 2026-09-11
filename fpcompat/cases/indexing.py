@@ -758,3 +758,90 @@ case(
     in_process=True,
     note=AS_A_FRAME,
 )
+
+# ---------------------------------------------------------------------------
+# The index put in order of its own labels
+# ---------------------------------------------------------------------------
+
+# Sorting is the first member of this family where the core has the operation and
+# still cannot answer the case. `Index` in the core has no sort of its own: what
+# firepanda does is turn the labels into a column, sort the column, and turn the
+# answer back into an index of the class it started as. A driver entry would have
+# to write those three steps, which is the method rather than a spelling of it, so
+# these run in process for the reason the family above does. See spec 43.
+IN_ORDER = (
+    "an index in the core has no sort of its own and firepanda's is the column's sort "
+    "with a door on each end, so a driver entry would have to write the method it is "
+    "scoring. See spec 43"
+)
+
+case(
+    "indexing/index-sort-values",
+    "Index.sort_values",
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("value").index.sort_values(),
+    in_process=True,
+    note="the value column of the unique frame, which arrives in no order and has no "
+    "two labels the same, so the sort has real work in it and no tie for the two "
+    "libraries to settle differently. " + IN_ORDER,
+)
+case(
+    "indexing/index-sort-values-descending",
+    "Index.sort_values",
+    level="L3",
+    covers=("ascending",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("value").index.sort_values(ascending=False),
+    in_process=True,
+    note=IN_ORDER,
+)
+case(
+    "indexing/index-sort-values-indexer",
+    "Index.sort_values",
+    level="L3",
+    covers=("return_indexer",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: list(df.set_index("value").index.sort_values(return_indexer=True)[1]),
+    in_process=True,
+    note="the permutation rather than the sorted index, which is the second of the two "
+    "shapes this method answers in and the reason it is the one member of the family "
+    "whose return type depends on an argument. The list is around it because pandas "
+    "answers a numpy array here and firepanda answers a list, which is the shape the "
+    "whole index family already differs in. " + IN_ORDER,
+)
+case(
+    "indexing/index-argsort",
+    "Index.argsort",
+    frames=("keys_unique",),
+    expr=lambda pd, df: list(df.set_index("value").index.argsort()),
+    in_process=True,
+    note=IN_ORDER,
+)
+
+case(
+    "indexing/series-sort-values-na-first",
+    "Series.sort_values",
+    level="L3",
+    covers=("na_position",),
+    frames=("keys_awkward",),
+    expr=lambda pd, df: df["key"].sort_values(na_position="first"),
+    note="the awkward key column, which holds real nulls and an empty string, so the "
+    "front of this answer has both a missing value and the smallest value that is not "
+    "one. The half null float frames are not used here because their missing rows are "
+    "a mix of nulls and NaNs, and pandas cannot tell those apart while firepanda can, "
+    "which is a divergence this case has no business measuring. Ten rows, so numpy "
+    "falls back to insertion sort and settles the ties stably by accident, which is "
+    "the same reason basics/sort-values-na-first gives",
+)
+case(
+    "indexing/series-sort-values-ignore-index",
+    "Series.sort_values",
+    level="L3",
+    covers=("ignore_index",),
+    frames=("keys_awkward",),
+    expr=lambda pd, df: df["key"].sort_values(ignore_index=True),
+    in_process=True,
+    note="numbering the rows again after the sort, which in firepanda is a reset_index "
+    "on the answer and lives in the Python layer rather than in the core, so a driver "
+    "entry would have to write it. See spec 43",
+)
