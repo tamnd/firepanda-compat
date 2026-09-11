@@ -578,3 +578,53 @@ case(
     in_process=True,
     note=AS_A_COLUMN,
 )
+
+
+# ---------------------------------------------------------------------------
+# The index of instants read as a frame
+# ---------------------------------------------------------------------------
+
+AS_A_FRAME = (
+    "the members that read as a frame are firepanda's Python layer on top of two doors "
+    "end to end, the labels into a column and the column into a frame, and the core has "
+    "no call for any of them, so a driver entry would have to build both and then write "
+    "the method itself. See spec 36"
+)
+
+case(
+    "temporal/index-to-frame",
+    "DatetimeIndex.to_frame",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).to_frame(),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "temporal/index-to-frame-given-both",
+    "DatetimeIndex.to_frame",
+    level="L3",
+    covers=("index", "name"),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).to_frame(index=False, name="labels"),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "temporal/index-duplicated",
+    "DatetimeIndex.duplicated",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: list(_instants(pd, df).duplicated()),
+    in_process=True,
+    note=AS_A_FRAME,
+)
+case(
+    "temporal/index-drop-duplicates",
+    "DatetimeIndex.drop_duplicates",
+    level="L3",
+    covers=("keep",),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).drop_duplicates(keep="last"),
+    in_process=True,
+    note="what comes back is still an index of instants, the same way dropna says so. "
+    + AS_A_FRAME,
+)
