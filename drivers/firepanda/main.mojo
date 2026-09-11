@@ -721,6 +721,29 @@ def rolled(frame: DataFrame, op: WindowOp) raises -> Series:
     )
 
 
+def measured(frame: DataFrame, op: WindowOp) raises -> Series:
+    """Runs one spread reduction over every eight row window of `value`.
+
+    The three spread cases ask for a width of eight where the five plain ones ask
+    for five, because a variance needs more than a handful of rows before the
+    answer says anything, and eight is what the case list settled on. The degrees
+    of freedom is one, which is what pandas defaults to and what the cases spell.
+
+    Args:
+        frame: The corpus frame.
+        op: The reduction.
+
+    Returns:
+        The windowed column.
+
+    Raises:
+        Error: Whatever `rolling` raises.
+    """
+    return frame.column("value").rolling(
+        op, 8, None, False, WindowEdge.RIGHT, None, 1
+    )
+
+
 def spread(frame: DataFrame, op: WindowOp) raises -> Series:
     """Runs one reduction over every window that starts at the first row.
 
@@ -1949,6 +1972,12 @@ def main() raises:
             # the one that tests `min_periods` against how many rows the window
             # covers rather than how many of them hold a value.
             emit_series("value", rolled(frame, WindowOp.COUNT), out)
+        elif case_id == "windows/rolling-var":
+            emit_series("value", measured(frame, WindowOp.VAR), out)
+        elif case_id == "windows/rolling-std":
+            emit_series("value", measured(frame, WindowOp.STD), out)
+        elif case_id == "windows/rolling-sem":
+            emit_series("value", measured(frame, WindowOp.SEM), out)
         elif case_id == "windows/rolling-min-periods":
             emit_series(
                 "value",
@@ -2033,6 +2062,12 @@ def main() raises:
             emit_series("value", spread(frame, WindowOp.MAX), out)
         elif case_id == "windows/expanding-count":
             emit_series("value", spread(frame, WindowOp.COUNT), out)
+        elif case_id == "windows/expanding-var":
+            emit_series("value", spread(frame, WindowOp.VAR), out)
+        elif case_id == "windows/expanding-std":
+            emit_series("value", spread(frame, WindowOp.STD), out)
+        elif case_id == "windows/expanding-sem":
+            emit_series("value", spread(frame, WindowOp.SEM), out)
         elif case_id == "windows/expanding-min-periods":
             emit_series(
                 "value", frame.column("value").expanding(WindowOp.SUM, 5), out
