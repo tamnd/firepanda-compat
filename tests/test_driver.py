@@ -510,7 +510,7 @@ def test_the_engine_picks_the_driver_up_and_says_so(driver_only):
     engine = FirepandaEngine()
     assert engine.available
     assert engine.form == "driver"
-    assert engine.out_of_process_for(types.SimpleNamespace(level="L2"))
+    assert engine.out_of_process_for(types.SimpleNamespace(level="L2", in_process=False))
 
 
 @built

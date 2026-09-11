@@ -145,6 +145,41 @@ def test_known_exception_types_resolve(isolated):
     assert declared.raises == ("MergeError", "No common columns")
 
 
+def test_running_in_process_without_a_reason_is_fatal(isolated):
+    """A case that skips the driver has to say what the driver cannot reach.
+
+    Nothing in the expression shows why one case is measured differently from every
+    other case at its level, so without a note the next reader cannot tell a method
+    that genuinely lives only in firepanda's Python layer from a case somebody
+    rerouted to make it stop failing.
+    """
+    with pytest.raises(CaseError, match="asks to run in process"):
+        declare(in_process=True)
+
+
+def test_running_in_process_is_carried_into_the_result_file(isolated):
+    """The declaration has to be visible where the outcome is.
+
+    A reader looking at a passing L2 case in a result file has no other way of knowing
+    that the driver never saw it, and that is exactly the thing they would want to
+    know before trusting the outcome.
+    """
+    declared = declare(
+        in_process=True,
+        note="the numpy type tree lives in the Python layer and the driver cannot copy it",
+    )
+
+    assert declared.in_process
+    assert declared.describe()["in_process"] is True
+
+
+def test_running_through_the_driver_is_the_default(isolated):
+    declared = declare()
+
+    assert not declared.in_process
+    assert declared.describe()["in_process"] is False
+
+
 # ---------------------------------------------------------------------------
 # The operator escape hatch
 # ---------------------------------------------------------------------------

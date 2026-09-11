@@ -140,6 +140,8 @@ class Case:
         raises: The exception type name and a message substring, for an L4 case.
         warns: The warning type name and a substring, `NO_WARNING` to assert that
             nothing was warned, or None to not look.
+        in_process: Whether the answer can only be reached through the subject's
+            own Python module rather than through a driver binary.
         note: Why this case exists, when that is not obvious from the id.
     """
 
@@ -154,6 +156,7 @@ class Case:
     rules: Rules = field(default_factory=Rules)
     raises: tuple[str, str] | None = None
     warns: tuple[str, str] | None = None
+    in_process: bool = False
     note: str = ""
 
     def describe(self) -> dict[str, Any]:
@@ -174,6 +177,7 @@ class Case:
             "tolerance": self.rules.tolerance.name,
             "reason": self.rules.reason,
             "raises": list(self.raises) if self.raises else None,
+            "in_process": self.in_process,
         }
 
 
@@ -297,6 +301,7 @@ def case(
     rules: Rules | None = None,
     raises: tuple[str, str] | None = None,
     warns: tuple[str, str] | None = None,
+    in_process: bool = False,
     note: str = "",
 ) -> Case:
     """Declares and registers one case.
@@ -312,6 +317,8 @@ def case(
         rules: What the comparison may relax.
         raises: For an L4 case, the exception type and a message substring.
         warns: The expected warning, `NO_WARNING`, or None to not look.
+        in_process: Whether the answer can only be reached through the subject's own
+            module. An engine with no driver ignores it. Needs a note saying why.
         note: Why the case exists.
 
     Returns:
@@ -363,6 +370,17 @@ def case(
             resolve_error(raises[0])
         except LookupError as error:
             raise CaseError(f"{id} expects {raises[0]}, and {error}") from error
+    if in_process and not note:
+        # A case asking to skip the driver is asking to be measured differently from
+        # every other case at its level, and the reason for that is never visible in
+        # the expression. Without a note the next reader has to work out whether the
+        # method really is unreachable from the driver or whether somebody wrote the
+        # flag to make a failing case pass.
+        raise CaseError(
+            f"{id} asks to run in process, so it needs a note saying what the driver "
+            "cannot reach. A case that skips the driver without saying why reads as a "
+            "case that was failing"
+        )
 
     declared = Case(
         id=id,
@@ -376,6 +394,7 @@ def case(
         rules=rules or Rules(),
         raises=raises,
         warns=warns,
+        in_process=in_process,
         note=note,
     )
     _REGISTERED[id] = declared
