@@ -236,6 +236,22 @@ def _answer(header: dict[str, Any], table: pa.Table) -> Answer:
             name=None if name is None else str(name),
         )
 
+    if kind == "array":
+        # A numpy array, which is what pandas answers from `Index.isin`, from
+        # `Index.values` and from `unique` on the dtypes that do not give back an
+        # Index. It is a bare run of values with no labels and no name, which is
+        # what makes it a different kind from an index rather than an index whose
+        # name happens to be missing.
+        if table.num_columns != 1:
+            raise DriverBroken(
+                f"an array answer has one column and the driver wrote {table.num_columns}"
+            )
+        return Answer(
+            kind="array",
+            table=table.rename_columns([VALUE]),
+            columns=(VALUE,),
+        )
+
     if kind == "tuple":
         # One row of as many columns as the tuple has parts. Each part comes back as
         # a scalar with its Arrow type, for the reason a scalar does not travel
@@ -260,8 +276,8 @@ def _answer(header: dict[str, Any], table: pa.Table) -> Answer:
 
     raise DriverBroken(
         f"the driver reported kind {kind!r}, which is not one of scalar, frame, "
-        "series, index or tuple. Either the driver is newer than this file or the "
-        "line is corrupt"
+        "series, index, array or tuple. Either the driver is newer than this file "
+        "or the line is corrupt"
     )
 
 

@@ -52,7 +52,8 @@ Usage:
 from std.os.path import exists
 from std.sys import argv, exit
 
-from firepanda.array.array import Array
+from firepanda.array.any import AnyArray
+from firepanda.array.array import Array, from_list
 from firepanda.array.strings import StringArray, StringBuilder
 from firepanda.array.value import Value
 from firepanda.dtype import Field, LogicalType, Schema, TimeUnit, TimeZone
@@ -621,10 +622,55 @@ def emit_index(var column: Series, path: String) raises:
     Raises:
         Error: If it cannot be written.
     """
+    emit_index_named(column^, Optional[String](), path)
+
+
+def emit_index_named(
+    var column: Series, name: Optional[String], path: String
+) raises:
+    """Writes an index answer that carries a level name.
+
+    An index that came out of a column keeps that column's name, and the name is
+    compared, so an answer that has one has to say so. This is the same write as
+    `emit_index` with the one field filled in, and the two are kept apart because
+    the overwhelming majority of index answers in this driver are column label lists
+    and those are unnamed.
+
+    Args:
+        column: The labels. Consumed.
+        name: The level name, or nothing.
+        path: Where to write them.
+
+    Raises:
+        Error: If it cannot be written.
+    """
+    var rendered = String("null")
+    if name:
+        rendered = quote(name.value())
     var series = List[Series]()
     series.append(column^.rename("__value__"))
     write_arrow(DataFrame.from_series(series^), path)
-    print('{"status":"ok","kind":"index","name":null}')
+    print('{"status":"ok","kind":"index","name":' + rendered + "}")
+
+
+def emit_array(var column: Series, path: String) raises:
+    """Writes a bare run of values, which is what pandas answers as a numpy array.
+
+    An array is not an index and not a series. It has no labels and no name, and
+    `Index.isin` is the first case in this suite to need one, since pandas answers it
+    with a numpy array of bools rather than with anything that carries an index.
+
+    Args:
+        column: The values. Consumed.
+        path: Where to write them.
+
+    Raises:
+        Error: If it cannot be written.
+    """
+    var series = List[Series]()
+    series.append(column^.rename("__value__"))
+    write_arrow(DataFrame.from_series(series^), path)
+    print('{"status":"ok","kind":"array"}')
 
 
 def labels_of(frame: DataFrame) raises -> Series:
@@ -2331,6 +2377,61 @@ def main() raises:
         elif case_id == "windows/ewm-sum":
             emit_series(
                 "value", decayed(frame, EwmOp.SUM, span=Optional(5.0)), out
+            )
+        elif case_id == "indexing/set-index":
+            emit_frame(frame.set_index("key"), out)
+        elif case_id == "indexing/set-index-drop-false":
+            emit_frame(frame.set_index("key", drop=False), out)
+        elif case_id == "indexing/reset-index":
+            emit_frame(frame.set_index("key").reset_index(), out)
+        elif case_id == "indexing/reset-index-drop":
+            emit_frame(frame.set_index("key").reset_index(drop=True), out)
+        elif case_id == "indexing/index-unique":
+            var distinct = frame.set_index("key").index.unique()
+            emit_index_named(
+                Series("__value__", distinct.materialize()),
+                distinct.name,
+                out,
+            )
+        elif case_id == "indexing/index-is-unique":
+            emit_bool(frame.set_index("key").index.is_unique(), out)
+        elif case_id == "indexing/index-monotonic":
+            emit_bool(
+                frame.set_index("key").index.is_monotonic_increasing(), out
+            )
+        elif case_id == "indexing/index-get-loc":
+            # The corpus frame is keyed uniquely, so this is one position and
+            # pandas answers it as an integer rather than as a slice or a mask.
+            var found = frame.set_index("key").index.get_loc(
+                AnyArray(from_list[DType.int64]([Int64(5)]))
+            )
+            emit_scalar(
+                scalar_frame[DType.int64]("value", Int64(found[0])), out
+            )
+        elif case_id == "indexing/index-searchsorted":
+            var where_it_goes = (
+                frame.set_index("key")
+                .sort_index()
+                .index.searchsorted(
+                    AnyArray(from_list[DType.int64]([Int64(5)]))
+                )
+            )
+            emit_scalar(
+                scalar_frame[DType.int64]("value", Int64(where_it_goes)), out
+            )
+        elif case_id == "indexing/index-isin":
+            emit_array(
+                Series(
+                    "__value__",
+                    AnyArray(
+                        frame.set_index("key").index.isin(
+                            AnyArray(
+                                from_list[DType.int64]([Int64(1), 2, 3])
+                            )
+                        )
+                    ),
+                ),
+                out,
             )
         else:
             print('{"status":"absent"}')
