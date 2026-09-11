@@ -229,3 +229,23 @@ spec = "31-a-window-is-a-pair-of-rows.md#a-carried-variance-needs-to-know-when-t
 expect = "differs"
 instead = "a window that holds an infinity has no mean and therefore no spread, so var, std and sem answer NaN, and they keep answering it for as long as the infinity is in reach. An expanding window never drops a row, so that is every row after the one that carried it. On the tall frame these three cases also run on there is no infinity in the column and the two engines agree to the last bit."
 since = "2026-09-11"
+
+# The eighteenth, which is the sixteenth one power further along and the other way
+# round. There the carried quantity that overflowed was firepanda's and pandas answered
+# an infinity for the rest of the frame. Here the quantity that overflows is pandas',
+# because a third and a fourth power of the largest finite double are both infinite
+# before any window has been formed, and what pandas answers for the rest of the frame
+# is not a number at all. The expanding forms of the same two reductions need no entry:
+# an expanding window never drops the infinities in rows one and two, both engines
+# answer NaN for every row, and they agree.
+
+[[divergence]]
+id = "engine/window-shape-overflow"
+cases = ["windows/rolling-skew", "windows/rolling-kurt"]
+frames = ["float64_no_nulls"]
+kind = "engine"
+reason = "A skewness is a third central moment over a three halves power of the second and a kurtosis is a fourth over a square, and pandas builds both from running sums of the raw powers of the values. Row five of the suite's float64 frame is the largest finite double, so its cube and its fourth power are infinities the moment they are formed, and every sum they enter is an infinity from then on. pandas therefore answers NaN for all sixty four rows of the frame, including the fifty one that hold nothing but ordinary values near ten to the fifteen. firepanda carries the central moments themselves with an error bound beside each, so the bound catches the window that overflowed, the window is rebuilt from its own eight rows as soon as that value has left, and row thirteen onwards answer. At row thirteen firepanda gives a skewness of 0.16153873394877702 where exact rational arithmetic over those eight values gives 0.16153873394877818, so it is right to fifteen figures and pandas has no answer. 51 of the 64 rows differ and every one of them is a row where the window holds nothing unusual."
+spec = "31-a-window-is-a-pair-of-rows.md#the-third-and-fourth-moments-are-section-6-twice-more-with-a-tighter-bound"
+expect = "differs"
+instead = "a window whose moments overflowed is rebuilt from its own rows once the value that overflowed them has left, so the shape is a number again as soon as the data is. The rows that genuinely hold the largest finite double still answer NaN, because a fourth moment over those eight values is an infinity whichever way it is computed. On the tall frame these two cases also run on there is nothing near the top of the float range and the two engines agree to within the suite's statistical tolerance."
+since = "2026-09-11"

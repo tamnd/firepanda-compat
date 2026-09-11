@@ -391,7 +391,7 @@ def test_an_entry_with_no_expiry_never_expires():
 
 
 def test_the_committed_registry_loads():
-    """Seventeen, having been eight at the start, then seven, and up one at a time.
+    """Eighteen, having been eight at the start, then seven, and up one at a time.
 
     The count is pinned so that an entry cannot appear or disappear without somebody
     saying so here. `engine/index-alignment` is the one that went, because firepanda
@@ -448,9 +448,19 @@ def test_the_committed_registry_loads():
     overflowed it has left, where pandas answers an infinity for every later row of
     the frame. The second is the thirteenth entry on a window that never drops a
     row, so pandas' replacement of an infinity by a missing value has no chance to
-    stop being visible, and pandas' own overflow sits on top of it."""
+    stop being visible, and pandas' own overflow sits on top of it.
+
+    `engine/window-shape-overflow` is the eighteenth and it is the sixteenth one power
+    further along and pointing the other way. There the carried quantity that lost its
+    meaning was firepanda's and pandas answered an infinity for the rest of the frame.
+    Here it is pandas' own, because it builds a skewness and a kurtosis out of running
+    sums of raw cubes and fourth powers and the largest finite double has neither, so
+    pandas answers NaN for the whole frame where firepanda rebuilds and answers from
+    row thirteen on. The expanding forms need no entry of their own, because an
+    expanding window never drops the two infinities near the top of the frame and both
+    engines answer NaN for every row."""
     entries = divergences.registry()
-    assert len(entries) == 17
+    assert len(entries) == 18
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
