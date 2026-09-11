@@ -62,7 +62,7 @@ from firepanda.frame.series import Series
 from firepanda.frame.groupby import AggSpec
 from firepanda.io import read_arrow, write_arrow
 from firepanda.kernel import AggKind, BinaryOp
-from firepanda.kernel.window import WindowEdge, WindowOp
+from firepanda.kernel.window import WindowEdge, WindowOp, WindowSettings
 
 # The exit status is not the protocol, the JSON line is, and this is only here so
 # that a harness reading a truncated line has something to say about it. Zero means a
@@ -732,6 +732,10 @@ def measured(frame: DataFrame, op: WindowOp) raises -> Series:
     pandas defaults to and what the cases spell, and the two shapes ignore it
     because pandas gives neither of them one to read.
 
+    It is spelled out rather than left to the default because the default carries
+    every other reduction's parameters too, and a spread reading the one field it
+    cares about should say which field that is.
+
     Args:
         frame: The corpus frame.
         op: The reduction.
@@ -742,8 +746,10 @@ def measured(frame: DataFrame, op: WindowOp) raises -> Series:
     Raises:
         Error: Whatever `rolling` raises.
     """
+    var settings = WindowSettings()
+    settings.ddof = 1
     return frame.column("value").rolling(
-        op, 8, None, False, WindowEdge.RIGHT, None, 1
+        op, 8, None, False, WindowEdge.RIGHT, None, settings
     )
 
 
