@@ -487,3 +487,94 @@ case(
     note="a date32 column comes back as objects holding Python dates, which is a "
     "pandas fact rather than a good idea and it has to be copied anyway",
 )
+
+
+def _instants(pd, df):
+    """The second resolution column as an index of instants."""
+    return pd.DatetimeIndex(df["s"])
+
+
+# The same ten questions the indexing section asks of `Index`, asked again of
+# `DatetimeIndex`, because the board scores a name rather than a method and
+# `DatetimeIndex.isna` is a different name from `Index.isna` even though one class
+# inherits the other. The flag on each is what the indexing section's note says: these
+# are firepanda's Python layer on top of one door between an index and a column, the
+# core has no call for any of them, and a driver entry would have to write the method
+# it is scoring. See spec 36.
+AS_A_COLUMN = (
+    "the index members that read as a column are firepanda's Python layer on top of "
+    "one door, and the core has no call for any of them, so a driver entry would have "
+    "to build the column and then write the method itself. See spec 36"
+)
+case(
+    "temporal/index-to-series",
+    "DatetimeIndex.to_series",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).to_series(),
+    in_process=True,
+    note=AS_A_COLUMN,
+)
+case(
+    "temporal/index-to-series-given-both",
+    "DatetimeIndex.to_series",
+    level="L3",
+    covers=("index", "name"),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).to_series(index=list(range(len(df))), name="when"),
+    in_process=True,
+    note="the labels come back twice unless the caller says otherwise. " + AS_A_COLUMN,
+)
+case(
+    "temporal/index-isna",
+    "DatetimeIndex.isna",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: list(_instants(pd, df).isna()),
+    in_process=True,
+    note=AS_A_COLUMN,
+)
+case(
+    "temporal/index-isnull",
+    "DatetimeIndex.isnull",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: list(_instants(pd, df).isnull()),
+    in_process=True,
+    note="the older spelling of isna. " + AS_A_COLUMN,
+)
+case(
+    "temporal/index-notna",
+    "DatetimeIndex.notna",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: list(_instants(pd, df).notna()),
+    in_process=True,
+    note=AS_A_COLUMN,
+)
+case(
+    "temporal/index-notnull",
+    "DatetimeIndex.notnull",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: list(_instants(pd, df).notnull()),
+    in_process=True,
+    note="the older spelling of notna. " + AS_A_COLUMN,
+)
+case(
+    "temporal/index-dropna",
+    "DatetimeIndex.dropna",
+    level="L3",
+    covers=("how",),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).dropna(how="any"),
+    in_process=True,
+    note="what comes back is still an index of instants, which is the one member of "
+    "this family that says so by wrapping the answer in the class it was given rather "
+    "than in a plain index. " + AS_A_COLUMN,
+)
+case(
+    "temporal/index-nunique",
+    "DatetimeIndex.nunique",
+    level="L3",
+    covers=("dropna",),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: _instants(pd, df).nunique(dropna=False),
+    in_process=True,
+    note=AS_A_COLUMN,
+)
