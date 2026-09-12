@@ -64,6 +64,7 @@ for name in (
     "first",
     "last",
     "median",
+    "prod",
     "nunique",
 ):
     case(
@@ -468,6 +469,28 @@ case(
     "GroupBy.all",
     frames=("tall",),
     expr=lambda pd, df: df.groupby("key")["flag"].all(),
+)
+case(
+    "groupby/words-any",
+    "GroupBy.any",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.groupby("right").any(),
+    note="a truth is the only reduction a column of words answers with a number, "
+    "so these two are the only cases in the section that group a frame with its "
+    "text column left in it. Every other reduction here has to be handed a frame "
+    "of nothing but numbers, and a frame of a key, a number and a label is the "
+    "ordinary shape of a frame, so an engine that drops the text column or refuses "
+    "the call is wrong in a way no other case in the section can see",
+)
+case(
+    "groupby/words-all",
+    "GroupBy.all",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.groupby("right").all(),
+    note="the same frame asked the other question. It is a separate case rather "
+    "than a second frame on the one above because the two answers come out of one "
+    "loop in most implementations and a loop that starts from the wrong identity "
+    "is right for one of them and wrong for the other",
 )
 case(
     "groupby/cov",
