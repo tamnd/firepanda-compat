@@ -1616,6 +1616,16 @@ def main() raises:
                 ),
                 out,
             )
+        elif case_id == "groupby/prod":
+            # The key frames carry one int64 column beside the key, so a product
+            # over ten thousand rows runs off the end of int64 and wraps. That is
+            # what pandas does too, because it multiplies in numpy int64 and numpy
+            # wraps without saying anything, so the two agree on a number neither
+            # of them would call meaningful.
+            emit_frame(
+                grouped(frame, one_key("key"), AggKind.PROD, True, True, True),
+                out,
+            )
         elif case_id == "groupby/std":
             emit_frame(
                 grouped(frame, one_key("key"), AggKind.STD, True, True, True),
@@ -1666,6 +1676,8 @@ def main() raises:
             emit_frame(grouped(frame, one_key("key"), AggKind.LAST), out)
         elif case_id == "groupby/flat-median":
             emit_frame(grouped(frame, one_key("key"), AggKind.MEDIAN), out)
+        elif case_id == "groupby/flat-prod":
+            emit_frame(grouped(frame, one_key("key"), AggKind.PROD), out)
         elif case_id == "groupby/flat-nunique":
             emit_frame(grouped(frame, one_key("key"), AggKind.NUNIQUE), out)
         elif case_id == "groupby/flat-std":
@@ -1725,6 +1737,39 @@ def main() raises:
                 grouped(
                     frame, one_key("key"), AggKind.MEAN, True, True, True
                 ).column("value"),
+                out,
+            )
+        elif case_id == "groupby/any":
+            # These two ask the tall frame's boolean column one group at a time.
+            # The reduction runs over the numeric column beside it as well, since
+            # that is what a grouped reduction over a frame does, and the case
+            # takes the one column the pandas side asked for.
+            emit_series(
+                "flag",
+                grouped(
+                    frame, one_key("key"), AggKind.ANY, True, True, True
+                ).column("flag"),
+                out,
+            )
+        elif case_id == "groupby/all":
+            emit_series(
+                "flag",
+                grouped(
+                    frame, one_key("key"), AggKind.ALL, True, True, True
+                ).column("flag"),
+                out,
+            )
+        elif case_id == "groupby/words-any":
+            # The two column frame grouped by its integer column, so the text
+            # column stays in the frame rather than being the key. A grouped truth
+            # is the only reduction that can read one.
+            emit_frame(
+                grouped(frame, one_key("right"), AggKind.ANY, True, True, True),
+                out,
+            )
+        elif case_id == "groupby/words-all":
+            emit_frame(
+                grouped(frame, one_key("right"), AggKind.ALL, True, True, True),
                 out,
             )
         elif case_id == "groupby/bool-key":
