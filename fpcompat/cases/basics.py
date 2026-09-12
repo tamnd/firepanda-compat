@@ -219,6 +219,81 @@ case(
     "shape that lets one loop walk either class. " + MEASURING,
 )
 
+INVARIANT = (
+    "in process, and written as a question the two libraries answer the same way rather "
+    "than as the number itself, because the number is a divergence and is scored under "
+    "`divergences/nbytes`. What is left after the divergence is taken out is still worth "
+    "holding, since every rule here can break without the byte count changing at all. " + MEASURING
+)
+
+case(
+    "basics/series-nbytes",
+    "Series.nbytes",
+    frames=SHAPES,
+    expr=lambda pd, df: df[df.columns[0]].nbytes > 0,
+    in_process=True,
+    note="whether the column weighs anything, which both libraries agree about even "
+    "though they disagree about how much. The empty frame is the half that makes this a "
+    "question rather than a constant. " + INVARIANT,
+)
+case(
+    "basics/memory-columns",
+    "DataFrame.memory_usage",
+    level="L3",
+    covers=("index",),
+    frames=("single", "two", "tall"),
+    expr=lambda pd, df: (
+        df.memory_usage(index=False).tolist() == [df[name].nbytes for name in df.columns]
+    ),
+    in_process=True,
+    note="the plural is the singular repeated, which holds in both libraries and is the "
+    "rule an implementation that recomputed the columns under the flag would be free to "
+    "break. " + INVARIANT,
+)
+case(
+    "basics/memory-series",
+    "Series.memory_usage",
+    level="L3",
+    covers=("index",),
+    frames=("single", "two", "tall"),
+    expr=lambda pd, df: df[df.columns[0]].memory_usage(index=False) == df[df.columns[0]].nbytes,
+    in_process=True,
+    note="the column's own weight with the labels left out, which is what `nbytes` "
+    "answers on both sides, so the two members have to agree with each other even where "
+    "neither agrees across the two libraries. " + INVARIANT,
+)
+case(
+    "basics/memory-series-index",
+    "Series.memory_usage",
+    level="L3",
+    covers=("index",),
+    frames=("single", "two", "tall"),
+    expr=lambda pd, df: (
+        df[df.columns[0]].memory_usage() - df[df.columns[0]].memory_usage(index=False)
+        == df.index.nbytes
+    ),
+    in_process=True,
+    note="what the flag is worth, which is exactly the index and nothing else. The two "
+    "libraries put very different numbers in that gap, 132 there for labels nobody "
+    "declared and nothing here, and the gap is the index either way. " + INVARIANT,
+)
+case(
+    "basics/memory-deep",
+    "DataFrame.memory_usage",
+    level="L3",
+    covers=("deep",),
+    frames=("tall", "int64_no_nulls"),
+    expr=lambda pd, df: df.memory_usage(deep=True).tolist() == df.memory_usage().tolist(),
+    in_process=True,
+    note="the flag changes nothing on a frame with no text in it, which is true in both "
+    "libraries and is as far as the agreement goes. A frame with text in it was measured "
+    "rather than assumed: pandas 3 charges the characters only under `deep`, so a two row "
+    "text column goes from 16 to 84 there, while here the characters are always counted "
+    "and there is no shallow answer to give. That difference belongs to the byte counts, "
+    "which `engine/nbytes` already covers, and these two frames are what is left once it "
+    "is taken out. " + INVARIANT,
+)
+
 # ---------------------------------------------------------------------------
 # Selection and the head of the frame
 # ---------------------------------------------------------------------------
