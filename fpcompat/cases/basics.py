@@ -377,6 +377,66 @@ case(
     expr=lambda pd, df: df.fillna({"value": 0.0}),
 )
 case(
+    "basics/fillna-map",
+    "Series.fillna",
+    level="L3",
+    covers=("value",),
+    frames=FLOATS,
+    expr=lambda pd, df: df["value"].fillna({label: float(label) for label in range(df.shape[0])}),
+    in_process=True,
+    note="a dict on a column means row labels and not column names, which is the one "
+    "shape that reads differently on a column than on a frame, and every row gets a "
+    "different value so an implementation that lined the mapping up by position rather "
+    "than by label would answer the same length and the wrong rows. The mapping covers "
+    "every label because a row left missing on the firepanda side is a null and the "
+    "same row on the pandas side is a NaN, which the harness is right to call a "
+    "difference and which is about loading rather than about this method. The alignment "
+    "lives in the Python layer rather than in the core, so a driver entry would have to "
+    "write it. See spec 47",
+)
+case(
+    "basics/fillna-column",
+    "Series.fillna",
+    level="L3",
+    covers=("value",),
+    frames=FLOATS,
+    expr=lambda pd, df: df["value"].fillna(df["row"]),
+    in_process=True,
+    note="the row column is the position written down, so this fills each missing row "
+    "with its own label and is the same question the mapping case asks with the other "
+    "shape. It is also a fallback of a different type than the column it fills, which "
+    "is allowed here because every whole number in it survives the trip to a float and "
+    "back. Python layer, see spec 47",
+)
+case(
+    "basics/frame-fillna-column",
+    "DataFrame.fillna",
+    level="L3",
+    covers=("value",),
+    frames=FLOATS,
+    expr=lambda pd, df: df.fillna(
+        type(df)({"name": ["value"], "fill": [0.0]}).set_index("name")["fill"]
+    ),
+    in_process=True,
+    note="a column handed to a frame names columns rather than rows, so this is the "
+    "dict case written the other way and it is worth a case of its own because the "
+    "shape that lines up against the rows on a column lines up against the column names "
+    "here. Python layer, see spec 47",
+)
+case(
+    "basics/frame-fillna-frame",
+    "DataFrame.fillna",
+    level="L3",
+    covers=("value",),
+    frames=FLOATS,
+    expr=lambda pd, df: df.fillna(type(df)({"value": [0.0] * df.shape[0]})),
+    in_process=True,
+    note="a frame is the one value that lines up on both axes, and the fallback here "
+    "carries one of the two columns so the other one is left alone, which is the half "
+    "of the rule that a shape lining up on one axis only cannot state. Python layer, "
+    "see spec 47",
+)
+case(
     "basics/fillna-axis",
     "Series.fillna",
     level="L3",

@@ -252,6 +252,16 @@ case(
     raises=("TypeError", "Cannot setitem"),
 )
 case(
+    "errors/fillna-frame-on-column",
+    "Series.fillna",
+    level="L4",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].fillna(df),
+    raises=("TypeError", "must be a scalar, dict or Series"),
+    note="a frame is the one shape a column refuses, because a frame lines up on both "
+    "axes and a column has only one for it to line up against",
+)
+case(
     "errors/add-existing-category",
     "cat.add_categories",
     level="L4",
