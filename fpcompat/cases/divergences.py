@@ -505,3 +505,65 @@ case(
     note="every row divides by zero here, so pandas answers three NaNs and firepanda "
     "answers three nulls, which is the clearest form of the difference",
 )
+
+
+# ---------------------------------------------------------------------------
+# How a type is spelt
+# ---------------------------------------------------------------------------
+
+# Every type firepanda has is an Arrow type, and `dtype` gives Arrow's name for it.
+# Every type pandas has is a numpy dtype or an extension dtype, and `dtype` gives that
+# one's name. For most types the two names happen to be the same word, which is why
+# this went unnoticed: `int64`, `float64`, `bool` and `category` all read identically on
+# both sides and are compared by string all over this suite. Text and dates are where
+# the two vocabularies do not share a word, and there is no third name that would be
+# right for both.
+#
+# The frames are the ones the corpus already has rather than new ones, so these cases
+# also say which corpus frames the ordinary dtype cases have to stay off.
+
+DTYPE_SPELLING = (
+    "compared as a string, because a dtype object is not a value the comparison can "
+    "hold and because the string is what a user reads"
+)
+
+case(
+    "divergences/dtype-spelling/text-column",
+    "Series.dtype",
+    frames=("single",),
+    expr=lambda pd, df: str(df["c"].dtype),
+    in_process=True,
+    note="pandas 3 says `str` and firepanda says `string`, which is Arrow's name for "
+    "the same thing. " + DTYPE_SPELLING,
+)
+case(
+    "divergences/dtype-spelling/text-frame",
+    "DataFrame.dtypes",
+    frames=("single",),
+    expr=lambda pd, df: list(df.dtypes.astype(str)),
+    in_process=True,
+    note="the same word through the plural member, which matters because `dtypes` is "
+    "the shape people actually read and a list of three where one is wrong looks like "
+    "a list of three that is right. " + DTYPE_SPELLING,
+)
+case(
+    "divergences/dtype-spelling/date-column",
+    "Series.dtype",
+    frames=("temporal_range",),
+    expr=lambda pd, df: str(df["date"].dtype),
+    in_process=True,
+    note="a date carrying a day and no clock is `date32[day]` in Arrow and firepanda keeps that "
+    "name. pandas has no date dtype at all, so it reads the column into a column of "
+    "Python date objects and calls it `object`, which is the type it refuses to have "
+    "anywhere else. " + DTYPE_SPELLING,
+)
+case(
+    "divergences/dtype-spelling/timestamp-column",
+    "Series.dtype",
+    frames=("temporal_range",),
+    expr=lambda pd, df: str(df["second"].dtype),
+    in_process=True,
+    note="the control, and the reason the entry is about two types rather than about "
+    "temporal columns in general. A timestamp is `datetime64[s]` in both libraries "
+    "because pandas has a dtype for it, so this case has to pass. " + DTYPE_SPELLING,
+)

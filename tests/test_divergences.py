@@ -524,9 +524,16 @@ def test_the_committed_registry_loads():
     firepanda exception can be a subclass of one without importing pandas, so a case
     that asks which class comes out of a refusal gets the right refusal under the wrong
     class. It covers two cases in two unrelated sections, which is how an entry about
-    the dependency graph looks when it is written down as cases."""
+    the dependency graph looks when it is written down as cases.
+
+    `engine/dtype-spelling` is the twenty sixth and the second one that is about the
+    type system rather than about an operation. Every type firepanda has is an Arrow
+    type and every type pandas has is a numpy or extension dtype, and the two
+    vocabularies share a word for most types and not for text or for dates. It is one
+    entry over two types because that is one fact about which vocabulary names a
+    column."""
     entries = divergences.registry()
-    assert len(entries) == 25
+    assert len(entries) == 26
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
