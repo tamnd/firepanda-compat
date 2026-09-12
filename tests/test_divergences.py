@@ -542,9 +542,18 @@ def test_the_committed_registry_loads():
     does. firepanda carries absence in a validity bitmap beside the values, so the width
     survives the gap. Two controls sit under the entry and have to pass, the same widths
     with no gap in them and the float widths with a gap in them, which is what keeps it
-    an entry about the gap."""
+    an entry about the gap.
+
+    `engine/nbytes` is the twenty eighth and is the third about the type system, or
+    rather about the memory under it. firepanda counts the Arrow buffers the data is
+    stored in and pandas counts the size of the numpy representation, which puts the
+    characters of a text column inside one number and outside the other, gives an
+    index nobody declared a weight of one hundred and thirty two bytes over there and
+    nothing over here, and does not even agree on a dense integer column because of the
+    validity bitmap. The labels of the frame member are the control, since the shape of
+    that answer is pandas' exactly and only the counting under it differs."""
     entries = divergences.registry()
-    assert len(entries) == 27
+    assert len(entries) == 28
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

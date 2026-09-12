@@ -382,3 +382,13 @@ spec = "06-pandas-parity.md#the-genuine-omissions"
 expect = "differs"
 instead = "an integer keeps the width it was read at and carries its missing rows in a validity bitmap, so an int8 column with a gap in it is still int8 and not float64."
 since = "2026-09-13"
+
+[[divergence]]
+id = "engine/nbytes"
+cases = ["divergences/nbytes/column", "divergences/nbytes/text-column", "divergences/nbytes/index", "divergences/nbytes/frame", "divergences/nbytes/series-usage"]
+kind = "engine"
+reason = "A byte count here and a byte count in pandas are answers to two different questions that happen to share a name. firepanda counts the Arrow buffers the data is actually stored in: the values, the validity bitmap, the views and the payload for text, and both the codes and the categories for a dictionary column. pandas counts the size of the numpy representation, so a column of three strings is twenty four bytes of pointers plus whatever pandas 3 has started adding for the characters, and the labels of a frame that never declared any are one hundred and thirty two bytes, which is the size of the three Python integers a RangeIndex holds and is a fact about a Python object rather than about any data. Neither number is wrong and neither can be converted into the other. The two do not agree even on a dense integer column, because Arrow allows a column with no nulls to omit its validity buffer and firepanda allocates one anyway, so a sixty four row int64 column is one byte heavier here than the numpy array holding the same values. What a caller should do about it is compare each number against the right thing: this one is close to the size of the same data in an uncompressed Parquet file and close to what the process grows by when the frame is loaded, and pandas' is close to neither of those once there is text in the frame. Anybody who needs the pandas number has to_pandas().memory_usage(). The labels case beside these is the control and has to pass, because the shape of the answer is pandas' down to the index row coming first under the label Index, and only the counting under those labels differs."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "differs"
+instead = "the count is the bytes in the Arrow buffers, so the text in a text column is inside the number, an index nobody declared weighs nothing, and a column with no nulls still pays for the validity bitmap it was allocated."
+since = "2026-09-13"
