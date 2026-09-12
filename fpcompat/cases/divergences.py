@@ -567,3 +567,69 @@ case(
     "temporal columns in general. A timestamp is `datetime64[s]` in both libraries "
     "because pandas has a dtype for it, so this case has to pass. " + DTYPE_SPELLING,
 )
+
+# ---------------------------------------------------------------------------
+# What a gap does to an integer
+# ---------------------------------------------------------------------------
+
+GAPPED_INTEGERS = (
+    "int8_half_null",
+    "int16_half_null",
+    "int32_half_null",
+    "int64_half_null",
+    "uint8_half_null",
+    "uint16_half_null",
+    "uint32_half_null",
+    "uint64_half_null",
+)
+"""Every integer width with a gap in it, because the answer is the same on all eight.
+
+Eight frames rather than one, because a rule that is stated about int64 and happens to be
+true of the other seven is a rule nobody has checked. This one is true of all eight and the
+case says so by running on all eight.
+"""
+
+INTEGER_WIDENING = (
+    "in process, because the divergence is in the read rather than in the member. The "
+    "driver's own read widens the way pandas does, so an arm here would agree with "
+    "pandas by doing the thing the case is about"
+)
+
+case(
+    "divergences/integer-widening/column-type",
+    "Series.dtype",
+    frames=GAPPED_INTEGERS,
+    expr=lambda pd, df: str(df["value"].dtype),
+    in_process=True,
+    note="an integer column with one missing row in it is still that integer here and "
+    "is float64 in pandas, at every width and both signednesses. " + INTEGER_WIDENING,
+)
+case(
+    "divergences/integer-widening/frame-type",
+    "DataFrame.dtypes",
+    frames=GAPPED_INTEGERS,
+    expr=lambda pd, df: str(df.dtypes["value"]),
+    in_process=True,
+    note="the same widening read through the plural member, which is where a caller "
+    "meets it, because `df.dtypes` is what gets printed and compared against. " + INTEGER_WIDENING,
+)
+case(
+    "divergences/integer-widening/float-control",
+    "Series.dtype",
+    frames=("float32_half_null", "float64_half_null"),
+    expr=lambda pd, df: str(df["value"].dtype),
+    in_process=True,
+    note="the first control, and it has to pass. A float already has a value for a "
+    "missing row, so pandas has nothing to widen to and both libraries keep the width "
+    "they were given. " + INTEGER_WIDENING,
+)
+case(
+    "divergences/integer-widening/dense-control",
+    "Series.dtype",
+    frames=("int8_no_nulls", "int64_no_nulls", "uint64_no_nulls"),
+    expr=lambda pd, df: str(df["value"].dtype),
+    in_process=True,
+    note="the second control, and it has to pass. The same integer widths with no gap "
+    "in them, which is what makes this an entry about the gap rather than an entry "
+    "about integers. " + INTEGER_WIDENING,
+)

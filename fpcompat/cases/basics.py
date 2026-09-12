@@ -200,14 +200,14 @@ case(
 case(
     "basics/series-dtypes",
     "Series.dtypes",
-    frames=DENSE_WIDTHS,
+    frames=DENSE_WIDTHS + WIDTHS,
     expr=lambda pd, df: str(df["value"].dtypes),
     in_process=True,
     note="the plural name on a thing with one type, which is what `dtype` answers and "
     "is run over every width for the same reason `dtype` is. The widths with gaps in "
-    "them are next door on `dtype` rather than here, because pandas reads a nullable "
-    "integer out of Arrow as float64 and firepanda reads it as itself, so that pair "
-    "measures the read path rather than the member. " + MEASURING,
+    "them are back now that `engine/integer-widening` is registered, and the entry has "
+    "a frame list on it, so the eight integer widths are allowed to differ and the two "
+    "float widths beside them are not. " + MEASURING,
 )
 case(
     "basics/series-axes",
