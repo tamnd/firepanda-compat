@@ -251,6 +251,12 @@ case(
     expr=lambda pd, df: df.sum(numeric_only=True),
     level="L3",
     covers=("numeric_only",),
+    note="unimplemented, and for a reason that has changed. It used to be that the "
+    "answer is a Series with no name and an unnamed Series reported its name as an "
+    "empty string here and as None in pandas, so the comparison failed on the name "
+    "whatever the numbers did. The name is right now and what is left is the "
+    "parameter: numeric_only refuses, because dropping the columns a reduction cannot "
+    "read is not written yet. The cases below are the same reductions without it",
 )
 case(
     "basics/any",
@@ -321,13 +327,64 @@ case(
     note="the case a product written like a sum fails, because a null holds a zero in "
     "an Arrow buffer and zero is the identity for the wrong operator",
 )
-# The per column forms, `df.prod()` and `df.any()` and `df.all()`, are not here and
-# neither is `basics/frame-sum`, which has sat unimplemented since it was written.
-# All four answer a Series with no name, and an unnamed Series reports its name as an
-# empty string in firepanda and as None in pandas, so the comparison fails on the name
-# whatever the numbers do. That is one difference in one place rather than four, it is
-# about how a Series carries the absence of a name rather than about any reduction, and
-# it gets its own slice.
+# The per column forms on a frame. These answer a Series with no name, which is what
+# kept them off the board until a series name became an `Optional[String]` rather than
+# a `String` whose empty value was doing two jobs. The frames are the ones every column
+# of which the reduction can read, because numeric_only is the parameter that drops the
+# rest and it is not written yet.
+for name in ("sum", "prod"):
+    case(
+        f"basics/frame-{name}-all-columns",
+        f"DataFrame.{name}",
+        frames=("int64_no_nulls", "float64_half_null", "wide"),
+        expr=(lambda method: lambda pd, df: getattr(df, method)())(name),
+        in_process=True,
+        note="the answer is one value per column and is therefore about none of "
+        "them, so it carries no name at all rather than one that is empty. The float "
+        "frame carries the nulls because the integer one cannot: a whole frame answer "
+        "is a typed column rather than a scalar, so it shows the widening the str.len "
+        "entry in the registry already describes, where pandas turns an integer column "
+        "with a missing row in it into a float64 and firepanda keeps the width. That is "
+        "the same difference in a new place and it wants its own entry, which the "
+        "registry says is a pull request of its own",
+    )
+for name in ("any", "all"):
+    case(
+        f"basics/frame-{name}",
+        f"DataFrame.{name}",
+        frames=("two", "wide"),
+        expr=(lambda method: lambda pd, df: getattr(df, method)())(name),
+        in_process=True,
+        note="these two read a text column as well as a number, so the two frame is "
+        "here where the arithmetic reductions above cannot have it",
+    )
+case(
+    "basics/frame-name-of-a-reduction",
+    "DataFrame.sum",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.sum().name,
+    in_process=True,
+    note="the attribute on its own, so that a regression in how the absence of a name "
+    "is carried is reported as being about the name rather than about the reduction",
+)
+case(
+    "basics/series-name-cleared",
+    "Series.rename",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].rename(None).name,
+    in_process=True,
+    note="rename(None) takes the name off and rename('') sets one that is empty, and "
+    "they are two different calls because pandas tells the two states apart",
+)
+case(
+    "basics/series-name-empty",
+    "Series.rename",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].rename("").name,
+    in_process=True,
+    note="the other half of the pair above, and the one that would come back wrong if "
+    "the absence were put back by asking whether the name had come out empty",
+)
 for fold in ("sum", "prod", "min", "max", "any", "all"):
     case(
         f"basics/frame-fold-{fold}",
