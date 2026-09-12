@@ -1196,6 +1196,113 @@ case(
     covers=("to_replace", "value"),
     frames=("keys_10",),
     expr=lambda pd, df: df["key"].replace(0, 99),
+    in_process=True,
+    note="one value swapped for another, which is the whole method in its smallest "
+    "shape, and the replacement is a whole number so nothing here asks either library "
+    "to widen a column. This case was written before the method existed and its frames "
+    "are the ones it was written with. Python layer, see spec 50",
+)
+case(
+    "basics/replace-run",
+    "Series.replace",
+    level="L3",
+    covers=("to_replace", "value"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].replace([0, 1, 2], [7, 8, 9]),
+    in_process=True,
+    note="a run of values against a run of replacements, which is three comparisons and "
+    "three picks and is the shape that shows the pairs are judged against the column as "
+    "it arrived. Every value here is one the column already holds, so nothing is a no "
+    "op. Python layer, see spec 50",
+)
+case(
+    "basics/replace-swap",
+    "Series.replace",
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].replace([3, 4], [4, 3]),
+    in_process=True,
+    note="two values swapped for each other in one call, which is only the right answer "
+    "because no pair can see what the pair before it did. A method that walked the pairs "
+    "against the running answer would send every three and every four to three. Python "
+    "layer, see spec 50",
+)
+case(
+    "basics/replace-mapping",
+    "Series.replace",
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].replace({0: 90, 5: 95}),
+    in_process=True,
+    note="a mapping of pairs on a column, where the keys are the values being replaced "
+    "rather than anything to do with labels, which is the reading a frame only takes "
+    "when nothing arrives beside it. Python layer, see spec 50",
+)
+case(
+    "basics/replace-missing",
+    "Series.replace",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].replace(float("nan"), 0.0),
+    in_process=True,
+    note="a missing value named for replacement, which is isna rather than a comparison "
+    "because nothing equals a missing value, and so is the same answer as fillna. The "
+    "frame is the one carrying gaps, so the rows that move are the ones that hold "
+    "nothing. Python layer, see spec 50",
+)
+case(
+    "basics/replace-nothing-holds",
+    "Series.replace",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].replace(0, 99),
+    in_process=True,
+    note="a value of the right type that no row holds, since every value in this frame "
+    "is negative, so the answer is the column and the pair is dropped before any pick is "
+    "built. Python layer, see spec 50",
+)
+case(
+    "basics/frame-replace",
+    "DataFrame.replace",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.replace(0, 99),
+    in_process=True,
+    note="one pair against every column of the frame, which reaches the first position "
+    "and nothing in the values, so one column moves and one is handed back with its "
+    "type. Python layer, see spec 50",
+)
+case(
+    "basics/frame-replace-per-column",
+    "DataFrame.replace",
+    level="L3",
+    covers=("to_replace", "value"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.replace({"row": 0}, 99),
+    in_process=True,
+    note="a mapping with a value beside it, which is the reading where the keys are "
+    "column names, so only the positions column is offered the pair. The same mapping "
+    "without the value would be a mapping of values and would do nothing at all, which "
+    "is spec 50 section 5. Python layer, see spec 50",
+)
+case(
+    "basics/frame-replace-mapping-of-mappings",
+    "DataFrame.replace",
+    level="L3",
+    covers=("to_replace",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.replace({"row": {0: 90, 1: 91}}),
+    in_process=True,
+    note="a mapping of column names to mappings of pairs, which is the one shape read by "
+    "column name with nothing beside it, decided on the whole mapping rather than per "
+    "entry. Python layer, see spec 50",
+)
+case(
+    "basics/frame-replace-value-per-column",
+    "DataFrame.replace",
+    level="L3",
+    covers=("to_replace", "value"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.replace(0, {"row": 99}),
+    in_process=True,
+    note="a mapping as the value, which is a different replacement per column for the "
+    "same thing replaced, and a column the mapping does not name is left alone rather "
+    "than refused. Python layer, see spec 50",
 )
 case(
     "basics/isin",
