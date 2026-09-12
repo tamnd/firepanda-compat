@@ -447,3 +447,25 @@ case(
     "at the ones being melted, which is why naming an untouched column value is enough "
     "to break the call",
 )
+case(
+    "errors/where-condition-not-boolean",
+    "Series.where",
+    level="L4",
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df["value"].where(df["row"]),
+    raises=("TypeError", "Boolean array expected for the condition"),
+    note="a column of ones and zeros is the obvious thing to write and is the thing "
+    "pandas will not take, which makes this the refusal a caller is most likely to "
+    "meet in this family",
+)
+case(
+    "errors/where-other-needs-an-axis",
+    "DataFrame.where",
+    level="L4",
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df.where(df["value"] > 0, df["row"]),
+    raises=("ValueError", "Must specify axis=0 or 1"),
+    note="a column offered to a frame is a value per row or a value per column and "
+    "pandas will not guess between them, which is one of the few places it refuses "
+    "rather than picking the reading that is usually meant",
+)

@@ -977,16 +977,126 @@ case(
     "Series.where",
     level="L3",
     covers=("cond", "other"),
-    frames=FLOATS + NUMERIC,
+    frames=(*FLOATS, "int64_no_nulls"),
     expr=lambda pd, df: df["value"].where(df["value"] > 0, -1),
+    in_process=True,
+    note="a condition written as a comparison is how this method is actually called, "
+    "and it is also the shape that says what a comparison against a missing value "
+    "does, since a row the condition says nothing about is replaced rather than kept. "
+    "Every missing row is therefore filled, which is what keeps the case about the "
+    "method rather than about a null on one side being a nan on the other. The two "
+    "integer frames with gaps in them are not here for the same reason: the oracle "
+    "loads an Arrow integer column with nulls as float64, so the answer would differ "
+    "by type before the method had done anything. The alignment, the order the nulls "
+    "are read in and the type rules are all in the Python layer, so a driver entry "
+    "would have to write them again. See spec 48",
 )
 case(
     "basics/mask",
     "Series.mask",
     level="L3",
     covers=("cond", "other"),
-    frames=FLOATS + NUMERIC,
+    frames=("float64_no_nulls", "int64_no_nulls"),
     expr=lambda pd, df: df["value"].mask(df["value"] > 0, -1),
+    in_process=True,
+    note="the same condition and the opposite half of the column, on the frames with "
+    "no nulls so that both libraries read the condition the same way everywhere. A "
+    "comparison against a null answers a null here and a false in the oracle, which "
+    "this method turns over and which would therefore be a difference about loading "
+    "rather than about masking. The frames with gaps are the next case. Python layer, "
+    "see spec 48",
+)
+case(
+    "basics/where-column",
+    "Series.where",
+    level="L3",
+    covers=("cond", "other"),
+    frames=FLOATS,
+    expr=lambda pd, df: df["value"].where(df["value"] > 0, df["row"]),
+    in_process=True,
+    note="the other side as a column rather than a value, lined up by label, and of a "
+    "different type than the column it is going into, which is allowed because every "
+    "whole number in it survives the trip to a float. Python layer, see spec 48",
+)
+case(
+    "basics/where-leaves-missing",
+    "Series.where",
+    frames=("float64_half_null", "int64_no_nulls"),
+    expr=lambda pd, df: df["value"].where(df["value"] > 0).isna(),
+    in_process=True,
+    note="the method called with nothing but the condition, which is what makes this "
+    "the L2 case of the four. With no other side named the rows that were not kept "
+    "hold nothing, and what can be compared about that is which rows they are. The "
+    "values cannot be, because pandas widens the column and puts a nan in it where "
+    "this keeps the column's type and puts a null in it, which is the divergence spec "
+    "48 section 5 argues is the right one and which the harness is right to call a "
+    "difference. The integer frame is here because that is where pandas' widening is "
+    "visible. Python layer",
+)
+case(
+    "basics/mask-leaves-missing",
+    "Series.mask",
+    frames=("float64_no_nulls", "int64_no_nulls"),
+    expr=lambda pd, df: df["value"].mask(df["value"] > 0).isna(),
+    in_process=True,
+    note="the same call with the condition turned over, on the frames with no nulls "
+    "for the reason the mask case above gives. Python layer, see spec 48",
+)
+case(
+    "basics/frame-where-leaves-missing",
+    "DataFrame.where",
+    frames=("float64_no_nulls", "float64_half_null"),
+    expr=lambda pd, df: df.where(df["value"] > 0).isna(),
+    in_process=True,
+    note="both columns are chosen over by one condition and the positions column is "
+    "the one pandas widens, since it holds whole numbers and is about to hold a nan. "
+    "Python layer, see spec 48",
+)
+case(
+    "basics/frame-mask-leaves-missing",
+    "DataFrame.mask",
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df.mask(df["value"] > 0).isna(),
+    in_process=True,
+    note="the frame shaped mask with nothing but a condition. Python layer, see spec 48",
+)
+case(
+    "basics/mask-nulls",
+    "Series.mask",
+    level="L3",
+    covers=("cond", "other"),
+    frames=FLOATS,
+    expr=lambda pd, df: df["value"].mask(df["value"].isna(), 0.0),
+    in_process=True,
+    note="fillna written the other way round, which is worth a case because it is the "
+    "one condition that picks out exactly the rows that hold nothing and because it "
+    "fills every one of them. Python layer, see spec 48",
+)
+case(
+    "basics/frame-where",
+    "DataFrame.where",
+    level="L3",
+    covers=("cond", "other"),
+    frames=FLOATS,
+    expr=lambda pd, df: df.where(df["value"] > 0, 0),
+    in_process=True,
+    note="one column of flags against a frame is read down the rows and is shared by "
+    "every column, so the positions column is chosen over by a condition computed from "
+    "the value column. The other side is a whole number rather than 0.0 because the "
+    "two columns are of two types and a whole number goes into both of them without "
+    "either library widening anything. Python layer, see spec 48",
+)
+case(
+    "basics/frame-mask",
+    "DataFrame.mask",
+    level="L3",
+    covers=("cond", "other"),
+    frames=FLOATS,
+    expr=lambda pd, df: df.mask(df["value"].isna(), 0),
+    in_process=True,
+    note="the rows where one column holds nothing, replaced in every column, which is "
+    "the frame shaped version of the condition that picks out the gaps. Python layer, "
+    "see spec 48",
 )
 case(
     "basics/replace",
