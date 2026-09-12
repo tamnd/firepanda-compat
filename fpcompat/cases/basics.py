@@ -98,13 +98,13 @@ case(
 case(
     "basics/dtypes",
     "DataFrame.dtypes",
-    frames=("tall", "wide", "int64_no_nulls", "categorical_ordered"),
+    frames=(*SHAPES, "wide", "temporal_range", "categorical_ordered"),
     expr=lambda pd, df: df.dtypes.astype(str),
     in_process=True,
     note="compared as strings because a dtype object is not a value the comparison can "
-    "hold. The frames are the ones where the two libraries spell every type in them the "
-    "same way, which leaves out text and dates, and those two are divergences of `dtype` "
-    "that have to be registered before a case can carry them. " + MEASURING,
+    "hold. The frames with text and dates in them are back now that "
+    "`engine/dtype-spelling` is registered, so this case asserts the divergence over the "
+    "types that have one and the agreement over the types that do not. " + MEASURING,
 )
 case(
     "basics/dtypes-labels",
