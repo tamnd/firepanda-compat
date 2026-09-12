@@ -1217,6 +1217,23 @@ def main() raises:
         elif case_id == "basics/var":
             write_arrow(reduce(frame, "value", AggKind.VAR), out)
             print('{"status":"ok","kind":"scalar"}')
+        elif (
+            case_id == "basics/prod"
+            or case_id == "basics/product"
+            or case_id == "basics/prod-nulls"
+        ):
+            # One branch for three cases, because `product` is pandas' second
+            # spelling of the same method and the null frames differ only in
+            # which corpus frame the case names.
+            emit_scalar(reduce(frame, "value", AggKind.PROD), out)
+        elif case_id == "basics/any":
+            emit_scalar(reduce(frame, "flag", AggKind.ANY), out)
+        elif case_id == "basics/all":
+            emit_scalar(reduce(frame, "flag", AggKind.ALL), out)
+        elif case_id == "basics/any-numbers" or case_id == "basics/any-text":
+            emit_scalar(reduce(frame, "value", AggKind.ANY), out)
+        elif case_id == "basics/all-numbers" or case_id == "basics/all-text":
+            emit_scalar(reduce(frame, "value", AggKind.ALL), out)
         elif case_id == "basics/nunique":
             # The first column and not "value", because the case reduces
             # `df.iloc[:, 0]` and the frames it runs on are the key frames.
@@ -2022,6 +2039,8 @@ def main() raises:
             # The `single` frame has no column called `value`, and the case asks for
             # `b`, which is its float one.
             emit_scalar(reduce(frame, "b", AggKind.STD), out)
+        elif case_id == "stats/prod":
+            emit_scalar(reduce(frame, "value", AggKind.PROD), out)
         elif case_id == "stats/median":
             emit_scalar(reduce(frame, "value", AggKind.MEDIAN), out)
         elif case_id == "stats/quantile-linear":
