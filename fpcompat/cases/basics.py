@@ -13,6 +13,8 @@ an opinion about.
 
 from __future__ import annotations
 
+import io
+
 from fpcompat.cases import case, section
 from fpcompat.compare import Rules, Tolerance
 
@@ -292,6 +294,155 @@ case(
     "and there is no shallow answer to give. That difference belongs to the byte counts, "
     "which `engine/nbytes` already covers, and these two frames are what is left once it "
     "is taken out. " + INVARIANT,
+)
+
+REPORTED = (
+    "in process, and read back out of a buffer, because `info` prints and answers nothing. "
+    "Three of its lines are allowed to differ, the class, the spelling of the types and the "
+    "memory, and all three are registered, so every case here reads a part of the report "
+    "that is not one of those and asserts it exactly. " + MEASURING
+)
+
+
+def info_lines(frame: object, **kwargs: object) -> list[str]:
+    """The report as lines, which is the only way to score a member that prints.
+
+    Args:
+        frame: The frame or the column being asked.
+        kwargs: Passed straight through to `info`.
+
+    Returns:
+        The lines, with no newlines on them.
+    """
+    buf = io.StringIO()
+    frame.info(buf=buf, **kwargs)  # type: ignore[attr-defined]
+    return buf.getvalue().splitlines()
+
+
+def info_rows(frame: object) -> list[str]:
+    """The body of the column table, without its header or the two lines under it.
+
+    The table starts three lines in, at the header, and the rule is the line after that, so
+    the body is everything from the fifth line to the two lines that always end the report.
+
+    Args:
+        frame: The frame being asked.
+
+    Returns:
+        One string per column.
+    """
+    return info_lines(frame)[5:-2]
+
+
+case(
+    "basics/info-labels",
+    "DataFrame.info",
+    frames=SHAPES,
+    expr=lambda pd, df: info_lines(df)[1],
+    in_process=True,
+    note="the line about the labels, which both libraries write the same way for a frame "
+    "whose index was never declared, down to `RangeIndex` and the two ends. The empty "
+    "frame is the one that stops after the count, because there is no first label. " + REPORTED,
+)
+case(
+    "basics/info-shape",
+    "DataFrame.info",
+    frames=(*SHAPES, "wide"),
+    expr=lambda pd, df: len(info_lines(df)),
+    in_process=True,
+    note="how many lines the report is, which is the cheapest thing that catches a table "
+    "with a row too many or a heading that went missing. The wide frame is the one that "
+    "takes the summary form instead, so the count there is five whatever the width. " + REPORTED,
+)
+case(
+    "basics/info-columns",
+    "DataFrame.info",
+    frames=("single", "two", "tall"),
+    expr=lambda pd, df: [line.split()[0:2] for line in info_rows(df)],
+    in_process=True,
+    note="the position and the name off each row of the table, which is the half of the "
+    "table that has nothing to do with types. " + REPORTED,
+)
+case(
+    "basics/info-counts",
+    "DataFrame.info",
+    frames=("single", "two", "tall"),
+    expr=lambda pd, df: [line.split()[2] for line in info_rows(df)],
+    in_process=True,
+    note="how many rows each column says are not missing, which is what `count` says and "
+    "is the one number in the report that is neither a shape nor a byte count. " + REPORTED,
+)
+case(
+    "basics/info-summary",
+    "DataFrame.info",
+    level="L3",
+    covers=("verbose",),
+    frames=("single", "two", "wide"),
+    expr=lambda pd, df: info_lines(df, verbose=False)[2],
+    in_process=True,
+    note="the one line form, which names the first column and the last one. The wide frame "
+    "takes this form anyway and the two narrow ones only take it when asked, so the flag is "
+    "doing the work on two of the three. " + REPORTED,
+)
+case(
+    "basics/info-max-cols",
+    "DataFrame.info",
+    level="L3",
+    covers=("max_cols",),
+    frames=("two", "tall"),
+    expr=lambda pd, df: info_lines(df, max_cols=1)[2].startswith("Columns:"),
+    in_process=True,
+    note="the width at which the table stops being worth printing, moved down to one so a "
+    "frame of two or three columns is over it. pandas reads the default off an option and "
+    "this library has it as a constant, which is why the case passes a number rather than "
+    "leaning on the default. " + REPORTED,
+)
+case(
+    "basics/info-show-counts",
+    "DataFrame.info",
+    level="L3",
+    covers=("show_counts",),
+    frames=("single", "two"),
+    expr=lambda pd, df: (
+        "Non-Null Count" not in "\n".join(info_lines(df, show_counts=False)),
+        len(info_lines(df, show_counts=False)) == len(info_lines(df)),
+    ),
+    in_process=True,
+    note="one column of the table goes and the report stays the same height, which is the "
+    "pair that tells a flag that narrows the table from one that drops a row. " + REPORTED,
+)
+case(
+    "basics/info-memory-off",
+    "DataFrame.info",
+    level="L3",
+    covers=("memory_usage",),
+    frames=("single", "two", "tall"),
+    expr=lambda pd, df: info_lines(df, memory_usage=False) == info_lines(df)[:-1],
+    in_process=True,
+    note="the last line goes and nothing else moves, which can be asserted exactly even "
+    "though the line itself holds a number the two libraries disagree about. " + REPORTED,
+)
+case(
+    "basics/info-buf",
+    "DataFrame.info",
+    level="L3",
+    covers=("buf",),
+    frames=("single", "tall"),
+    expr=lambda pd, df: (df.info(buf=io.StringIO()) is None, info_lines(df)[-1].endswith("s")),
+    in_process=True,
+    note="the call answers nothing and writes instead, which is the whole reason every "
+    "other case here reads a buffer. The second half is the memory line ending in its "
+    "unit, which is as much of that line as can be compared. " + REPORTED,
+)
+case(
+    "basics/info-series",
+    "Series.info",
+    frames=("single", "two", "tall"),
+    expr=lambda pd, df: info_lines(df[df.columns[0]])[2:4],
+    in_process=True,
+    note="the column's name and the heading under it, which is where the column's report "
+    "parts company with the frame's: there is no position and no name in the table, so the "
+    "name goes on a line of its own above it. " + REPORTED,
 )
 
 # ---------------------------------------------------------------------------
