@@ -759,6 +759,52 @@ case(
     frames=("two", "tall", "wide"),
     expr=lambda pd, df: df.drop(columns=[df.columns[0]]),
 )
+
+A_POINTER = (
+    "dropping a column takes a pointer out of a schema and reads no values, which is "
+    "the half of pandas' drop that costs nothing. The other half takes row labels out "
+    "of the index and lives with the indexing cases, since what it is really about is "
+    "the index. See spec 46"
+)
+
+case(
+    "basics/drop-column-axis",
+    "DataFrame.drop",
+    level="L3",
+    covers=("labels", "axis"),
+    frames=("two", "tall"),
+    expr=lambda pd, df: df.drop(df.columns[0], axis=1),
+    note="the same door as basics/drop-column with the name passed positionally and the "
+    "axis named, which is the spelling pandas puts first in its own signature. One name "
+    "rather than a list of them as well, which matters because a string is iterable in "
+    "Python and has to be read as a label anyway. " + A_POINTER,
+)
+case(
+    "basics/drop-column-missing-ignored",
+    "DataFrame.drop",
+    level="L3",
+    covers=("errors",),
+    frames=("two",),
+    expr=lambda pd, df: df.drop(columns=["not_a_column"], errors="ignore"),
+    in_process=True,
+    note="errors='ignore' skips a name that is not a column and drops the rest. The "
+    "core resolves names against the schema and raises on the first one it cannot find, "
+    "with no word for skipping, so the filtering happens in the Python layer before the "
+    "core is reached and a driver entry would answer the frame unchanged without "
+    "exercising anything. " + A_POINTER,
+)
+case(
+    "basics/drop-both-axes",
+    "DataFrame.drop",
+    level="L3",
+    covers=("index", "columns"),
+    frames=("two",),
+    expr=lambda pd, df: df.drop(index=[0], columns=[df.columns[0]]),
+    note="naming both axes in one call, which drop allows and rename does not. rename "
+    "refuses the pair because one of its halves refuses on its own, and here neither "
+    "does, so the pair is two independent steps with nothing to decide between them. "
+    "The labels are read against the default index this frame came with. " + A_POINTER,
+)
 case(
     "basics/assign",
     "DataFrame.assign",

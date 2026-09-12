@@ -1192,6 +1192,18 @@ def main() raises:
             emit_frame(frame.select([names[1], names[0]]), out)
         elif case_id == "basics/drop-column":
             emit_frame(frame.drop([frame.names()[0]]), out)
+        elif case_id == "basics/drop-column-axis":
+            # pandas decides between a column name and a row label from the
+            # axis it was handed. The core has one call per axis instead, so
+            # the door the axis picked is what is written here.
+            emit_frame(frame.drop([frame.names()[0]]), out)
+        elif case_id == "basics/drop-both-axes":
+            # Both axes in one call, which is two independent steps here as
+            # well, since neither half needs to know what the other did.
+            var narrowed_rows = frame.reindex(
+                frame.index.drop(AnyArray(from_list[DType.int64]([Int64(0)])))
+            )
+            emit_frame(narrowed_rows.drop([frame.names()[0]]), out)
         elif case_id == "basics/rename":
             emit_frame(frame.rename(frame.names()[0], "renamed"), out)
         elif case_id == "basics/rename-axis-columns":
@@ -2631,6 +2643,81 @@ def main() raises:
             # optional rather than as a string nobody would want.
             emit_frame(
                 frame.set_index("key").rename_axis(Optional[String](None)), out
+            )
+        elif case_id == "indexing/drop-labels":
+            # The row half of drop, which firepanda reaches by asking the index
+            # to drop the labels and then reindexing the frame on what is left.
+            # Two calls the core already had and no third one, so this writes
+            # down the composition rather than an operation.
+            var keyed = frame.set_index("key")
+            emit_frame(
+                keyed.reindex(
+                    keyed.index.drop(
+                        AnyArray(from_list[DType.int64]([Int64(0), 2]))
+                    )
+                ),
+                out,
+            )
+        elif case_id == "indexing/drop-index":
+            # The keyword spelling, which is the same pair of calls. pandas
+            # decides between the two axes from which keyword arrived and the
+            # core has one call per axis, so the door the keyword picked is
+            # what is written here.
+            var by_keyword = frame.set_index("key")
+            emit_frame(
+                by_keyword.reindex(
+                    by_keyword.index.drop(
+                        AnyArray(from_list[DType.int64]([Int64(0), 2]))
+                    )
+                ),
+                out,
+            )
+        elif case_id == "indexing/drop-missing-ignored":
+            # One label the index has and one it does not. The index takes the
+            # word itself here, which is the difference from the column half,
+            # where the same word is answered before the core is reached.
+            var forgiving = frame.set_index("key")
+            emit_frame(
+                forgiving.reindex(
+                    forgiving.index.drop(
+                        AnyArray(from_list[DType.int64]([Int64(0), 999999])),
+                        "ignore",
+                    )
+                ),
+                out,
+            )
+        elif case_id == "indexing/series-drop-labels":
+            var one_column = frame.set_index("key")
+            emit_series(
+                "value",
+                one_column.column("value").reindex(
+                    one_column.index.drop(
+                        AnyArray(from_list[DType.int64]([Int64(0), 2]))
+                    )
+                ),
+                out,
+            )
+        elif case_id == "indexing/series-drop-index":
+            var by_keyword_column = frame.set_index("key")
+            emit_series(
+                "value",
+                by_keyword_column.column("value").reindex(
+                    by_keyword_column.index.drop(
+                        AnyArray(from_list[DType.int64]([Int64(0), 2]))
+                    )
+                ),
+                out,
+            )
+        elif case_id == "indexing/series-drop-labels-axis":
+            var with_axis = frame.set_index("key")
+            emit_series(
+                "value",
+                with_axis.column("value").reindex(
+                    with_axis.index.drop(
+                        AnyArray(from_list[DType.int64]([Int64(0), 2]))
+                    )
+                ),
+                out,
             )
         elif case_id == "indexing/set-index-drop-false":
             emit_frame(frame.set_index("key", drop=False), out)

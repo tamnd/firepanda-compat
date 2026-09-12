@@ -1046,3 +1046,95 @@ case(
     "on the answer and lives in the Python layer rather than in the core, so a driver "
     "entry would have to write it. See spec 43",
 )
+
+A_LABEL = (
+    "the row half of pandas' drop, which finds the positions a set of labels sits at "
+    "and builds every column again without them. firepanda reaches it by asking the "
+    "index to drop the labels and then reindexing on what is left, which is two calls "
+    "the core already had and no third one, so that composition is what the driver "
+    "writes down as well. The column half is a schema edit and lives with the basics "
+    "cases. See spec 46"
+)
+
+case(
+    "indexing/drop-labels",
+    "DataFrame.drop",
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key").drop([0, 2]),
+    rules=STRICT,
+    note="the plainest form of the method, which is a positional argument and every "
+    "other parameter left alone, and on a frame it means the rows rather than the "
+    "columns. The whole frame is compared rather than the index alone, so a drop that "
+    "took the right labels out and reordered what was left would not pass. " + A_LABEL,
+)
+case(
+    "indexing/drop-index",
+    "DataFrame.drop",
+    level="L3",
+    covers=("index",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key").drop(index=[0, 2]),
+    rules=STRICT,
+    note="the keyword spelling of the same door, which is the one that says out loud "
+    "which axis was meant and the one a reader of the call does not have to know the "
+    "default to follow. " + A_LABEL,
+)
+case(
+    "indexing/drop-missing-ignored",
+    "DataFrame.drop",
+    level="L3",
+    covers=("errors",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key").drop([0, 999999], errors="ignore"),
+    rules=STRICT,
+    note="a label the index has and one it does not, with the word that says to skip "
+    "what is not there. The index does this itself in the core rather than in the "
+    "Python layer, which is the difference from the column half, where the same word "
+    "is answered before the core is reached. " + A_LABEL,
+)
+case(
+    "indexing/drop-missing-raised",
+    "DataFrame.drop",
+    level="L4",
+    covers=("errors",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key").drop([999999]),
+    raises=("KeyError", "not found in axis"),
+    note="the default, which is that a label the index does not have stops the call. "
+    "Both libraries name what was missing in the message, and firepanda puts the word "
+    "index in front of the list where pandas does not, which is why the substring "
+    "asserted here is the part they share. " + A_LABEL,
+)
+case(
+    "indexing/series-drop-labels",
+    "Series.drop",
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key")["value"].drop([0, 2]),
+    rules=STRICT,
+    note="the row half with one column under it, which is the whole of the method on a "
+    "column, since a column has no second axis to take anything out of. " + A_LABEL,
+)
+case(
+    "indexing/series-drop-index",
+    "Series.drop",
+    level="L3",
+    covers=("index",),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key")["value"].drop(index=[0, 2]),
+    rules=STRICT,
+    note="the keyword spelling on a column, where it reads oddly because index is the "
+    "only axis there is, and pandas takes it for the same reason it takes columns here "
+    "and does nothing with that one. " + A_LABEL,
+)
+case(
+    "indexing/series-drop-labels-axis",
+    "Series.drop",
+    level="L3",
+    covers=("labels", "axis"),
+    frames=("keys_unique",),
+    expr=lambda pd, df: df.set_index("key")["value"].drop([0, 2], axis=0),
+    rules=STRICT,
+    note="the axis named on an object that has one, which pandas accepts and checks "
+    "rather than ignores, so naming the other one is an error on a column where it is "
+    "a door on a frame. " + A_LABEL,
+)
