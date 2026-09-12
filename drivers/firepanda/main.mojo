@@ -1396,6 +1396,21 @@ def main() raises:
         elif case_id == "basics/cummin":
             emit_series("value", frame.column("value").cummin(), out)
 
+        # Membership. The set crosses into the kernel as a column, so it is
+        # built as one here the way firepanda's own binding builds it. Both key
+        # frames hold int64 keys with no nulls and the set is int64, so this
+        # reaches the kernel with nothing for the layer above it to decide. The
+        # rules that layer applies, which are dropping the values a column
+        # cannot hold and answering false rather than null for a missing row,
+        # are firepanda spec 55 sections 3 and 5 and are not what this case is
+        # measuring.
+        elif case_id == "basics/isin":
+            var key = frame.column("key")
+            var wanted = Series("", from_list[DType.int64]([Int64(0), 1, 2]))
+            var found = Series("key", key.is_in(wanted))
+            found.index = Index(copy=key.index)
+            emit_series("key", found^, out)
+
         # Ordering. firepanda has no default for the null position and pandas'
         # default is last, so that default is written out here rather than left to
         # be guessed. Where firepanda puts a null when it is asked to put it last is

@@ -1448,6 +1448,70 @@ case(
     expr=lambda pd, df: df["key"].isin([0, 1, 2]),
 )
 case(
+    "basics/isin-mixed",
+    "Series.isin",
+    level="L3",
+    covers=("values",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].isin([1, "b", 9.5, None, True]),
+    in_process=True,
+    note="a set holding one value of the column's kind and four that are not, which is "
+    "the shape a set written by hand actually has. pandas compares by value and never "
+    "refuses, and firepanda's kernel compares one type against one type and always "
+    "refuses, so the whole of this case is the layer between them. Python layer, see "
+    "spec 55 sections 3 and 4",
+)
+case(
+    "basics/isin-nulls",
+    "Series.isin",
+    level="L3",
+    covers=("values",),
+    frames=("strings_null_heavy",),
+    expr=lambda pd, df: df["value"].isin(["v1", None]),
+    in_process=True,
+    note="a missing row is in the set when the set holds a missing value and false when "
+    "it does not, and pandas decides which missing value counts from the column's dtype "
+    "where firepanda has one null for every dtype and decides it from the set. Python "
+    "layer, see spec 55 section 5",
+)
+case(
+    "basics/isin-empty",
+    "Series.isin",
+    level="L3",
+    covers=("values",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df["key"].isin([]),
+    in_process=True,
+    note="a set with nothing in it is false everywhere rather than an error, and it is "
+    "worth its own case because a list with nothing in it has no type to build a column "
+    "from and the obvious implementation raises there. Python layer, see spec 55",
+)
+case(
+    "basics/frame-isin",
+    "DataFrame.isin",
+    level="L3",
+    covers=("values",),
+    frames=("keys_10", "two"),
+    expr=lambda pd, df: df.isin([0, 1, "one"]),
+    in_process=True,
+    note="one set asked of every column, where each column finds its own half of it and "
+    "a column that can hold none of it answers false all the way down. The answer is put "
+    "back together through the frame constructor, since there is no other way to make a "
+    "frame here. Python layer, see spec 55 section 8",
+)
+case(
+    "basics/frame-isin-mapping",
+    "DataFrame.isin",
+    level="L3",
+    covers=("values",),
+    frames=("two",),
+    expr=lambda pd, df: df.isin({"a": [1], "c": ["one"]}),
+    in_process=True,
+    note="a set per column, where the column the mapping does not name answers false all "
+    "the way down rather than being left out of the answer. Python layer, see spec 55 "
+    "section 8",
+)
+case(
     "basics/between",
     "Series.between",
     level="L3",
