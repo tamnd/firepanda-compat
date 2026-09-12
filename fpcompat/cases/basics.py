@@ -265,6 +265,84 @@ case(
     expr=lambda pd, df: df["flag"].all(),
 )
 case(
+    "basics/any-numbers",
+    "Series.any",
+    frames=NUMERIC + FLOATS,
+    expr=lambda pd, df: df["value"].any(),
+    note="a number is true when it is not zero, and the all null frame is the one "
+    "worth reading because it answers False rather than a null",
+)
+case(
+    "basics/all-numbers",
+    "Series.all",
+    frames=NUMERIC + FLOATS,
+    expr=lambda pd, df: df["value"].all(),
+    note="an all null column answers True, which is the identity of the operator and "
+    "is the opposite of what the any case above gives on the same frame",
+)
+case(
+    "basics/any-text",
+    "Series.any",
+    frames=("strings_ascii", "strings_null_heavy"),
+    expr=lambda pd, df: df["value"].any(),
+    note="the null heavy frame has empty strings sitting next to nulls, and an empty "
+    "string is false while a null is neither",
+)
+case(
+    "basics/all-text",
+    "Series.all",
+    frames=("strings_ascii", "strings_null_heavy"),
+    expr=lambda pd, df: df["value"].all(),
+)
+case(
+    "basics/any-bool-only",
+    "Series.any",
+    level="L3",
+    covers=("bool_only",),
+    frames=("tall",),
+    expr=lambda pd, df: df["value"].any(bool_only=True),
+    in_process=True,
+    note="pandas takes this argument on a column, does nothing with it and answers, "
+    "which is measurable and is not what the name suggests",
+)
+case(
+    "basics/product",
+    "Series.product",
+    frames=NUMERIC + FLOATS,
+    expr=lambda pd, df: df["value"].product(),
+    note="pandas' second spelling of prod, which is the same method and has to be "
+    "present under both names rather than aliased at the call site",
+)
+case(
+    "basics/prod-nulls",
+    "Series.prod",
+    frames=("int64_half_null", "int64_all_null"),
+    expr=lambda pd, df: df["value"].prod(),
+    note="the case a product written like a sum fails, because a null holds a zero in "
+    "an Arrow buffer and zero is the identity for the wrong operator",
+)
+# The per column forms, `df.prod()` and `df.any()` and `df.all()`, are not here and
+# neither is `basics/frame-sum`, which has sat unimplemented since it was written.
+# All four answer a Series with no name, and an unnamed Series reports its name as an
+# empty string in firepanda and as None in pandas, so the comparison fails on the name
+# whatever the numbers do. That is one difference in one place rather than four, it is
+# about how a Series carries the absence of a name rather than about any reduction, and
+# it gets its own slice.
+for fold in ("sum", "prod", "min", "max", "any", "all"):
+    case(
+        f"basics/frame-fold-{fold}",
+        f"DataFrame.{fold}",
+        level="L3",
+        covers=("axis",),
+        frames=("wide", "int64_no_nulls"),
+        expr=(lambda method: lambda pd, df: getattr(df, method)(axis=None))(fold),
+        in_process=True,
+        note="axis=None folds the whole frame to one value rather than meaning the "
+        "default axis, and these six are the ones that can answer it by being asked "
+        "a second time of their own per column answers",
+    )
+
+case(
     "basics/idxmax",
     "Series.idxmax",
     frames=("float64_no_nulls", "int64_no_nulls", "tall"),
