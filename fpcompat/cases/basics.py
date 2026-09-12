@@ -55,16 +55,40 @@ ACCUMULATED = Rules(
 # Shape and attributes
 # ---------------------------------------------------------------------------
 
+MEASURING = (
+    "in process because there is no kernel to reach. A driver arm for one of these "
+    "can only restate the case in Mojo, and one that did meant the board called "
+    "`df.size` a pass through the whole period when the class had no such member. "
+    "See spec 57 section 1"
+)
+
 case(
     "basics/shape",
     "DataFrame.shape",
     frames=(*SHAPES, "wide"),
     expr=lambda pd, df: df.shape,
-    note="the empty frame is here because a zero row shape is where an off by one shows",
+    in_process=True,
+    note="the empty frame is here because a zero row shape is where an off by one shows. "
+    + MEASURING,
 )
 case("basics/len", "DataFrame.__len__", frames=SHAPES, expr=lambda pd, df: len(df))
-case("basics/size", "DataFrame.size", frames=(*SHAPES, "wide"), expr=lambda pd, df: df.size)
-case("basics/ndim", "DataFrame.ndim", frames=SHAPES, expr=lambda pd, df: df.ndim)
+case(
+    "basics/size",
+    "DataFrame.size",
+    frames=(*SHAPES, "wide"),
+    expr=lambda pd, df: df.size,
+    in_process=True,
+    note="cells rather than rows, so the wide frame is the one that tells the two apart. "
+    + MEASURING,
+)
+case(
+    "basics/ndim",
+    "DataFrame.ndim",
+    frames=SHAPES,
+    expr=lambda pd, df: df.ndim,
+    in_process=True,
+    note="a constant, and the only thing worth measuring about it is that it answers. " + MEASURING,
+)
 case(
     "basics/columns",
     "DataFrame.columns",
@@ -74,12 +98,55 @@ case(
 case(
     "basics/dtypes",
     "DataFrame.dtypes",
-    frames=(*SHAPES, "temporal_range", "categorical_ordered"),
+    frames=("tall", "wide", "int64_no_nulls", "categorical_ordered"),
     expr=lambda pd, df: df.dtypes.astype(str),
-    note="compared as strings because a dtype object is not a value the comparison can hold",
+    in_process=True,
+    note="compared as strings because a dtype object is not a value the comparison can "
+    "hold. The frames are the ones where the two libraries spell every type in them the "
+    "same way, which leaves out text and dates, and those two are divergences of `dtype` "
+    "that have to be registered before a case can carry them. " + MEASURING,
+)
+case(
+    "basics/dtypes-labels",
+    "DataFrame.dtypes",
+    frames=("single", "wide"),
+    expr=lambda pd, df: list(df.dtypes.index),
+    in_process=True,
+    note="the half that makes this a column rather than a list, which is the column "
+    "names sitting beside the types. The values are checked next door and this is the "
+    "labels on their own, because a right list of types under wrong labels reads as a "
+    "pass. " + MEASURING,
 )
 case("basics/index", "DataFrame.index", frames=SHAPES, expr=lambda pd, df: df.index)
-case("basics/empty", "DataFrame.empty", frames=SHAPES, expr=lambda pd, df: df.empty)
+case(
+    "basics/empty",
+    "DataFrame.empty",
+    frames=SHAPES,
+    expr=lambda pd, df: df.empty,
+    in_process=True,
+    note="the empty frame is the whole case, because `empty` is a question about either "
+    "axis rather than about rows and a frame of columns with no rows in them is one. " + MEASURING,
+)
+case(
+    "basics/axes",
+    "DataFrame.axes",
+    frames=("single", "two"),
+    expr=lambda pd, df: [len(axis) for axis in df.axes],
+    in_process=True,
+    note="the lengths rather than the axes, because the second entry is a list here and "
+    "an Index in pandas, which is the divergence `columns` carries and is scored where "
+    "`columns` is. What is scored here is that there are two of them and that the rows "
+    "come first. " + MEASURING,
+)
+case(
+    "basics/axes-labels",
+    "DataFrame.axes",
+    frames=("single", "two"),
+    expr=lambda pd, df: list(df.axes[0]),
+    in_process=True,
+    note="the first axis on its own, which is the row labels and is an Index on both "
+    "sides, so it can be compared as values. " + MEASURING,
+)
 case(
     "basics/series-dtype",
     "Series.dtype",
@@ -99,6 +166,57 @@ case(
     "Series.shape",
     frames=SHAPES,
     expr=lambda pd, df: df[df.columns[0]].shape,
+    in_process=True,
+    note="a tuple of one, which is the shape a caller writing code for both classes "
+    "unpacks. " + MEASURING,
+)
+case(
+    "basics/series-ndim",
+    "Series.ndim",
+    frames=SHAPES,
+    expr=lambda pd, df: df[df.columns[0]].ndim,
+    in_process=True,
+    note="one where the frame says two, which is the pair that makes either constant "
+    "worth having. " + MEASURING,
+)
+case(
+    "basics/series-size",
+    "Series.size",
+    frames=SHAPES,
+    expr=lambda pd, df: df[df.columns[0]].size,
+    in_process=True,
+    note="rows, where the frame's is cells, and the two names being the same is the "
+    "thing to get wrong. " + MEASURING,
+)
+case(
+    "basics/series-empty",
+    "Series.empty",
+    frames=SHAPES,
+    expr=lambda pd, df: df[df.columns[0]].empty,
+    in_process=True,
+    note="one axis, so there is one way to be empty, which is the simple half of the "
+    "rule the frame has the hard half of. " + MEASURING,
+)
+case(
+    "basics/series-dtypes",
+    "Series.dtypes",
+    frames=DENSE_WIDTHS,
+    expr=lambda pd, df: str(df["value"].dtypes),
+    in_process=True,
+    note="the plural name on a thing with one type, which is what `dtype` answers and "
+    "is run over every width for the same reason `dtype` is. The widths with gaps in "
+    "them are next door on `dtype` rather than here, because pandas reads a nullable "
+    "integer out of Arrow as float64 and firepanda reads it as itself, so that pair "
+    "measures the read path rather than the member. " + MEASURING,
+)
+case(
+    "basics/series-axes",
+    "Series.axes",
+    frames=SHAPES,
+    expr=lambda pd, df: len(df[df.columns[0]].axes),
+    in_process=True,
+    note="a list of one on a class with one axis, which reads like a mistake and is the "
+    "shape that lets one loop walk either class. " + MEASURING,
 )
 
 # ---------------------------------------------------------------------------
