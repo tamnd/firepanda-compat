@@ -355,3 +355,18 @@ reason = "pandas defines about forty six exception classes of its own in pandas.
 spec = "14-errors-across-the-boundary.md#what-is-not-done"
 expect = "raises"
 since = "2026-09-11"
+
+# The twenty sixth, and the second about the type system rather than about an
+# operation. It is one entry over two types because they are one fact about which
+# vocabulary names a column, and it is the reason the ordinary dtype cases have to
+# stay off the text and date frames.
+
+[[divergence]]
+id = "engine/dtype-spelling"
+cases = ["divergences/dtype-spelling/text-*", "divergences/dtype-spelling/date-column"]
+kind = "engine"
+reason = "Every type firepanda has is an Arrow type and dtype gives Arrow's name for it, while every type pandas has is a numpy dtype or a pandas extension dtype and dtype gives that one's name. For most types the two vocabularies happen to share a word, so int64, float64, bool and category read identically on both sides and nobody notices there are two vocabularies at all. Text and dates are where they do not share a word. A column of text is string here, which is Arrow's name, and str in pandas 3, which is the name of the extension dtype that replaced object in that release. A column of dates carrying a day and no clock is date32[day] here and object in pandas, because pandas has no date dtype and reads such a column into a column of Python date objects, which is the one representation it refuses to have anywhere else and which firepanda refuses outright. There is no third name that would be right for both, and translating Arrow's names into pandas' at the boundary would mean a user cannot ask a firepanda column what it is and get an answer that is true of the memory underneath it. The timestamp case beside these two is the control and has to pass, because pandas does have a dtype for a timestamp and both libraries call it datetime64[s]."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "differs"
+instead = "a column is named by its Arrow type, so text is string rather than str and a date is date32[day] rather than object. Types that both vocabularies have a word for are spelt the same way on both sides."
+since = "2026-09-13"
