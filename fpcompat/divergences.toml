@@ -371,3 +371,14 @@ spec = "06-pandas-parity.md#the-genuine-omissions"
 expect = "differs"
 instead = "a column is named by its Arrow type, so text is string rather than str and a date is date32[day] rather than object. Types that both vocabularies have a word for are spelt the same way on both sides."
 since = "2026-09-13"
+
+[[divergence]]
+id = "engine/integer-widening"
+cases = ["divergences/integer-widening/column-*", "divergences/integer-widening/frame-*", "basics/series-dtypes"]
+frames = ["int8_half_null", "int16_half_null", "int32_half_null", "int64_half_null", "uint8_half_null", "uint16_half_null", "uint32_half_null", "uint64_half_null"]
+kind = "engine"
+reason = "An integer column with a missing row in it is read as float64 by pandas and as itself by firepanda, at every width and both signednesses. The reason is that numpy has no way to say that an integer is absent. A float has one, which is nan, so pandas has always handled a gap in a numeric column by promoting the column to float64 and putting a nan in the hole, and reading an Arrow int8 with one null in it therefore produces a float64 column in pandas whatever the file said. firepanda stores a validity bitmap beside the values, which is what Arrow is, so absence costs a bit per row and costs the type nothing, and an int8 with a gap in it stays an int8. Following pandas here would mean an eight times widening on the read, a value of 9007199254740993 coming back as 9007199254740992 because a double cannot hold it, and a library that cannot round trip a file it just opened. It would also be a change pandas itself is trying to get out of, since the nullable extension dtypes exist for exactly this and pandas does not use them by default. The two control cases beside these are the point of the entry. The same widths with no gap in them agree exactly, and the float widths with a gap in them agree exactly, so what is registered here is what a gap does to an integer and not anything wider than that."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "differs"
+instead = "an integer keeps the width it was read at and carries its missing rows in a validity bitmap, so an int8 column with a gap in it is still int8 and not float64."
+since = "2026-09-13"

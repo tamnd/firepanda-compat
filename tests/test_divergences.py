@@ -533,9 +533,18 @@ def test_the_committed_registry_loads():
     entry over two types because that is one fact about which vocabulary names a
     column. It carries a frame list as well, because the whole frame member is under
     it now and that member runs over frames whose types both vocabularies do have a
-    word for, which it still has to get exactly right."""
+    word for, which it still has to get exactly right.
+
+    `engine/integer-widening` is the twenty seventh and is the other half of the same
+    subject, which is not what a type is called but what a gap does to it. An integer
+    column with one missing row in it is read as float64 by pandas, at every width and
+    both signednesses, because numpy has no way to say an integer is absent and a float
+    does. firepanda carries absence in a validity bitmap beside the values, so the width
+    survives the gap. Two controls sit under the entry and have to pass, the same widths
+    with no gap in them and the float widths with a gap in them, which is what keeps it
+    an entry about the gap."""
     entries = divergences.registry()
-    assert len(entries) == 26
+    assert len(entries) == 27
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
