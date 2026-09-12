@@ -380,7 +380,30 @@ def run_case(
         and not isinstance(actual_error, Absent)
         and isinstance(actual_error, declared)
     )
-    if actual_error is not None and not as_declared and _unimplemented(actual_error):
+    # A case that declares a failure and gets exactly the failure it declared has
+    # already answered, and its declaration is a more specific statement than the
+    # depth heuristic above it. Both of the cases where that matters ask for an
+    # `AttributeError` on purpose, one about a method nobody has and one about a
+    # styler that needs a package this environment does not carry, and neither the
+    # depth nor the missing attribute can be told from a gap in a schedule. They were
+    # scored as gaps, on the oracle as well, which is why the pandas against pandas
+    # run has not been perfect and why the harness check has been red on every commit.
+    # The message substring is what keeps this narrow, since a name that is simply
+    # absent raises about the name and not about what the case declared. `Absent` is
+    # excluded here for the same reason it is excluded above: it is this package
+    # talking about the driver rather than the subject talking about itself.
+    declared_by_case = (
+        case.raises is not None
+        and actual_error is not None
+        and not isinstance(actual_error, Absent)
+        and bool(check_error(actual_error, *case.raises, exact=False))
+    )
+    if (
+        actual_error is not None
+        and not as_declared
+        and not declared_by_case
+        and _unimplemented(actual_error)
+    ):
         record["outcome"] = UNIMPLEMENTED
         record["detail"] = f"{type(actual_error).__name__}: {actual_error}"
         return record

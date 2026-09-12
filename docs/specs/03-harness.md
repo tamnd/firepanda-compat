@@ -57,6 +57,8 @@ Four, per document 01: pass, fail, divergent, unimplemented. Written down again 
 
 `unimplemented` is produced by exactly one condition, which is the subject raising `AttributeError` or `NotImplementedError` at the top of the call, or the driver replying that it has no entry for the case id. Anything else that raises is a `fail`. An implementation that raises `NotImplementedError` from inside a branch is a fail, deliberately, because a half implemented method is worse than an absent one and the score should say so.
 
+A case that declares a failure and gets the failure it declared is the one thing that stands in front of that rule, and the reason is that a name nobody wrote and a name that is meant not to be there raise the same exception from the same depth. `errors/attribute-missing` asks for an `AttributeError` about a method that does not exist, which is the case that says a caller's except clause still fires, and `divergences/plotting/frame-style` asks for the one pandas itself raises because the styler needs a package this environment does not carry. Both were scored as gaps in a schedule, on the oracle as well as on the subject, which meant pandas was being called unwritten about its own answer and the pandas against pandas run was never perfect. The declaration wins when the class matches and the message carries the substring the case named, and the substring is what keeps it narrow, since a name that is simply absent raises about that name rather than about what the case asked for.
+
 ## The two engines
 
 The oracle is pandas, imported in the runner's process, pinned in `pixi.toml`, and its version recorded in every result file. Nothing about it is clever.

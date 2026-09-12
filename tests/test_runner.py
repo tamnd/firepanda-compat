@@ -270,6 +270,55 @@ def test_l4_matching_exception_passes():
     assert record["outcome"] == runner.PASS
 
 
+def test_l4_an_attribute_that_is_meant_to_be_missing_is_the_declared_answer():
+    """The case that asks for an AttributeError gets one, and that is not a gap.
+
+    A name that is not there and a name that has not been written yet raise the same
+    exception from the same depth, so the absence check cannot tell them apart and
+    scored both as gaps. The case declaring the exception is the more specific
+    statement and it wins. Both cases that do this were being scored unimplemented on
+    the oracle as well, which is pandas being called unwritten about its own answer,
+    and it is what kept the pandas against pandas run from being perfect.
+    """
+    record = run_one(
+        build(
+            id="errors/scratch",
+            api="DataFrame.head",
+            level="L4",
+            expr=lambda pd, df: df.not_a_method(),
+            raises=("AttributeError", "not_a_method"),
+        )
+    )
+    assert record["outcome"] == runner.PASS
+
+
+def test_a_name_nobody_wrote_is_still_a_gap_when_a_case_declares_another_one():
+    """The other half, without which the rule above excuses every absence.
+
+    The declaration is only more specific when the failure is the one it describes,
+    and a name nobody has written raises about that name rather than about what the
+    case asked for. The message substring is what separates them.
+    """
+
+    def expr(module, df):
+        if module is pd:
+            raise AttributeError("not_a_method is not here")
+        return module.not_written_yet(df)
+
+    record = run_one(
+        build(
+            id="errors/scratch",
+            api="DataFrame.head",
+            level="L4",
+            expr=expr,
+            raises=("AttributeError", "not_a_method"),
+        ),
+        subject=Lying(module=bare()),
+    )
+    assert record["outcome"] == runner.UNIMPLEMENTED
+    assert "not_written_yet" in record["detail"]
+
+
 def test_l4_wrong_exception_type_fails():
     """A subclass is not what the caller wrote in their except clause."""
     record = run_one(
