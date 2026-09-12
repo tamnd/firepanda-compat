@@ -162,9 +162,17 @@ case(
 # `inplace` parameter in a future pandas shows up as a failing test rather than as a
 # quiet hole.
 #
+# Four callables are left here and they are the four whose method is not in firepanda
+# at all: `eval` and `query` on a frame, and `interpolate` on a frame and on a column.
+# The other thirty one moved to `fpcompat/cases/inplace.py` when firepanda started
+# honouring the parameter, which document 51 over there is the argument for. Nothing
+# below is about the parameter. Each of these refuses because the method is missing,
+# and each will leave this file for the same reason the thirty one did.
+#
 # Each expression returns the object after the mutation rather than the return value of
-# the call, because the return value of an inplace call is None and None is the same on
-# every engine. What is being asserted is that the mutation happened.
+# the call, because the return value of an inplace call is None for half of these and
+# is the object itself for the other half, and neither is evidence that anything
+# happened. What is being asserted is that the mutation happened.
 
 NUMERIC = ("float64_half_null",)
 PLAIN = ("two",)
@@ -187,111 +195,20 @@ def _mutating(call):
 
 
 INPLACE = (
-    ("DataFrame.bfill", "frame-bfill", NUMERIC, lambda pd, d: d.bfill(inplace=True)),
-    ("DataFrame.clip", "frame-clip", NUMERIC, lambda pd, d: d.clip(0, 1, inplace=True)),
-    ("DataFrame.drop", "frame-drop", PLAIN, lambda pd, d: d.drop(columns=["c"], inplace=True)),
-    (
-        "DataFrame.drop_duplicates",
-        "frame-drop-duplicates",
-        ("keys_10",),
-        lambda pd, d: d.drop_duplicates(subset=["key"], inplace=True),
-    ),
-    ("DataFrame.dropna", "frame-dropna", NUMERIC, lambda pd, d: d.dropna(inplace=True)),
     ("DataFrame.eval", "frame-eval", PLAIN, lambda pd, d: d.eval("d = a + 1", inplace=True)),
-    ("DataFrame.ffill", "frame-ffill", NUMERIC, lambda pd, d: d.ffill(inplace=True)),
-    ("DataFrame.fillna", "frame-fillna", NUMERIC, lambda pd, d: d.fillna(0.0, inplace=True)),
     (
         "DataFrame.interpolate",
         "frame-interpolate",
         NUMERIC,
         lambda pd, d: d.interpolate(inplace=True),
     ),
-    ("DataFrame.mask", "frame-mask", NUMERIC, lambda pd, d: d.mask(d > 0, inplace=True)),
     ("DataFrame.query", "frame-query", PLAIN, lambda pd, d: d.query("a > 1", inplace=True)),
-    (
-        "DataFrame.rename",
-        "frame-rename",
-        PLAIN,
-        lambda pd, d: d.rename(columns={"a": "z"}, inplace=True),
-    ),
-    (
-        "DataFrame.rename_axis",
-        "frame-rename-axis",
-        PLAIN,
-        lambda pd, d: d.rename_axis("row", inplace=True),
-    ),
-    ("DataFrame.replace", "frame-replace", PLAIN, lambda pd, d: d.replace(1, 100, inplace=True)),
-    (
-        "DataFrame.reset_index",
-        "frame-reset-index",
-        PLAIN,
-        lambda pd, d: d.reset_index(drop=True, inplace=True),
-    ),
-    (
-        "DataFrame.set_index",
-        "frame-set-index",
-        PLAIN,
-        lambda pd, d: d.set_index("a", inplace=True),
-    ),
-    (
-        "DataFrame.sort_index",
-        "frame-sort-index",
-        PLAIN,
-        lambda pd, d: d.sort_index(ascending=False, inplace=True),
-    ),
-    (
-        "DataFrame.sort_values",
-        "frame-sort-values",
-        PLAIN,
-        lambda pd, d: d.sort_values("b", inplace=True),
-    ),
-    ("DataFrame.where", "frame-where", NUMERIC, lambda pd, d: d.where(d > 0, inplace=True)),
-    ("Series.bfill", "series-bfill", NUMERIC, lambda pd, d: d.bfill(inplace=True)),
-    ("Series.clip", "series-clip", NUMERIC, lambda pd, d: d.clip(0, 1, inplace=True)),
-    ("Series.drop", "series-drop", PLAIN, lambda pd, d: d.drop(0, inplace=True)),
-    (
-        "Series.drop_duplicates",
-        "series-drop-duplicates",
-        ("keys_10",),
-        lambda pd, d: d.drop_duplicates(inplace=True),
-    ),
-    ("Series.dropna", "series-dropna", NUMERIC, lambda pd, d: d.dropna(inplace=True)),
-    ("Series.ffill", "series-ffill", NUMERIC, lambda pd, d: d.ffill(inplace=True)),
-    ("Series.fillna", "series-fillna", NUMERIC, lambda pd, d: d.fillna(0.0, inplace=True)),
     (
         "Series.interpolate",
         "series-interpolate",
         NUMERIC,
         lambda pd, d: d.interpolate(inplace=True),
     ),
-    ("Series.mask", "series-mask", NUMERIC, lambda pd, d: d.mask(d > 0, inplace=True)),
-    ("Series.rename", "series-rename", PLAIN, lambda pd, d: d.rename("z", inplace=True)),
-    (
-        "Series.rename_axis",
-        "series-rename-axis",
-        PLAIN,
-        lambda pd, d: d.rename_axis("row", inplace=True),
-    ),
-    ("Series.replace", "series-replace", NUMERIC, lambda pd, d: d.replace(0.0, 1.0, inplace=True)),
-    (
-        "Series.reset_index",
-        "series-reset-index",
-        PLAIN,
-        lambda pd, d: d.reset_index(drop=True, inplace=True),
-    ),
-    (
-        "Series.sort_index",
-        "series-sort-index",
-        PLAIN,
-        lambda pd, d: d.sort_index(ascending=False, inplace=True),
-    ),
-    (
-        "Series.sort_values",
-        "series-sort-values",
-        NUMERIC,
-        lambda pd, d: d.sort_values(inplace=True),
-    ),
-    ("Series.where", "series-where", NUMERIC, lambda pd, d: d.where(d > 0, inplace=True)),
 )
 
 IN_PROCESS_NOTE = (
@@ -330,16 +247,13 @@ def _index_names(pd, index, call):
     return list(copied.names)
 
 
-# There is no flat index block here any more. Renaming a level and setting its
-# names are the four places in the library where firepanda honours inplace rather
-# than refusing it, on Index and DatetimeIndex for each of rename and set_names.
-# A level name is not data, changing one does not move a single label, and pandas
-# treats an index as mutable in that one respect for the same reason, so the
-# divergence this file registers is simply not true of them. Their cases live with
-# the ordinary index cases instead, as indexing/index-rename-inplace,
+# There is no flat index block here any more, and there has not been one since the
+# index slice. Renaming a level and setting its names were the first places in the
+# library where firepanda honoured inplace rather than refusing it, and their cases
+# live with the ordinary index cases as indexing/index-rename-inplace,
 # indexing/index-set-names-inplace, temporal/index-rename-inplace and
-# temporal/index-set-names-inplace. What is left below is the MultiIndex, which
-# has no implementation to honour anything yet.
+# temporal/index-set-names-inplace. What is left below is the MultiIndex, which has
+# no implementation to honour anything with.
 
 case(
     "divergences/inplace/multi-index-rename",

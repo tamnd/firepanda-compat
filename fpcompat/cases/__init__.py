@@ -62,6 +62,7 @@ CASE_MODULES = (
     "temporal",
     "nested",
     "errors",
+    "inplace",
     "divergences",
     "resolution",
     "signature",
