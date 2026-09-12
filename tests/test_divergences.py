@@ -531,7 +531,9 @@ def test_the_committed_registry_loads():
     type and every type pandas has is a numpy or extension dtype, and the two
     vocabularies share a word for most types and not for text or for dates. It is one
     entry over two types because that is one fact about which vocabulary names a
-    column."""
+    column. It carries a frame list as well, because the whole frame member is under
+    it now and that member runs over frames whose types both vocabularies do have a
+    word for, which it still has to get exactly right."""
     entries = divergences.registry()
     assert len(entries) == 26
     assert all(isinstance(entry, Divergence) for entry in entries)
