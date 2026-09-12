@@ -350,6 +350,44 @@ case(
     ),
 )
 case(
+    "basics/fillna-text",
+    "Series.fillna",
+    frames=("strings_null_heavy",),
+    expr=lambda pd, df: df["value"].fillna("missing"),
+    note="the float cases fill a number into a number and this one fills a word "
+    "into a word, which is the other half of the rule that a column here is "
+    "typed and stays typed",
+)
+case(
+    "basics/frame-fillna",
+    "DataFrame.fillna",
+    frames=FLOATS,
+    expr=lambda pd, df: df.fillna(0.0),
+    note="the row column has no gaps and the value column does, so this is also "
+    "the case that says a column with nothing missing is left alone whatever "
+    "the value was, which is the rule pandas has and the reason filling a whole "
+    "frame with one number is not a type error every time",
+)
+case(
+    "basics/frame-fillna-dict",
+    "DataFrame.fillna",
+    level="L3",
+    covers=("value",),
+    frames=FLOATS,
+    expr=lambda pd, df: df.fillna({"value": 0.0}),
+)
+case(
+    "basics/fillna-axis",
+    "Series.fillna",
+    level="L3",
+    covers=("axis",),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].fillna(0.0, axis=0),
+    note="one value per column means the two axes name the same answer, so the "
+    "case is here to say the parameter is accepted and read rather than to "
+    "measure a difference between two answers",
+)
+case(
     "basics/ffill",
     "Series.ffill",
     frames=(*FLOATS, "strings_null_heavy"),
