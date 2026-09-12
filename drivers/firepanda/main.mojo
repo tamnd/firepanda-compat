@@ -1152,26 +1152,6 @@ def main() raises:
                 scalar_frame[DType.int64]("value", Int64(len(frame))), out
             )
             print('{"status":"ok","kind":"scalar"}')
-        elif case_id == "basics/size":
-            write_arrow(
-                scalar_frame[DType.int64](
-                    "value", Int64(len(frame) * frame.width())
-                ),
-                out,
-            )
-            print('{"status":"ok","kind":"scalar"}')
-        elif case_id == "basics/ndim":
-            write_arrow(scalar_frame[DType.int64]("value", Int64(2)), out)
-            print('{"status":"ok","kind":"scalar"}')
-        elif case_id == "basics/empty":
-            write_arrow(
-                scalar_frame[DType.bool](
-                    "value",
-                    Scalar[DType.bool](len(frame) == 0 or frame.width() == 0),
-                ),
-                out,
-            )
-            print('{"status":"ok","kind":"scalar"}')
         elif case_id == "basics/head":
             emit_frame(frame.head(), out)
         elif case_id == "basics/head-n":
@@ -1240,17 +1220,15 @@ def main() raises:
             write_arrow(reduce(frame, frame.names()[0], AggKind.NUNIQUE), out)
             print('{"status":"ok","kind":"scalar"}')
 
-        # Shape and labels. `shape` is a tuple in pandas rather than a frame, and
-        # `columns` is an Index rather than a Series, and both of those distinctions
-        # are answers rather than packaging.
-        elif case_id == "basics/shape":
-            write_arrow(
-                tuple_frame([Int64(len(frame)), Int64(frame.width())]), out
-            )
-            print('{"status":"ok","kind":"tuple"}')
-        elif case_id == "basics/series-shape":
-            write_arrow(tuple_frame([Int64(len(frame))]), out)
-            print('{"status":"ok","kind":"tuple"}')
+        # Labels. `columns` is an Index rather than a Series and that distinction
+        # is an answer rather than packaging.
+        #
+        # The pure shape members are not here on purpose. `shape`, `size`, `ndim`
+        # and `empty` have no kernel behind them, so an arm can only restate the
+        # case in Mojo, and one that did meant the board reported `df.size` as
+        # passing during the whole period when the Python class had no such
+        # member. Those cases run in process now, where the thing being measured
+        # is whether the member answers at all.
         elif case_id == "basics/columns":
             emit_index(labels_of(frame), out)
         elif case_id == "basics/series-name":
