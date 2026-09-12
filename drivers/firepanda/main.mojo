@@ -1002,6 +1002,70 @@ def category_list(var labels: List[String]) raises -> StringArray:
     return built^.finish()
 
 
+def filled(column: Series, value: Float64) raises -> Series:
+    """Fills a number column's missing rows with one number.
+
+    `fillna` in firepanda is a coalesce against a fallback column, and a
+    fallback of one row is used for every missing row, so filling with a
+    scalar means building that one row here. It is built as a float64 and
+    cast to the column's own type, the way the Python binding builds it,
+    because the kernel wants a fallback of the same type and the caller is
+    the side that knows what type to make it.
+
+    Args:
+        column: The column to fill.
+        value: The number, which the float frames make a float.
+
+    Returns:
+        The column with its missing rows taken from the value.
+
+    Raises:
+        Error: If the cast or the fill fails, which is a result about
+            firepanda.
+    """
+    var one = Array[DType.float64](1)
+    one[0] = value
+    var fallback = Series(column.name, one^).cast(column.logical())
+    return column.fill_null(fallback)
+
+
+def category_filled(column: Series, at: Int) raises -> Series:
+    """Fills a category column with one of its own labels.
+
+    A category column stores codes and a code is a position in a list, so a
+    fallback for one cannot be built from the type alone. It is built as a
+    category of its own and then told to carry this column's list, which is
+    where the code it needs comes from, and it keeps the column's ordering
+    flag because a category is only the same type as another when both
+    agree on the list and on whether the order means anything.
+
+    Args:
+        column: The category column.
+        at: Which of its labels to fill with.
+
+    Returns:
+        The column with its missing rows taken from that label.
+
+    Raises:
+        Error: If the column is not a category column, or the position is
+            not in it.
+    """
+    var names = column.cat_categories()
+    var labels = List[String]()
+    for i in range(len(names)):
+        labels.append(names.text(i))
+    var one = List[String]()
+    one.append(category_label(column, at))
+    var fallback = Series(column.name, category_list(one^)).cast(
+        LogicalType.dictionary(DType.int32, False)
+    )
+    return column.fill_null(
+        fallback.cat_set_categories(
+            category_list(labels^), column.cat_ordered()
+        )
+    )
+
+
 def emit_bool(value: Bool, path: String) raises:
     """Writes a scalar bool answer and prints its line.
 
@@ -1244,6 +1308,30 @@ def main() raises:
             emit_series("value", frame.column("value").drop_nulls(), out)
         elif case_id == "basics/frame-dropna":
             emit_frame(frame.drop_nulls(), out)
+        elif case_id == "basics/fillna":
+            emit_series("value", filled(frame.column("value"), 0.0), out)
+        elif case_id == "basics/fillna-text":
+            var word = StringBuilder(capacity=1)
+            word.append(String("missing").as_bytes())
+            emit_series(
+                "value",
+                frame.column("value").fill_null(
+                    Series("value", word^.finish())
+                ),
+                out,
+            )
+        elif case_id == "basics/fillna-axis":
+            emit_series("value", filled(frame.column("value"), 0.0), out)
+        elif case_id == "basics/fillna-signed-zero":
+            emit_series("value", filled(frame.column("value"), -0.0), out)
+        elif case_id == "basics/frame-fillna":
+            emit_frame(
+                frame.with_column(filled(frame.column("value"), 0.0)), out
+            )
+        elif case_id == "basics/frame-fillna-dict":
+            emit_frame(
+                frame.with_column(filled(frame.column("value"), 0.0)), out
+            )
         elif case_id == "basics/ffill":
             emit_series("value", frame.column("value").fill_forward(), out)
         elif case_id == "basics/bfill":
@@ -2033,6 +2121,10 @@ def main() raises:
             )
         elif case_id == "categorical/dropna":
             emit_series("value", frame.column("value").drop_nulls(), out)
+        elif case_id == "categorical/fillna":
+            emit_series(
+                "value", category_filled(frame.column("value"), 0), out
+            )
         elif case_id == "categorical/remove-unused":
             emit_index(
                 frame.column("value")
