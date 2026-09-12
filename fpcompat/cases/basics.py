@@ -570,8 +570,15 @@ case(
     "Series.clip",
     level="L3",
     covers=("lower", "upper"),
-    frames=FLOATS + NUMERIC,
+    frames=("float64_no_nulls", "int64_no_nulls"),
     expr=lambda pd, df: df["value"].clip(lower=-1, upper=1),
+    in_process=True,
+    note="written before the method existed and narrowed to the frames with no gaps "
+    "when it arrived, because a row that holds nothing is not clipped by either "
+    "library and so the answer carries a null here and a nan in the oracle, which is a "
+    "difference about loading rather than about clipping. The method is written in the "
+    "Python layer, where the shapes of the bounds and the type rules are, so a driver "
+    "entry would have to write them again. See spec 49",
 )
 case(
     "basics/neg",
@@ -1097,6 +1104,90 @@ case(
     note="the rows where one column holds nothing, replaced in every column, which is "
     "the frame shaped version of the condition that picks out the gaps. Python layer, "
     "see spec 48",
+)
+case(
+    "basics/clip-float-edges",
+    "Series.clip",
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df["value"].clip(1e15, 8e15),
+    in_process=True,
+    note="a floor and a ceiling on the frame that carries the float edges, so the two "
+    "infinities are caught by the bounds and the nan is left alone by both libraries "
+    "without anybody writing a rule for it, which is the half of this method worth "
+    "measuring. The bounds are floats because a fractional bound on whole numbers is "
+    "the widening divergence rather than the method. Python layer, see spec 49",
+)
+case(
+    "basics/clip-whole-numbers",
+    "Series.clip",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].clip(-4_611_686_017_000_000_000),
+    in_process=True,
+    note="a floor written as a whole number against whole numbers, which is the shape "
+    "that does not widen in either library and so is the one where the values can be "
+    "compared rather than the positions. The bound is inside the range the frame holds, "
+    "so some rows are lifted and some are not. Python layer, see spec 49",
+)
+case(
+    "basics/clip-ceiling",
+    "Series.clip",
+    level="L3",
+    covers=("upper",),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df["value"].clip(upper=4e15),
+    in_process=True,
+    note="the ceiling on its own, which is the other half of the signature and is also "
+    "the call that says an absent floor is not a floor of zero. Python layer, see "
+    "spec 49",
+)
+case(
+    "basics/clip-column",
+    "Series.clip",
+    level="L3",
+    covers=("lower", "upper"),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df["value"].clip(df["row"] * 1e14, df["row"] * 1e15),
+    in_process=True,
+    note="both bounds carrying rows of their own and lined up by label, which is a "
+    "different pair of bounds for every row and is the shape spec 49 section 4 spends "
+    "the most code on. The two are built from the positions so they are in order "
+    "everywhere and neither of them holds a gap. Python layer, see spec 49",
+)
+case(
+    "basics/frame-clip",
+    "DataFrame.clip",
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df.clip(0.0),
+    in_process=True,
+    note="one bound for every column of the frame, where the positions column is never "
+    "reached because no position is below zero. Both libraries hand that column back "
+    "with its type, which is what keeps a fractional bound from being an error on a "
+    "column of whole numbers it does not touch. Python layer, see spec 49",
+)
+case(
+    "basics/frame-clip-per-column",
+    "DataFrame.clip",
+    level="L3",
+    covers=("lower", "upper"),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df.clip([0, 1e15], [40, 8e15]),
+    in_process=True,
+    note="a run of values against a frame, which is one bound per column rather than "
+    "one per row, so the positions get whole numbers and the values get floats and "
+    "neither column is offered a bound of the other's type. Python layer, see spec 49",
+)
+case(
+    "basics/frame-clip-down-the-rows",
+    "DataFrame.clip",
+    level="L3",
+    covers=("lower", "axis"),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df.clip(df["row"], axis=0),
+    in_process=True,
+    note="a column of bounds read down the rows and shared by every column, which is "
+    "the reading that needs an axis because the other reading is a bound per column and "
+    "pandas will not guess between them. The positions column is bounded by itself and "
+    "so nothing in it moves. Python layer, see spec 49",
 )
 case(
     "basics/replace",
