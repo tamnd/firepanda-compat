@@ -445,6 +445,96 @@ case(
     "name goes on a line of its own above it. " + REPORTED,
 )
 
+PRINTED = (
+    "in process, and read as the labels rather than as the whole line, because the width of "
+    "the values beside them is a difference of its own: pandas keeps a column for the sign of "
+    "a number and this library does not, so a float column is padded one place differently. "
+    "The labels themselves are asserted exactly, which is what issue 719 was about. " + MEASURING
+)
+
+
+def listing(column: object) -> list[str]:
+    """The rows of a column's rendering, without the name above it or the footer below it.
+
+    A column with nothing in it renders as one line with no listing at all, and that is an
+    empty list here rather than a line, because there are no labels in it to read.
+
+    Args:
+        column: The column being printed.
+
+    Returns:
+        One line per printed row.
+    """
+    lines = repr(column).splitlines()
+    if lines[0].startswith("Series(["):
+        return []
+    head = 1 if column.index.name is not None else 0  # type: ignore[attr-defined]
+    return lines[head:-1]
+
+
+def relabelled(frame: object) -> object:
+    """The second column of a frame, under labels taken from the first.
+
+    Args:
+        frame: The frame being read.
+
+    Returns:
+        A column whose labels are not a range.
+    """
+    names = frame.columns  # type: ignore[attr-defined]
+    return frame.set_index(names[0])[names[1]]  # type: ignore[attr-defined]
+
+
+case(
+    "basics/repr-labels",
+    "Series.__repr__",
+    frames=("empty", "single", "two"),
+    expr=lambda pd, df: [line.split()[0] for line in listing(relabelled(df))],
+    in_process=True,
+    note="the labels a column prints down its left hand side, which used to be the row "
+    "positions here whatever the labels were. Everything else about the column answered "
+    "correctly, so nothing but a case that reads the rendering catches it. " + PRINTED,
+)
+case(
+    "basics/repr-range",
+    "Series.__repr__",
+    frames=("empty", "single", "two"),
+    expr=lambda pd, df: [line.split()[0] for line in listing(df[df.columns[0]])],
+    in_process=True,
+    note="the same labels on a column that never left the default range, which is the case "
+    "that was already right and had to stay right. " + PRINTED,
+)
+case(
+    "basics/repr-level-name",
+    "Series.__repr__",
+    frames=("single", "two"),
+    expr=lambda pd, df: repr(relabelled(df)).splitlines()[0],
+    in_process=True,
+    note="the name of the level, which pandas prints on a line of its own above the listing "
+    "and which was not printed here at all. The whole line is compared because there is "
+    "nothing else on it to pad. " + PRINTED,
+)
+case(
+    "basics/repr-unnamed",
+    "Series.__repr__",
+    frames=("single", "two"),
+    expr=lambda pd, df: repr(relabelled(df).rename_axis(None)).splitlines()[0].split()[0],
+    in_process=True,
+    note="taking the name off puts the first label on the first line, so this reads the same "
+    "position and gets a label rather than a name. A column that printed the name line "
+    "unconditionally would fail here and pass the case above. " + PRINTED,
+)
+case(
+    "basics/repr-footer",
+    "Series.__repr__",
+    frames=("single", "two"),
+    expr=lambda pd, df: repr(relabelled(df)).splitlines()[-1],
+    in_process=True,
+    note="the footer under the listing, which names the column and its type. The float "
+    "column is the one read, because a text column spells its type differently here and "
+    "that is `engine/dtype-spelling` rather than anything this member decides. " + PRINTED,
+)
+
 # ---------------------------------------------------------------------------
 # Selection and the head of the frame
 # ---------------------------------------------------------------------------

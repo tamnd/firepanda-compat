@@ -94,6 +94,7 @@ OPERATORS = frozenset(
         "Series.__getitem__",
         "Series.__setitem__",
         "Series.__len__",
+        "Series.__repr__",
         "Series.__iter__",
         "Series.__contains__",
         "Series.__bool__",
