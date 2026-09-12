@@ -282,6 +282,30 @@ case(
     "stops isin on a column of words from quietly meaning a set of letters",
 )
 case(
+    "errors/truth-value-frame",
+    "DataFrame.__bool__",
+    level="L4",
+    frames=("single", "two"),
+    expr=lambda pd, df: bool(df),
+    raises=("ValueError", "truth value of a DataFrame is ambiguous"),
+    in_process=True,
+    note="a frame of one row is refused as flatly as a frame of a thousand, because the "
+    "question is what the rows mean rather than how many there are, and Python's own "
+    "answer would be the row count. See spec 56 section 1",
+)
+case(
+    "errors/truth-value-column",
+    "Series.__bool__",
+    level="L4",
+    frames=("single", "two"),
+    expr=lambda pd, df: bool(df["a"]),
+    raises=("ValueError", "truth value of a Series is ambiguous"),
+    in_process=True,
+    note="the sentence names four members to use instead and one of them does not exist "
+    "here yet, which is copied whole anyway because a sentence people search for is not "
+    "a sentence to edit. See spec 56 section 9",
+)
+case(
     "errors/add-existing-category",
     "cat.add_categories",
     level="L4",

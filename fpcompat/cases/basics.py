@@ -1681,3 +1681,127 @@ case(
     note="the labels a drop leaves behind are the positions the rows held before it, so "
     "numbering them again is the parameter worth covering beside the rule. " + AS_A_FRAME,
 )
+
+# ---------------------------------------------------------------------------
+# Walking a frame and a column
+#
+# A frame walks its column names and a column walks its values, which is the
+# one place the two classes deliberately disagree, and `in` follows the same
+# split so it never looks at a value on a column. All of this is Python
+# protocol rather than kernel, so every case is in process: the driver's
+# boundary carries a frame, a column or a scalar, and a list of names, a run of
+# pairs or a run of tuples is none of those. See spec 56.
+# ---------------------------------------------------------------------------
+
+WALKING = "Python protocol rather than kernel, see spec 56"
+
+case(
+    "basics/iter",
+    "DataFrame.__iter__",
+    frames=("empty", "single", "wide"),
+    expr=lambda pd, df: list(df),
+    in_process=True,
+    note="the column names and not the rows, which reads like a mistake until you write "
+    "the loop it was chosen for, which is a name followed by the column it names. The "
+    "wide frame is here because a name at a time answer is where an order bug shows. " + WALKING,
+)
+case(
+    "basics/iter-values",
+    "Series.__iter__",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: list(df["value"]),
+    in_process=True,
+    note="the values and not the labels, which is the other half of the split above. "
+    "The frame is free of gaps on purpose, because a missing row comes out as None "
+    "here and as a nan in pandas, which would measure how the two libraries spell "
+    "nothing rather than how they walk a column. " + WALKING,
+)
+case(
+    "basics/contains",
+    "DataFrame.__contains__",
+    frames=("single", "two"),
+    expr=lambda pd, df: [name in df for name in ("a", "c", "zz", 1, None)],
+    in_process=True,
+    note="a name, another name, a name that is not there, and two keys of a kind no "
+    "column name could be, all of which are answered rather than refused because `in` "
+    "is a question. " + WALKING,
+)
+case(
+    "basics/contains-label",
+    "Series.__contains__",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: [key in df["value"] for key in (0, 63, 64, -1, "zz")],
+    in_process=True,
+    note="the labels and never the values, which is the rule that surprises everybody. "
+    "The frame's labels are its positions, so the first two are in and the third is one "
+    "past the end. " + WALKING,
+)
+case(
+    "basics/keys",
+    "DataFrame.keys",
+    frames=("single", "wide"),
+    expr=lambda pd, df: list(df.keys()),
+    in_process=True,
+    note="the same answer as columns through a second name, wrapped in list because "
+    "pandas hands back an Index there and firepanda hands back a list, which is the "
+    "divergence columns already carries. " + WALKING,
+)
+case(
+    "basics/keys-labels",
+    "Series.keys",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: list(df["value"].keys()),
+    in_process=True,
+    note="the same answer as index through a second name. " + WALKING,
+)
+case(
+    "basics/items",
+    "DataFrame.items",
+    frames=("empty", "single"),
+    expr=lambda pd, df: [(name, held.tolist()) for name, held in df.items()],
+    in_process=True,
+    note="a name and its column at a time, lazily, because a frame may be a thousand "
+    "columns wide and a caller who breaks out of the loop should not have paid for the "
+    "rest. " + WALKING,
+)
+case(
+    "basics/items-pairs",
+    "Series.items",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: list(df["value"].items()),
+    in_process=True,
+    note="a label and a value at a time, which is the loop neither iterating nor asking "
+    "in gives on its own. " + WALKING,
+)
+case(
+    "basics/itertuples",
+    "DataFrame.itertuples",
+    frames=("empty", "single"),
+    expr=lambda pd, df: [tuple(row) for row in df.itertuples()],
+    in_process=True,
+    note="the fast way to walk rows in pandas, and the tuples are compared as tuples "
+    "rather than by type, because the type is built per call in both libraries and two "
+    "of them are never the same object. Neither this nor the plain form runs on a frame "
+    "with a gap in it, because a missing cell comes out as None here and as a nan in "
+    "pandas. " + WALKING,
+)
+case(
+    "basics/itertuples-fields",
+    "DataFrame.itertuples",
+    frames=("single", "two"),
+    expr=lambda pd, df: list(next(iter(df.itertuples()))._fields),
+    in_process=True,
+    note="the field names, which are the column names with the row label in front under "
+    "the name Index, and neither library writes that rule down. " + WALKING,
+)
+case(
+    "basics/itertuples-plain",
+    "DataFrame.itertuples",
+    level="L3",
+    covers=("index", "name"),
+    frames=("empty", "single"),
+    expr=lambda pd, df: list(df.itertuples(index=False, name=None)),
+    in_process=True,
+    note="both parameters at once, which turns the answer into plain tuples of the "
+    "values with no label in front. " + WALKING,
+)
