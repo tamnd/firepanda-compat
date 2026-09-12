@@ -262,6 +262,26 @@ case(
     "axes and a column has only one for it to line up against",
 )
 case(
+    "errors/isin-scalar",
+    "Series.isin",
+    level="L4",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].isin(1),
+    raises=("TypeError", "only list-like objects are allowed"),
+    note="a set of one is still a set, and pandas refuses the bare value rather than "
+    "wrapping it, because a caller who wrote a scalar there meant a comparison",
+)
+case(
+    "errors/isin-string",
+    "Series.isin",
+    level="L4",
+    frames=("strings_null_heavy",),
+    expr=lambda pd, df: df["value"].isin("v1"),
+    raises=("TypeError", "only list-like objects are allowed"),
+    note="a string is list-like to Python and is not list-like to pandas, which is what "
+    "stops isin on a column of words from quietly meaning a set of letters",
+)
+case(
     "errors/add-existing-category",
     "cat.add_categories",
     level="L4",

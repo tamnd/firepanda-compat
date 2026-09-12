@@ -265,6 +265,12 @@ case(
     covers=("values",),
     frames=BOTH,
     expr=lambda pd, df: df["value"].isin([df["value"].cat.categories[0]]),
+    in_process=True,
+    note="the kernel refuses a category column outright, because it stores positions "
+    "into its categories rather than values, so the lookup happens against the codes "
+    "and the set has to be turned into a set of positions first. That turning is a "
+    "pandas compatibility rule and it lives in firepanda's Python layer, so a driver "
+    "arm would have to carry a second copy of it. Python layer, see spec 55 section 7",
 )
 case(
     "categorical/fillna",
