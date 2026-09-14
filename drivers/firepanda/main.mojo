@@ -2464,6 +2464,40 @@ def main() raises:
             # its dotted capital I are both read here, and so is the ligature that
             # has no other case at all and has to come back as it went in.
             emit_series("value", frame.column("value").chars_swapcase(), out)
+        elif case_id == "strings/normalize-nfc":
+            # The two arguments are the two choices the four forms are made of
+            # rather than a form name, so the mapping is compatibility first and
+            # compose second. This is the one name in the accessor whose answers
+            # come from CPython rather than from Arrow, because that is where
+            # pandas gets them and there is no Arrow kernel for it at all.
+            emit_series(
+                "value", frame.column("value").chars_normalize(False, True), out
+            )
+        elif case_id == "strings/normalize-nfd":
+            emit_series(
+                "value", frame.column("value").chars_normalize(False, False), out
+            )
+        elif (
+            case_id == "strings/normalize-nfkc"
+            or case_id == "strings/normalize-folding"
+        ):
+            emit_series(
+                "value", frame.column("value").chars_normalize(True, True), out
+            )
+        elif case_id == "strings/normalize-nfkd":
+            emit_series(
+                "value", frame.column("value").chars_normalize(True, False), out
+            )
+        elif case_id == "strings/normalize-len":
+            # Two names in one arm, which is the point of the case. Taking the
+            # accented rows apart makes them longer, so this is the one that says
+            # the answer is a new column of text and not a view of the old one
+            # that a later name would read the original bytes through.
+            emit_series(
+                "value",
+                frame.column("value").chars_normalize(False, False).chars_length(),
+                out,
+            )
         elif case_id == "strings/isspace":
             emit_series("value", frame.column("value").chars_is_space(), out)
         elif case_id == "strings/islower":
