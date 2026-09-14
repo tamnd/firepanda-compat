@@ -515,7 +515,8 @@ for name in (
         frames=ALL,
         expr=(lambda method: lambda pd, df: getattr(df["value"].str, method)())(name),
         note="digit, decimal and numeric are three different questions and the unicode "
-        "frame carries a character that answers them differently",
+        "frame carries a row for each of the three answers they can give, which it did "
+        "not until these arms were written and the corpus was checked rather than trusted",
     )
 
 case(

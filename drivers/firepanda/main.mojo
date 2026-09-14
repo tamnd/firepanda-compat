@@ -2363,6 +2363,31 @@ def main() raises:
             # to, since it asks what a row does not contain. Every string frame
             # has an empty row and the unicode frame is otherwise all no.
             emit_series("value", frame.column("value").chars_is_ascii(), out)
+        elif case_id == "strings/isalpha":
+            # The unicode frame is mostly letters that are not ASCII letters,
+            # which is the half of this question a table read from the wrong
+            # Unicode release gets wrong. Arrow knows 8946 that Python does not.
+            emit_series("value", frame.column("value").chars_is_alpha(), out)
+        elif case_id == "strings/isnumeric":
+            # The widest of the three number questions, and the only one the
+            # unicode frame's Roman numeral answers yes to, since a Roman
+            # numeral is a number and a letter at once.
+            emit_series("value", frame.column("value").chars_is_numeric(), out)
+        elif case_id == "strings/isdigit":
+            # Arrow calls anything written as a single number sign a digit, so
+            # the unicode frame's half sign is one here and is not one in
+            # Python. That row is what tells this arm from the next.
+            emit_series("value", frame.column("value").chars_is_digit(), out)
+        elif case_id == "strings/isdecimal":
+            # The narrowest of the three. The mathematical digits are decimal
+            # and the half sign beside them is not, which are the two rows an
+            # arm answering this with the digit table would get wrong.
+            emit_series("value", frame.column("value").chars_is_decimal(), out)
+        elif case_id == "strings/isalnum":
+            # No class of its own anywhere in the library, because a character
+            # is alphanumeric exactly when it is alphabetic or numeric. The
+            # pattern frame's `abc123` is the row that is neither on its own.
+            emit_series("value", frame.column("value").chars_is_alnum(), out)
         elif case_id == "strings/slice":
             emit_series(
                 "value",

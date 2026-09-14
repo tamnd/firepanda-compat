@@ -357,7 +357,9 @@ def string_frames() -> dict[str, pa.Table]:
         "ß",  # sharp s, whose upper case is two characters and is longer
         "ﬁance",  # the fi ligature, which normalizes into two characters
         "你好",  # three bytes per character in UTF-8
-        "\U0001d7d8\U0001d7d9",  # mathematical digits, numeric but not decimal
+        "\U0001d7d8\U0001d7d9",  # mathematical digits, decimal a long way from ASCII
+        "½",  # a half sign, which Arrow calls a digit and Python does not
+        "Ⅷ",  # a Roman eight, numeric and not a digit because it is a letter too
         "ǅungla",  # a titlecase letter, which is in neither case and is not both
         "ĸ",  # kra, lower case with no upper case to raise it to
         " ",  # a space that is not in the six everybody remembers
