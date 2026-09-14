@@ -2328,6 +2328,13 @@ def main() raises:
             # row and drops every other one, so a row of several words comes back
             # with one capital in it and the pattern frame is where that shows.
             emit_series("value", frame.column("value").chars_capitalize(), out)
+        elif case_id == "strings/title":
+            # This one is word by word, and a word ends at the first character
+            # in no case at all rather than at a space. The unicode frame holds
+            # a name with an apostrophe in it and a digit next to a letter for
+            # exactly that reason, and it holds a titlecase digraph, which comes
+            # back as the whole capital rather than as itself.
+            emit_series("value", frame.column("value").chars_title(), out)
         elif case_id == "strings/casefold":
             # The one name of this group pandas answers out of Python rather
             # than Arrow, because pyarrow has no kernel for it, so this is the
@@ -2347,6 +2354,15 @@ def main() raises:
             emit_series("value", frame.column("value").chars_is_lower(), out)
         elif case_id == "strings/isupper":
             emit_series("value", frame.column("value").chars_is_upper(), out)
+        elif case_id == "strings/istitle":
+            # The same word rule as `strings/title` asked the other way round,
+            # so the two arms fail together or not at all.
+            emit_series("value", frame.column("value").chars_is_title(), out)
+        elif case_id == "strings/isascii":
+            # The one question of this group that a row of nothing answers yes
+            # to, since it asks what a row does not contain. Every string frame
+            # has an empty row and the unicode frame is otherwise all no.
+            emit_series("value", frame.column("value").chars_is_ascii(), out)
         elif case_id == "strings/slice":
             emit_series(
                 "value",

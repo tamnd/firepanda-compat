@@ -358,6 +358,10 @@ def string_frames() -> dict[str, pa.Table]:
         "ﬁance",  # the fi ligature, which normalizes into two characters
         "你好",  # three bytes per character in UTF-8
         "\U0001d7d8\U0001d7d9",  # mathematical digits, numeric but not decimal
+        "ǅungla",  # a titlecase letter, which is in neither case and is not both
+        "ĸ",  # kra, lower case with no upper case to raise it to
+        " ",  # a space that is not in the six everybody remembers
+        "o'neill 3rd",  # a word ends at a character in no case, not at a space
         "",
         " leading and trailing ",
     ]
