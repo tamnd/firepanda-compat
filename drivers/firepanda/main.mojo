@@ -2463,6 +2463,24 @@ def main() raises:
             # pandas' answer. The unicode frame is the one that can tell them
             # apart and every row of it does.
             emit_series("value", frame.column("value").chars_count(""), out)
+        elif case_id == "strings/replace-literal":
+            # The one name of the group that needs no smaller promise made for
+            # it, because `regex` defaults to False in pandas 3 and so the
+            # ordinary call is already a byte search and a rewrite.
+            emit_series(
+                "value", frame.column("value").chars_replace("a", "A", -1), out
+            )
+        elif case_id == "strings/replace-n":
+            emit_series(
+                "value", frame.column("value").chars_replace("a", "A", 1), out
+            )
+        elif case_id == "strings/replace-empty":
+            # Counted in characters, which is the opposite of what the same
+            # argument means to the count a few lines up. Both are pandas'
+            # answers and document 67 says why the two differ.
+            emit_series(
+                "value", frame.column("value").chars_replace("", "-", -1), out
+            )
         elif case_id == "strings/startswith":
             emit_series(
                 "value", frame.column("value").chars_starts_with("a"), out

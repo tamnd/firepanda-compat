@@ -472,8 +472,26 @@ case(
     "str.replace",
     level="L3",
     covers=("pat", "repl", "n", "regex"),
-    frames=("strings_ascii",),
+    frames=("strings_pattern", "strings_ascii"),
     expr=lambda pd, df: df["value"].str.replace("a", "A", n=1, regex=False),
+    note="the pattern frame is here because the ascii frame cannot tell this case "
+    "from strings/replace-literal. Its rows are the alphabet cut at every length, "
+    "so no row of it holds the letter a twice and an implementation that ignored n "
+    "entirely would pass on it",
+)
+case(
+    "strings/replace-empty",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl"),
+    frames=("strings_unicode", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.replace("", "-"),
+    note="the other half of strings/count-empty, and the two of them together are "
+    "the reason both are on the board. An empty pattern is counted in characters "
+    "here and in bytes there, in the same accessor on the same row, because "
+    "pyarrow's replace_substring does not terminate on an empty pattern and pandas "
+    "has a guard that hands that one case to Python while count has no guard and "
+    "stays in Arrow",
 )
 case(
     "strings/replace-backreference",
