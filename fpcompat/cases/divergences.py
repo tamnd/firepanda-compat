@@ -707,3 +707,79 @@ case(
     "`nbytes` and the divergence is exactly the one next door rather than that one "
     "plus whatever the labels weigh. " + MEASURING_MEMORY,
 )
+
+
+# ---------------------------------------------------------------------------
+# What a gap is called
+# ---------------------------------------------------------------------------
+
+# pandas does not have a spelling for a missing value, it has four, and which one a
+# column gives you says what that column is made of. A numpy float array has nowhere to
+# record absence, so the hole is the floating point NaN and prints `NaN`. A timestamp
+# uses a sentinel integer and prints `NaT`. An object column holds the Python object and
+# prints `None`. Every one of pandas' nullable types keeps absence in a mask beside the
+# values and prints `<NA>`, which is what every firepanda column is, so the word here is
+# pandas' own word for a column that works this way rather than one this library made up.
+#
+# The float case is the one worth reading twice. The frame holds a genuine NaN in row
+# zero and missing values in rows one and three, and only the missing ones differ, which
+# is the entry in a single rendering.
+
+MISSING_SPELLING = (
+    "firepanda writes `<NA>` and pandas writes whatever its storage forced on it, which "
+    "is one character of difference and moves every value in the column"
+)
+
+case(
+    "divergences/missing-spelling/float-column",
+    "Series.__repr__",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: repr(df["value"].head(5)),
+    in_process=True,
+    note="the clearest form of it. Row zero holds a genuine NaN and rows one and three "
+    "hold nothing at all, and the rendering here tells those apart while pandas cannot, "
+    "because in a numpy float column they are the same float by the time the column "
+    "exists. " + MISSING_SPELLING,
+)
+case(
+    "divergences/missing-spelling/float-values",
+    "Series.tolist",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].head(5).tolist(),
+    in_process=True,
+    note="the same five rows read out as Python objects, which is where this stops "
+    "being about printing. pandas gives a NaN for the hole and firepanda gives None, so "
+    "a caller can ask which rows were computed and which were never there. " + MISSING_SPELLING,
+)
+case(
+    "divergences/missing-spelling/text-column",
+    "Series.__repr__",
+    frames=("strings_null_heavy",),
+    expr=lambda pd, df: repr(df["value"].head(4)).splitlines()[1],
+    in_process=True,
+    note="a text column, where pandas 3 carries the gap as a NaN even though the column "
+    "holds strings. One line is read rather than the rendering, because the footer "
+    "spells the type `string` here and `str` there and that is `engine/dtype-spelling` "
+    "rather than this. " + MISSING_SPELLING,
+)
+case(
+    "divergences/missing-spelling/timestamp-column",
+    "Series.__repr__",
+    frames=("temporal_range",),
+    expr=lambda pd, df: repr(df["second"].head(3).mask([False, True, False])),
+    in_process=True,
+    note="a timestamp, where pandas has a third spelling again and writes `NaT`. The "
+    "hole is put there by `mask` because no temporal corpus frame has one, and it is "
+    "the middle row of three so the column is as wide as a real timestamp either "
+    "way. " + MISSING_SPELLING,
+)
+case(
+    "divergences/missing-spelling/isna-agrees",
+    "Series.isna",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].head(5).isna().tolist(),
+    in_process=True,
+    note="the control, and it has to pass. Both libraries count the genuine NaN in row "
+    "zero as missing and both count the holes as missing, so what is registered beside "
+    "this is the word each of them writes and not what either of them thinks is there.",
+)
