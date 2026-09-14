@@ -613,6 +613,20 @@ case(
     covers=("table",),
     frames=PLAIN,
     expr=lambda pd, df: df["value"].str.translate(str.maketrans("abc", "xyz")),
+    note="the plain form, whose table maps three letters onto three that are not "
+    "themselves keys, so an implementation running the table entry by entry would "
+    "give the same answer and this case could not tell, which is what the swap is for",
+)
+case(
+    "strings/translate-swap",
+    "str.translate",
+    level="L3",
+    covers=("table",),
+    frames=PLAIN,
+    expr=lambda pd, df: df["value"].str.translate(str.maketrans("ab", "ba")),
+    note="a table whose values are also its keys, which is the difference between "
+    "this name and replace with a mapping, since every key is applied in the same "
+    "pass and so this really swaps the two letters where replace would collapse them",
 )
 
 # ---------------------------------------------------------------------------

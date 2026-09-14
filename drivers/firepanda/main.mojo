@@ -2481,6 +2481,31 @@ def main() raises:
             emit_series(
                 "value", frame.column("value").chars_replace("", "-", -1), out
             )
+        elif case_id == "strings/translate":
+            # Not three replaces one after another. Every key here is applied
+            # in the same pass, which is the whole difference between this and
+            # the name above it, and document 68 says why that matters.
+            var keys: List[String] = ["a", "b", "c"]
+            var swaps: List[String] = ["x", "y", "z"]
+            emit_series(
+                "value",
+                frame.column("value").chars_translate(
+                    Series("keys", category_list(keys^)),
+                    Series("values", category_list(swaps^)),
+                ),
+                out,
+            )
+        elif case_id == "strings/translate-swap":
+            var pair: List[String] = ["a", "b"]
+            var crossed: List[String] = ["b", "a"]
+            emit_series(
+                "value",
+                frame.column("value").chars_translate(
+                    Series("keys", category_list(pair^)),
+                    Series("values", category_list(crossed^)),
+                ),
+                out,
+            )
         elif case_id == "strings/startswith":
             emit_series(
                 "value", frame.column("value").chars_starts_with("a"), out
