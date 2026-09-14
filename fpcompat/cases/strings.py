@@ -810,6 +810,45 @@ case(
     note="normalizing changes the length, which is the point",
 )
 case(
+    "strings/normalize-nfkc",
+    "str.normalize",
+    level="L3",
+    covers=("form",),
+    frames=ALL,
+    expr=lambda pd, df: df["value"].str.normalize("NFKC"),
+    note="the wider relation, which the unicode frame is full of on purpose: the fi "
+    "ligature becomes two letters, the half sign becomes three characters, the "
+    "roman eight becomes four ordinary letters and the titlecase digraph becomes "
+    "two, so a library answering the canonical form here is wrong on four rows, and "
+    "the other three frames are here because they are the identity under all four "
+    "forms and a library that normalized an ascii row or a missing one would be "
+    "wrong on them without any character in the frame being unusual",
+)
+case(
+    "strings/normalize-nfkd",
+    "str.normalize",
+    level="L3",
+    covers=("form",),
+    frames=ALL,
+    expr=lambda pd, df: df["value"].str.normalize("NFKD"),
+    note="the fourth form, and it is not the third with a different last step on "
+    "every row, since the titlecase digraph gives a caron of its own here and a z "
+    "with a caron under the form above, which is the difference that catches an "
+    "implementation treating the K forms as a decomposition difference and nothing else",
+)
+case(
+    "strings/normalize-folding",
+    "str.normalize",
+    level="L3",
+    covers=("form",),
+    frames=FOLDING,
+    expr=lambda pd, df: df["value"].str.normalize("NFKC"),
+    note="the folding frame separates the four forms as well as the unicode one does "
+    "and separates them on different rows, since its long s becomes an ordinary s, "
+    "its micro sign becomes a greek mu and all three of its digraphs come apart, and "
+    "none of those is a difference the unicode frame's accented rows can score",
+)
+case(
     "strings/get-dummies",
     "str.get_dummies",
     level="L3",
