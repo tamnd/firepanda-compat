@@ -2315,6 +2315,22 @@ def main() raises:
             # on the ascii frame and fail on the other three, which is the whole
             # reason the corpus has four text frames rather than one.
             emit_series("value", frame.column("value").chars_length(), out)
+        elif case_id == "strings/upper":
+            # The unicode frame is the one that decides this. It holds a row that
+            # comes back longer than it went in and a row where the two cases of
+            # a letter are not a pair, so an arm that passed here on the ascii
+            # frame alone would be telling you nothing.
+            emit_series("value", frame.column("value").chars_upper(), out)
+        elif case_id == "strings/lower":
+            emit_series("value", frame.column("value").chars_lower(), out)
+        elif case_id == "strings/isspace":
+            emit_series("value", frame.column("value").chars_is_space(), out)
+        elif case_id == "strings/islower":
+            # Not the opposite of the next one. A row with no cased character in
+            # it, which the pattern frame has several of, answers no to both.
+            emit_series("value", frame.column("value").chars_is_lower(), out)
+        elif case_id == "strings/isupper":
+            emit_series("value", frame.column("value").chars_is_upper(), out)
         elif case_id == "strings/slice":
             emit_series(
                 "value",
