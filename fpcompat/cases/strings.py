@@ -20,6 +20,8 @@ section("strings")
 ALL = ("strings_ascii", "strings_unicode", "strings_null_heavy", "strings_pattern")
 PLAIN = ("strings_ascii", "strings_unicode", "strings_pattern")
 NULLS = ("strings_null_heavy",)
+FOLDING = ("strings_folding",)
+CASED = ("strings_ascii", "strings_pattern", "strings_null_heavy", "strings_folding")
 
 # ---------------------------------------------------------------------------
 # Length and case
@@ -168,8 +170,60 @@ case(
     "str.contains",
     level="L3",
     covers=("pat", "case"),
-    frames=ALL,
+    frames=CASED,
     expr=lambda pd, df: df["value"].str.contains("A", case=False),
+    note="an ASCII pattern, which every plausible fold agrees about, so this one is "
+    "the baseline and the three below it are the ones that can tell the folds apart",
+)
+case(
+    "strings/contains-case-false-longer",
+    "str.contains",
+    level="L3",
+    covers=("pat", "case"),
+    frames=FOLDING,
+    expr=lambda pd, df: df["value"].str.contains("ss", case=False),
+    note="the pattern that separates a search from casefold, since casefold turns a "
+    "sharp s into two letters and would find this in five rows a search does not",
+)
+case(
+    "strings/contains-case-false-long-s",
+    "str.contains",
+    level="L3",
+    covers=("pat", "case"),
+    frames=FOLDING,
+    expr=lambda pd, df: df["value"].str.contains("ſ", case=False),
+    note="long s, which is the pattern that separates a search from both of the other "
+    "two rules at once, since casefold gets two rows wrong here and the lower case "
+    "gets seven wrong, and a search folds it onto a plain s",
+)
+case(
+    "strings/contains-case-false-micro",
+    "str.contains",
+    level="L3",
+    covers=("pat", "case"),
+    frames=FOLDING,
+    expr=lambda pd, df: df["value"].str.contains("μm", case=False),
+    note="the micro sign against Greek mu, which is the same separation as the sigma "
+    "and is here because it is the lowest code point in the whole fold table",
+)
+case(
+    "strings/match-case-false",
+    "str.match",
+    level="L3",
+    covers=("pat", "case"),
+    frames=CASED,
+    expr=lambda pd, df: df["value"].str.match("straße", case=False),
+)
+case(
+    "strings/fullmatch-case-false",
+    "str.fullmatch",
+    level="L3",
+    covers=("pat", "case"),
+    frames=CASED,
+    expr=lambda pd, df: df["value"].str.fullmatch("straße", case=False),
+    note="a folded match can cover a different number of bytes than the pattern, since "
+    "long s is two bytes and is compared as the one byte s, so this cannot be decided "
+    "by comparing lengths the way the case sensitive one can",
 )
 case(
     "strings/contains-na",
@@ -492,6 +546,31 @@ case(
     "pyarrow's replace_substring does not terminate on an empty pattern and pandas "
     "has a guard that hands that one case to Python while count has no guard and "
     "stays in Arrow",
+)
+case(
+    "strings/replace-case-false",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl", "case"),
+    frames=CASED,
+    expr=lambda pd, df: df["value"].str.replace("straße", "#", case=False),
+    note="the one of the four case insensitive names pandas does not answer out of "
+    "Arrow, since it refuses case=False there and falls back to a Python path that "
+    "escapes the pattern and runs it with re.IGNORECASE. The two rules agree on every "
+    "pair, which did not have to be true, and this is the case that says so",
+)
+case(
+    "strings/replace-case-false-n-zero",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl", "n", "case"),
+    frames=("strings_folding", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.replace("A", "#", n=0, case=False),
+    note="n=0 means no replacements to this method and every replacement to this "
+    "method with case=False, because the Arrow path takes the number at its word and "
+    "the fallback hands it to re.sub where a count of zero has meant unlimited for "
+    "thirty years. Same method, same column, two answers, and strings/replace-n "
+    "beside it is the half that reads the zero the other way",
 )
 case(
     "strings/replace-backreference",

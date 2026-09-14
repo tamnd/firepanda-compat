@@ -605,6 +605,22 @@
       "digest": "d5459c9cb2cbe7246c8fcd00db80f776850e6291c114d3e93544f2cfbc7c3f24",
       "rows": 21
     },
+    "strings_folding": {
+      "columns": [
+        {
+          "name": "row",
+          "nulls": 0,
+          "type": "int64"
+        },
+        {
+          "name": "value",
+          "nulls": 0,
+          "type": "large_string"
+        }
+      ],
+      "digest": "c58cd671aec8fd2c6984b88d09b1089e28a768dd199ea2379ff4f9b45a9d5888",
+      "rows": 27
+    },
     "strings_null_heavy": {
       "columns": [
         {
