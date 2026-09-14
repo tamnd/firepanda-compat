@@ -564,6 +564,33 @@ case(
     "one case where the rule can be seen on its own. " + PRINTED,
 )
 case(
+    "basics/repr-float",
+    "Series.__repr__",
+    frames=("float64_no_nulls", "tall"),
+    expr=lambda pd, df: repr(df.set_index(df.columns[0])[df.columns[1]]),
+    in_process=True,
+    note="a float column, where what a value prints as is a fact about the column rather "
+    "than about the value. Both of these hold something over a million and print every value "
+    "in scientific notation because of it, including the small ones, which is the whole point "
+    "of reading the rendering rather than a value out of it. The first frame also carries a "
+    "NaN, both infinities, a negative zero and the smallest subnormal there is, none of which "
+    "count as numbers when the column decides its format and all of which have to survive "
+    "being printed anyway. " + PRINTED,
+)
+case(
+    "basics/repr-float-fixed",
+    "Series.__repr__",
+    frames=("single", "two"),
+    expr=lambda pd, df: repr(df[df.columns[1]] / 3),
+    in_process=True,
+    note="the other side of the decision, and the clearest demonstration there is that the "
+    "format belongs to the column. Nothing here is over a million or under the last place "
+    "printed, so it stays in fixed point, and the division is there to put a value with six "
+    "places in it beside a value with one. The half is printed as `0.5` on the one row frame "
+    "and as `0.500000` on the two row frame, because the trailing zeros only come off while "
+    "every value in the column still ends in one. " + PRINTED,
+)
+case(
     "basics/repr-text",
     "Series.__repr__",
     frames=("single",),
