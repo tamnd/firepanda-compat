@@ -2323,6 +2323,16 @@ def main() raises:
             emit_series("value", frame.column("value").chars_upper(), out)
         elif case_id == "strings/lower":
             emit_series("value", frame.column("value").chars_lower(), out)
+        elif case_id == "strings/capitalize":
+            # Not a word by word thing. pandas raises the first character of the
+            # row and drops every other one, so a row of several words comes back
+            # with one capital in it and the pattern frame is where that shows.
+            emit_series("value", frame.column("value").chars_capitalize(), out)
+        elif case_id == "strings/swapcase":
+            # Every character in the row moves, so the unicode frame's sharp s and
+            # its dotted capital I are both read here, and so is the ligature that
+            # has no other case at all and has to come back as it went in.
+            emit_series("value", frame.column("value").chars_swapcase(), out)
         elif case_id == "strings/isspace":
             emit_series("value", frame.column("value").chars_is_space(), out)
         elif case_id == "strings/islower":
