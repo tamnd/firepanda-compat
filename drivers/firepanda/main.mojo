@@ -1066,6 +1066,66 @@ def category_filled(column: Series, at: Int) raises -> Series:
     )
 
 
+def cut_part(
+    column: Series, sep: String, from_right: Bool, which: Int
+) raises -> Series:
+    """Returns one of the three columns a partition hands back.
+
+    The kernel answers all three from one search, because the search is the
+    whole cost of this operation and the slicing after it is free. Five cases
+    want one column each, so this takes the three and drops the two it was not
+    asked for rather than searching three times.
+
+    Args:
+        column: The text column.
+        sep: The separator.
+        from_right: Whether to cut at the last occurrence rather than the first.
+        which: 0 for the part before the cut, 1 for the separator itself, 2 for
+            the part after.
+
+    Returns:
+        That one column.
+
+    Raises:
+        Error: If the column is not text, or the separator is empty.
+    """
+    var parts = column.chars_partition(sep, from_right)
+    for _ in range(which):
+        _ = parts.pop(0)
+    return parts.pop(0)
+
+
+def cut_frame(column: Series, sep: String, from_right: Bool) raises -> DataFrame:
+    """Returns all three columns of a partition as a frame.
+
+    The names are put on here rather than by the kernel. A frame needs its
+    columns to have distinct names and the kernel hands all three back carrying
+    the name of the column they were cut out of, so somebody has to choose, and
+    the Python layer of firepanda makes the same choice one level up.
+
+    These are the text `0`, `1` and `2` where pandas uses the integers, which is
+    `engine/integer-column-labels` and is the only difference either of these two
+    names has from pandas.
+
+    Args:
+        column: The text column.
+        sep: The separator.
+        from_right: Whether to cut at the last occurrence rather than the first.
+
+    Returns:
+        A frame of three columns.
+
+    Raises:
+        Error: If the column is not text, or the separator is empty.
+    """
+    var parts = column.chars_partition(sep, from_right)
+    var named = List[Series](capacity=3)
+    named.append(parts.pop(0).rename("0"))
+    named.append(parts.pop(0).rename("1"))
+    named.append(parts.pop(0).rename("2"))
+    return DataFrame.from_series(named^)
+
+
 def emit_bool(value: Bool, path: String) raises:
     """Writes a scalar bool answer and prints its line.
 
@@ -2561,6 +2621,37 @@ def main() raises:
                     Series("values", category_list(crossed^)),
                 ),
                 out,
+            )
+        elif case_id == "strings/partition":
+            # No row of this frame holds a hyphen, so what these two frame cases
+            # measure is where an uncut row goes, which is the first column for
+            # this name and the third for the one below it.
+            emit_frame(cut_frame(frame.column("value"), "-", False), out)
+        elif case_id == "strings/rpartition":
+            emit_frame(cut_frame(frame.column("value"), "-", True), out)
+        elif case_id == "strings/partition-head":
+            emit_series(
+                "value", cut_part(frame.column("value"), "o", False, 0), out
+            )
+        elif case_id == "strings/partition-sep":
+            emit_series(
+                "value", cut_part(frame.column("value"), "o", False, 1), out
+            )
+        elif case_id == "strings/partition-tail":
+            emit_series(
+                "value", cut_part(frame.column("value"), "o", False, 2), out
+            )
+        elif case_id == "strings/rpartition-head":
+            emit_series(
+                "value", cut_part(frame.column("value"), "o", True, 0), out
+            )
+        elif case_id == "strings/rpartition-tail":
+            emit_series(
+                "value", cut_part(frame.column("value"), "o", True, 2), out
+            )
+        elif case_id == "strings/partition-null":
+            emit_series(
+                "value", cut_part(frame.column("value"), "v", False, 2), out
             )
         elif case_id == "strings/startswith":
             emit_series(

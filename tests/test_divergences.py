@@ -562,9 +562,17 @@ def test_the_committed_registry_loads():
     an Arrow array with a validity bitmap, so `<NA>` is pandas' own word for a column
     that works this way. The float case reads a frame holding a genuine NaN beside two
     holes and tells them apart, which pandas cannot do at all, and the control beside it
-    is that both libraries agree on which rows are missing."""
+    is that both libraries agree on which rows are missing.
+
+    `engine/integer-column-labels` is the thirtieth and is the first about a label
+    rather than about a value. A pandas column label is any hashable object and a
+    firepanda one is text, because an Arrow schema names its fields with strings and
+    every frame here is an Arrow frame. It is visible in two places: a frame built from
+    a dictionary with integer keys, which is the general form, and the three columns
+    `str.partition` hands back, which pandas labels 0, 1 and 2 and which found this. The
+    control is that reading those three by position rather than by label agrees."""
     entries = divergences.registry()
-    assert len(entries) == 29
+    assert len(entries) == 30
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

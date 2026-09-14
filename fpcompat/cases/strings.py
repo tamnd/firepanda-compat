@@ -476,6 +476,19 @@ case(
     note="no pattern means split on any run of whitespace and drop the empties, which "
     "is a different algorithm from splitting on a single space",
 )
+CUT_BY_POSITION = (
+    "The column is read by position and then renamed, because the name pandas gives it "
+    "is the integer label and that is `engine/integer-column-labels`, which the two "
+    "frame cases above carry. Renaming here is what keeps this case about the values"
+)
+
+CUT_LABELS = (
+    "and the whole frame is compared here, so this case carries "
+    "`engine/integer-column-labels`: pandas labels the three columns with the integers "
+    "0, 1 and 2 and firepanda labels them with the text. The five cases under this one "
+    "read a column out by position instead, which is where the values get scored"
+)
+
 case(
     "strings/partition",
     "str.partition",
@@ -483,6 +496,10 @@ case(
     covers=("sep",),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.partition("-"),
+    note="no row of this frame holds a hyphen, which is on purpose rather than by "
+    "accident, because a row the separator is not in is where the two names differ in "
+    "the way nobody guesses: the row survives whole and goes into the first column for "
+    "this name and into the third for the other one, " + CUT_LABELS,
 )
 case(
     "strings/rpartition",
@@ -491,6 +508,75 @@ case(
     covers=("sep",),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.rpartition("-"),
+    note="the same eighteen rows and the same absent separator, and the pair is what "
+    "says the two names put an uncut row at opposite ends, " + CUT_LABELS,
+)
+case(
+    "strings/partition-head",
+    "str.partition",
+    level="L3",
+    covers=("sep",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.partition("o").iloc[:, 0].rename("value"),
+    note="a separator that is really in three of the rows, read a column at a time so "
+    "the values are compared without the labels. `foofoobar` holds the separator three "
+    "times, which is what makes this case and its `r` twin disagree with each other and "
+    "is the only way to tell that a search really ran. " + CUT_BY_POSITION,
+)
+case(
+    "strings/partition-sep",
+    "str.partition",
+    level="L3",
+    covers=("sep",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.partition("o").iloc[:, 1].rename("value"),
+    note="the middle column, which is the separator where it was found and the empty "
+    "string where it was not, and is the one of the three that cannot tell the two "
+    "names apart since they find the same separator wherever they find it. " + CUT_BY_POSITION,
+)
+case(
+    "strings/partition-tail",
+    "str.partition",
+    level="L3",
+    covers=("sep",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.partition("o").iloc[:, 2].rename("value"),
+    note="the part after the cut, which for this name is everything left over and for "
+    "a row with no separator in it is empty. " + CUT_BY_POSITION,
+)
+case(
+    "strings/rpartition-head",
+    "str.rpartition",
+    level="L3",
+    covers=("sep",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.rpartition("o").iloc[:, 0].rename("value"),
+    note="the same column of the other name, and the answer is different on every row "
+    "that holds the separator more than once, which is what says the search started "
+    "from the right end. " + CUT_BY_POSITION,
+)
+case(
+    "strings/rpartition-tail",
+    "str.rpartition",
+    level="L3",
+    covers=("sep",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.rpartition("o").iloc[:, 2].rename("value"),
+    note="the column an uncut row lands in for this name, so the empty strings here "
+    "and the empty strings in `strings/partition-tail` are in different rows. " + CUT_BY_POSITION,
+)
+case(
+    "strings/partition-null",
+    "str.partition",
+    level="L3",
+    covers=("sep",),
+    frames=("strings_null_heavy",),
+    expr=lambda pd, df: df["value"].str.partition("v").iloc[:, 2].rename("value"),
+    note="two thirds of this frame is missing and the rest is either the empty string "
+    "or a row the separator starts, so it asks three questions at once: a missing row "
+    "is missing in all three columns rather than empty in any of them, an empty row is "
+    "not a missing one, and a separator at the very start leaves the first column empty "
+    "rather than dropping the row. " + CUT_BY_POSITION,
 )
 case(
     "strings/join",
