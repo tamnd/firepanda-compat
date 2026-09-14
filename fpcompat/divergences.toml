@@ -406,3 +406,17 @@ spec = "63-what-a-missing-value-is-called.md#2-pandas-has-four-spellings-and-one
 expect = "differs"
 instead = "a missing value is written <NA> whatever the column holds, where pandas writes NaN on a float or a text column, NaT on a temporal one and <NA> only on its nullable types. Read out as a Python object it is None rather than nan or NaT. Asking whether a value is missing agrees on both sides, including on a genuine NaN."
 since = "2026-09-14"
+
+# The thirtieth, and the first that is about a label rather than about a value. It came
+# out of `str.partition`, which is the first name on the string accessor whose answer is
+# a frame, and it has nothing to do with strings.
+
+[[divergence]]
+id = "engine/integer-column-labels"
+cases = ["divergences/integer-column-labels/partition", "divergences/integer-column-labels/constructor", "strings/partition", "strings/rpartition"]
+kind = "engine"
+reason = "A pandas column label can be any hashable object and a firepanda column label is text. That is a decision about what a schema is rather than an omission: an Arrow schema names its fields with strings, every firepanda frame is an Arrow frame, and a label type that allowed integers would have to be carried through the schema, the Arrow export, the C Data Interface and every place a frame is written to a file, in exchange for letting a user write df[0] instead of df['0']. So an integer label arrives as the text of that integer. Nothing is lost, nothing is reordered, and no value under a label changes. Two places make it visible. A frame built from a dictionary with integer keys gets text labels here, which is the general form. And str.partition and str.rpartition hand back three columns which pandas labels 0, 1 and 2 as integers, which is the form that found this, and there the values agree row for row so the label is the entire difference. Reading a column by position rather than by label agrees on both sides and the control case beside these says so. The same thing will be visible from str.split with expand=True and from str.extract when those arrive, and what closes it for all of them at once is a column label type rather than anything any of those methods could write differently."
+spec = "70-an-answer-that-is-wider-than-a-column.md#6-where-the-two-cannot-agree-and-both-of-them-come-from-the-same-cause"
+expect = "differs"
+instead = "a column label is always text, so an integer label is the text of that integer, and the three columns of a partition are labelled '0', '1' and '2' where pandas labels them 0, 1 and 2."
+since = "2026-09-15"

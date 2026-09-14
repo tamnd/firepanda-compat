@@ -783,3 +783,50 @@ case(
     "zero as missing and both count the holes as missing, so what is registered beside "
     "this is the word each of them writes and not what either of them thinks is there.",
 )
+
+# The thirtieth, found by implementing the first two `str` names whose answer is a
+# frame. It is the only difference those two have from pandas and it is not about
+# text at all, which is why it is registered here rather than in the strings section.
+
+INTEGER_LABELS = (
+    "a firepanda frame holds text column labels and nothing else, so an integer label "
+    "arrives as the text of that integer. Nothing is lost and nothing is reordered, and "
+    "the only thing a caller can see is that the label they get back is not the label "
+    "they would have got from pandas"
+)
+
+case(
+    "divergences/integer-column-labels/partition",
+    "str.partition",
+    frames=("strings_pattern",),
+    expr=lambda pd, df: [type(label).__name__ for label in df["value"].str.partition("o").columns],
+    in_process=True,
+    note="the name that found this. pandas labels the three columns it hands back with "
+    "the integers 0, 1 and 2, and here they are the text `0`, `1` and `2`. The type "
+    "name of each label is read rather than the label, because the two render the same "
+    "way and printing them side by side would make this look like it passes. " + INTEGER_LABELS,
+)
+case(
+    "divergences/integer-column-labels/constructor",
+    "pandas.DataFrame",
+    milestone="M2",
+    frames=("empty",),
+    expr=lambda pd, df: [
+        type(label).__name__ for label in pd.DataFrame({0: [1, 2], 1: [3, 4]}).columns
+    ],
+    in_process=True,
+    note="the same difference reached without any string method in the way, which is "
+    "what says this belongs to frames rather than to the accessor. A dictionary with "
+    "integer keys builds a frame with integer labels in pandas and with text labels "
+    "here, and the corpus frame is ignored because the case builds its own. " + INTEGER_LABELS,
+)
+case(
+    "divergences/integer-column-labels/values-agree",
+    "str.partition",
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.partition("o").iloc[:, 1].tolist(),
+    in_process=True,
+    note="the control, and it has to pass. Reading the same three columns by position "
+    "rather than by label gives the same values on both sides, so what is registered "
+    "beside this is the label and not anything under it.",
+)
