@@ -446,15 +446,20 @@ case(
 )
 
 PRINTED = (
-    "in process, and read as the labels rather than as the whole line, because the width of "
-    "the values beside them is a difference of its own: pandas keeps a column for the sign of "
-    "a number and this library does not, so a float column is padded one place differently. "
-    "The labels themselves are asserted exactly, which is what issue 719 was about. " + MEASURING
+    "in process, and compared as the whole rendering rather than as the labels read out of "
+    "it, because the spacing is as much of the contract as the labels are. These cases did "
+    "read one field out of each line while the padding was a place out, which is what issue "
+    "730 was, and a case that loose would have gone on passing after the padding broke "
+    "again. " + MEASURING
 )
 
 
 def listing(column: object) -> list[str]:
     """The rows of a column's rendering, without the name above it or the footer below it.
+
+    Worth having for the text columns only, where the two libraries still spell the type
+    differently in the footer and comparing the whole rendering would be comparing that
+    rather than the layout.
 
     A column with nothing in it renders as one line with no listing at all, and that is an
     empty list here rather than a line, because there are no labels in it to read.
@@ -489,17 +494,19 @@ case(
     "basics/repr-labels",
     "Series.__repr__",
     frames=("empty", "single", "two"),
-    expr=lambda pd, df: [line.split()[0] for line in listing(relabelled(df))],
+    expr=lambda pd, df: repr(relabelled(df)),
     in_process=True,
     note="the labels a column prints down its left hand side, which used to be the row "
     "positions here whatever the labels were. Everything else about the column answered "
-    "correctly, so nothing but a case that reads the rendering catches it. " + PRINTED,
+    "correctly, so nothing but a case that reads the rendering catches it. The float column "
+    "is the one read, and on the two row frame it holds a negative, so this is also where "
+    "the place kept in front of a value is compared. " + PRINTED,
 )
 case(
     "basics/repr-range",
     "Series.__repr__",
     frames=("empty", "single", "two"),
-    expr=lambda pd, df: [line.split()[0] for line in listing(df[df.columns[0]])],
+    expr=lambda pd, df: repr(df[df.columns[0]]),
     in_process=True,
     note="the same labels on a column that never left the default range, which is the case "
     "that was already right and had to stay right. " + PRINTED,
@@ -518,11 +525,11 @@ case(
     "basics/repr-unnamed",
     "Series.__repr__",
     frames=("single", "two"),
-    expr=lambda pd, df: repr(relabelled(df).rename_axis(None)).splitlines()[0].split()[0],
+    expr=lambda pd, df: repr(relabelled(df).rename_axis(None)),
     in_process=True,
-    note="taking the name off puts the first label on the first line, so this reads the same "
-    "position and gets a label rather than a name. A column that printed the name line "
-    "unconditionally would fail here and pass the case above. " + PRINTED,
+    note="taking the name off puts the first label on the first line, so the rendering is "
+    "one line shorter and starts with a label rather than a name. A column that printed the "
+    "name line unconditionally would fail here and pass the case above. " + PRINTED,
 )
 case(
     "basics/repr-footer",
@@ -533,6 +540,40 @@ case(
     note="the footer under the listing, which names the column and its type. The float "
     "column is the one read, because a text column spells its type differently here and "
     "that is `engine/dtype-spelling` rather than anything this member decides. " + PRINTED,
+)
+case(
+    "basics/repr-elided",
+    "Series.__repr__",
+    frames=("int64_no_nulls", "keys_10"),
+    expr=lambda pd, df: repr(relabelled(df)),
+    in_process=True,
+    note="a column with more rows in it than pandas will print, where the middle is left out "
+    "and a footer says how long the whole thing was. Three things only this case reaches: "
+    "the row of dots is two dots in a column too narrow for three, the label beside it is "
+    "left blank, and the footer names the column before it gives the length. " + PRINTED,
+)
+case(
+    "basics/repr-boolean",
+    "Series.__repr__",
+    frames=("tall",),
+    expr=lambda pd, df: repr(df.set_index(df.columns[0])[df.columns[2]]),
+    in_process=True,
+    note="a boolean column, which pandas counts as numeric when it decides whether to hold "
+    "the column's name in by a place, so the name sits one place further right than the same "
+    "name over a text column. No boolean ever prints a sign, which is what makes this the "
+    "one case where the rule can be seen on its own. " + PRINTED,
+)
+case(
+    "basics/repr-text",
+    "Series.__repr__",
+    frames=("single",),
+    expr=lambda pd, df: listing(df.set_index(df.columns[0])[df.columns[2]]),
+    in_process=True,
+    note="a text column, whose name is not held in and whose values are not read as numbers, "
+    "so a word beginning with a minus does not take the place a number's sign takes. Only "
+    "the one row frame is read: the two row frame has a missing value in its text column, "
+    "which prints as `<NA>` here and as `NaN` there, and that is four characters against "
+    "three so it moves the whole column as well. " + PRINTED,
 )
 
 # ---------------------------------------------------------------------------
