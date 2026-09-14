@@ -2328,6 +2328,12 @@ def main() raises:
             # row and drops every other one, so a row of several words comes back
             # with one capital in it and the pattern frame is where that shows.
             emit_series("value", frame.column("value").chars_capitalize(), out)
+        elif case_id == "strings/casefold":
+            # The one name of this group pandas answers out of Python rather
+            # than Arrow, because pyarrow has no kernel for it, so this is the
+            # only case arm here where a row can come back longer than it went
+            # in. The unicode frame's sharp s is that row.
+            emit_series("value", frame.column("value").chars_casefold(), out)
         elif case_id == "strings/swapcase":
             # Every character in the row moves, so the unicode frame's sharp s and
             # its dotted capital I are both read here, and so is the ligature that
