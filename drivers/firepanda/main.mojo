@@ -1122,6 +1122,37 @@ def fold_text(
     )
 
 
+def dummy_frame(column: Series, sep: String, as_flags: Bool) raises -> DataFrame:
+    """Splits every row at a separator and returns one column per token.
+
+    This is the only answer on the accessor whose width is not known before the
+    column has been read, so the tokens come back first and the columns come
+    back labelled with them. The labels are text on both sides, which is why
+    this one carries none of the label divergence `partition` does.
+
+    Args:
+        column: The text column.
+        sep: What every row is split at.
+        as_flags: Whether the columns are read as booleans rather than as the
+            int64 pandas answers by default.
+
+    Returns:
+        A frame one column wide per distinct token, in byte order.
+
+    Raises:
+        Error: If the column is not text, or the separator is empty.
+    """
+    var tokens = column.chars_dummy_tokens(sep)
+    var columns = column.chars_dummies(sep, tokens)
+    var named = List[Series](capacity=len(columns))
+    for i in range(len(columns)):
+        if as_flags:
+            named.append(columns.pop(0).cast(DType.bool))
+        else:
+            named.append(columns.pop(0))
+    return DataFrame.from_series(named^)
+
+
 def cut_frame(column: Series, sep: String, from_right: Bool) raises -> DataFrame:
     """Returns all three columns of a partition as a frame.
 
@@ -2666,6 +2697,14 @@ def main() raises:
             emit_scalar(fold_text(frame.column("value"), "|", "?", False), out)
         elif case_id == "strings/cat-na-rep-empty":
             emit_scalar(fold_text(frame.column("value"), "|", "", False), out)
+        elif case_id == "strings/get-dummies":
+            emit_frame(dummy_frame(frame.column("value"), "-", False), out)
+        elif case_id == "strings/get-dummies-split":
+            emit_frame(dummy_frame(frame.column("value"), "a", False), out)
+        elif case_id == "strings/get-dummies-null":
+            emit_frame(dummy_frame(frame.column("value"), "v", False), out)
+        elif case_id == "strings/get-dummies-bool":
+            emit_frame(dummy_frame(frame.column("value"), "a", True), out)
         elif case_id == "strings/partition-head":
             emit_series(
                 "value", cut_part(frame.column("value"), "o", False, 0), out

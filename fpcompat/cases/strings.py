@@ -816,6 +816,48 @@ case(
     covers=("sep",),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.get_dummies(sep="-"),
+    note="no row in this frame holds a hyphen, so nothing here splits and every "
+    "row is one whole token, which is the path where the answer is one column "
+    "per distinct value and is worth scoring on its own because it is the one "
+    "an implementation that dropped rows without the separator would get wrong, "
+    "and it still scores the byte order of the labels and the empty row's empty "
+    "label, but the splitting is scored by the case below rather than by this one",
+)
+case(
+    "strings/get-dummies-split",
+    "str.get_dummies",
+    level="L3",
+    covers=("sep",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.get_dummies(sep="a"),
+    note="a separator many rows do hold, and hold at the start and at the end and "
+    "twice over, so this is where the empty token gets in by the three routes that "
+    "are not an empty row, and where a row cut into three pieces has to contribute "
+    "all three rather than the first and the last",
+)
+case(
+    "strings/get-dummies-null",
+    "str.get_dummies",
+    level="L3",
+    covers=("sep",),
+    frames=NULLS,
+    expr=lambda pd, df: df["value"].str.get_dummies(sep="v"),
+    note="two thirds of this frame is missing and the rest is an empty string or "
+    "a value starting with the separator, so a missing row has to contribute no "
+    "label and come back as zeros where an empty row has to contribute the empty "
+    "label and come back as a one under it, which is the single place on this "
+    "accessor where the two do not behave alike",
+)
+case(
+    "strings/get-dummies-bool",
+    "str.get_dummies",
+    level="L3",
+    covers=("dtype",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.get_dummies(sep="a", dtype=bool),
+    note="the same answer read as flags rather than as the int64 pandas gives by "
+    "default, which is the shape the data really has since the only two values "
+    "this method can produce are a one and a zero",
 )
 case(
     "strings/translate",
