@@ -551,9 +551,20 @@ def test_the_committed_registry_loads():
     index nobody declared a weight of one hundred and thirty two bytes over there and
     nothing over here, and does not even agree on a dense integer column because of the
     validity bitmap. The labels of the frame member are the control, since the shape of
-    that answer is pandas' exactly and only the counting under it differs."""
+    that answer is pandas' exactly and only the counting under it differs.
+
+    `engine/missing-spelling` is the twenty ninth and is the last of the three the
+    printing work turned up, the other two being the dtype spelling and the byte count
+    above. pandas has four words for a missing value rather than one, and which word a
+    column gives you says what that column is made of: a NaN where a numpy float array
+    has nowhere else to put absence, a NaT where a timestamp uses a sentinel, None in an
+    object column, and `<NA>` in every one of its nullable types. A firepanda column is
+    an Arrow array with a validity bitmap, so `<NA>` is pandas' own word for a column
+    that works this way. The float case reads a frame holding a genuine NaN beside two
+    holes and tells them apart, which pandas cannot do at all, and the control beside it
+    is that both libraries agree on which rows are missing."""
     entries = divergences.registry()
-    assert len(entries) == 28
+    assert len(entries) == 29
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
