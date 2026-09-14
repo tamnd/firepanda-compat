@@ -255,6 +255,39 @@ case(
     expr=lambda pd, df: df["value"].str.fullmatch(r"[a-z]+"),
 )
 case(
+    "strings/match-literal",
+    "str.match",
+    level="L3",
+    covers=("pat",),
+    frames=ALL,
+    expr=lambda pd, df: df["value"].str.match("a"),
+    note="the same pattern the contains and fullmatch cases use, because the three "
+    "questions differ only in where the pattern is allowed to sit and a case that "
+    "uses a different pattern for each of them cannot show that",
+)
+case(
+    "strings/fullmatch-literal",
+    "str.fullmatch",
+    level="L3",
+    covers=("pat",),
+    frames=ALL,
+    expr=lambda pd, df: df["value"].str.fullmatch("a"),
+    note="the ascii frame holds a row that is exactly this pattern, which is the "
+    "only row in the corpus where fullmatch and match disagree",
+)
+case(
+    "strings/count-empty",
+    "str.count",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_unicode", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.count(""),
+    note="counted in bytes rather than in characters, because pandas answers this "
+    "out of Arrow and Arrow counts a match at every byte offset and once past the "
+    "end, so a row holding one accented letter answers one more than Python's re "
+    "module does for the same row",
+)
+case(
     "strings/findall",
     "str.findall",
     level="L3",
