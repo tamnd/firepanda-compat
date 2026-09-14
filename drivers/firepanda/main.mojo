@@ -2435,6 +2435,34 @@ def main() raises:
                 frame.column("value").chars_find("a", None, None, True),
                 out,
             )
+        elif case_id == "strings/contains":
+            # A literal pattern, which is what the case already asked for. pandas
+            # reads it as a regular expression and a pattern with no
+            # metacharacter in it means the same thing either way, so this is the
+            # same question and not a narrower one.
+            emit_series("value", frame.column("value").chars_contains("a"), out)
+        elif case_id == "strings/contains-regex-false":
+            # The dot said literally, which is the only way to ask about a
+            # metacharacter at all. The pattern frame holds `a.b.c`, which is the
+            # row that separates this from the regular expression reading.
+            emit_series("value", frame.column("value").chars_contains("."), out)
+        elif case_id == "strings/match-literal":
+            # The ascii frame holds a row that is exactly `a`, so the three
+            # questions about where a pattern sits give three different answers
+            # on it and a kernel wired to the wrong one fails here.
+            emit_series("value", frame.column("value").chars_match("a"), out)
+        elif case_id == "strings/fullmatch-literal":
+            emit_series("value", frame.column("value").chars_full_match("a"), out)
+        elif case_id == "strings/count":
+            # The pattern frame's `foofoobar` is the row a contains wearing a
+            # count's name would get wrong, and the ascii frame's twenty letter
+            # rows hold several of any short pattern.
+            emit_series("value", frame.column("value").chars_count("a"), out)
+        elif case_id == "strings/count-empty":
+            # Counted in bytes and not in characters, which is Arrow's rule and
+            # pandas' answer. The unicode frame is the one that can tell them
+            # apart and every row of it does.
+            emit_series("value", frame.column("value").chars_count(""), out)
         elif case_id == "strings/startswith":
             emit_series(
                 "value", frame.column("value").chars_starts_with("a"), out
