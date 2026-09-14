@@ -2446,6 +2446,43 @@ def main() raises:
             # metacharacter at all. The pattern frame holds `a.b.c`, which is the
             # row that separates this from the regular expression reading.
             emit_series("value", frame.column("value").chars_contains("."), out)
+        elif case_id == "strings/contains-case-false":
+            # An ASCII pattern, which every plausible fold agrees about, so this
+            # is the baseline and the three below are the ones with teeth.
+            emit_series(
+                "value", frame.column("value").chars_contains_folded("A"), out
+            )
+        elif case_id == "strings/contains-case-false-longer":
+            # Casefold would find this in five rows of the folding frame that a
+            # search does not, because casefold turns a sharp s into two letters
+            # and a search folds one character to exactly one character.
+            emit_series(
+                "value", frame.column("value").chars_contains_folded("ss"), out
+            )
+        elif case_id == "strings/contains-case-false-long-s":
+            # The pattern that separates a search from casefold and from the
+            # lower case at the same time, and the reason document 69 exists.
+            emit_series(
+                "value", frame.column("value").chars_contains_folded("ſ"), out
+            )
+        elif case_id == "strings/contains-case-false-micro":
+            # The micro sign against Greek mu, which the lower case calls two
+            # characters, and the lowest code point in the whole fold table.
+            emit_series(
+                "value", frame.column("value").chars_contains_folded("μm"), out
+            )
+        elif case_id == "strings/match-case-false":
+            emit_series(
+                "value", frame.column("value").chars_match_folded("straße"), out
+            )
+        elif case_id == "strings/fullmatch-case-false":
+            # A folded match can cover a different number of bytes than the
+            # pattern, so this one cannot be decided by comparing lengths.
+            emit_series(
+                "value",
+                frame.column("value").chars_full_match_folded("straße"),
+                out,
+            )
         elif case_id == "strings/match-literal":
             # The ascii frame holds a row that is exactly `a`, so the three
             # questions about where a pattern sits give three different answers
@@ -2480,6 +2517,25 @@ def main() raises:
             # answers and document 67 says why the two differ.
             emit_series(
                 "value", frame.column("value").chars_replace("", "-", -1), out
+            )
+        elif case_id == "strings/replace-case-false":
+            # The one of the four that pandas answers out of Python rather than
+            # out of Arrow. The two rules agree on every pair, which is what
+            # lets one fold table serve all four names.
+            emit_series(
+                "value",
+                frame.column("value").chars_replace_folded("straße", "#", -1),
+                out,
+            )
+        elif case_id == "strings/replace-case-false-n-zero":
+            # Minus one and not zero, and that is not a mistake in the arm. A
+            # count of zero means all of them once the search is folded, because
+            # pandas hands it to `re.sub` where zero has always meant unlimited,
+            # and the case beside this one reads the same zero the other way.
+            emit_series(
+                "value",
+                frame.column("value").chars_replace_folded("A", "#", -1),
+                out,
             )
         elif case_id == "strings/translate":
             # Not three replaces one after another. Every key here is applied

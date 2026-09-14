@@ -24,3 +24,6 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "A", "BLE"]
 [lint.per-file-ignores]
 "fpcompat/corpus.py" = ["RUF001", "RUF002", "RUF003"]
 "tests/test_corpus.py" = ["RUF001", "RUF002", "RUF003"]
+# The string cases join the list for the same reason the corpus is on it. A case
+# checking that a case insensitive search folds long s onto s has to spell long s.
+"fpcompat/cases/strings.py" = ["RUF001", "RUF002", "RUF003"]

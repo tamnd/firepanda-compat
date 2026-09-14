@@ -374,6 +374,54 @@ def string_frames() -> dict[str, pa.Table]:
         }
     )
 
+    # Built for one question: which of the three plausible folds does a case
+    # insensitive search actually use. The rows come in pairs and a pair is here
+    # only if the three answers disagree about it. Casefolding says STRASSE and
+    # straße are the same word and a search says they are not, because a search
+    # folds one code point to one code point and casefolding may make a row
+    # longer. Lowercasing says the micro sign and Greek mu are different and a
+    # search says they are the same, and it says the same wrong thing about long
+    # s, the Kelvin sign and the two small sigmas. Any frame without these pairs
+    # in it gives identical answers under all three rules, which is why the
+    # unicode frame could not have caught a wrong table. There is no null here on
+    # purpose: what a predicate does with a missing row is the null heavy frame's
+    # question and it is answered the same way whether the search folds or not.
+    folding_values = [
+        "straße",
+        "STRASSE",
+        "Straße",
+        "strasse",
+        "ſtraße",
+        "ﬁance",
+        "FIANCE",
+        "fiance",
+        "ΣΟΦΟΣ",
+        "σοφος",
+        "Σοφος",
+        "σοφoς",
+        "µm",
+        "μm",
+        "MM",
+        "KELVIN",
+        "Kelvin",
+        "kelvin",
+        "ẞ",
+        "ß",
+        "İstanbul",
+        "ıstanbul",
+        "istanbul",
+        "ǅungla",
+        "ǄUNGLA",
+        "ǆungla",
+        "",
+    ]
+    frames["strings_folding"] = pa.table(
+        {
+            "row": pa.array(range(len(folding_values)), type=pa.int64()),
+            "value": pa.array(folding_values, type=pa.large_string()),
+        }
+    )
+
     # Two thirds null, with the empty string sitting next to the nulls. A library
     # that confuses an empty string with a null fails here and nowhere else.
     heavy: list[str | None] = []
