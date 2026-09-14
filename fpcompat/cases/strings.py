@@ -682,6 +682,16 @@ case(
     frames=ALL,
     expr=lambda pd, df: df["value"].str.removesuffix("z"),
 )
+CAT_FOLDS = (
+    "with no others this is not a transformation at all, it folds the whole column "
+    "into one string, which is the only answer on this accessor narrower than a column"
+)
+CAT_DROPS = (
+    "a missing row is dropped rather than blanked and dropped takes its separator with "
+    "it, so the separator count goes down with the row, which is the one thing a join "
+    "written the obvious way gets wrong"
+)
+
 case(
     "strings/cat-scalar",
     "str.cat",
@@ -689,8 +699,28 @@ case(
     covers=("sep",),
     frames=PLAIN,
     expr=lambda pd, df: df["value"].str.cat(sep="|"),
-    note="with no others this reduces the whole column to one string, and a null makes "
-    "the whole thing vanish unless na_rep says otherwise",
+    note="these frames hold no nulls, so this one scores the separator and the order "
+    "and nothing about a missing row, which is what cat-drops-null is for. " + CAT_FOLDS,
+)
+case(
+    "strings/cat-default",
+    "str.cat",
+    level="L2",
+    frames=PLAIN,
+    expr=lambda pd, df: df["value"].str.cat(),
+    note="sep=None is the empty string rather than a missing argument, so a bare call "
+    "runs the rows together with nothing between them",
+)
+case(
+    "strings/cat-drops-null",
+    "str.cat",
+    level="L3",
+    covers=("sep",),
+    frames=NULLS,
+    expr=lambda pd, df: df["value"].str.cat(sep="|"),
+    note=CAT_DROPS + ". This frame is two thirds null with an empty string beside the "
+    "nulls, so it also separates the row that is dropped from the row that is empty and "
+    "kept, which come out looking alike and are reached by opposite rules",
 )
 case(
     "strings/cat-na-rep",
@@ -699,6 +729,19 @@ case(
     covers=("sep", "na_rep"),
     frames=NULLS,
     expr=lambda pd, df: df["value"].str.cat(sep="|", na_rep="?"),
+    note="given a stand in the missing row is a row again and its separator comes back, "
+    "so this answer is longer than cat-drops-null by more than the text",
+)
+case(
+    "strings/cat-na-rep-empty",
+    "str.cat",
+    level="L3",
+    covers=("sep", "na_rep"),
+    frames=NULLS,
+    expr=lambda pd, df: df["value"].str.cat(sep="|", na_rep=""),
+    note="pandas reads whether to drop the row off whether na_rep was given and not off "
+    "what it holds, so an empty stand in keeps the row and its separator and drops only "
+    "the text, which is a different answer from leaving the argument out",
 )
 case(
     "strings/cat-others",
@@ -707,6 +750,9 @@ case(
     covers=("others", "sep"),
     frames=ALL,
     expr=lambda pd, df: df["value"].str.cat(df["value"].str.upper(), sep="/"),
+    note="the other half of this name, which aligns the two columns on their labels "
+    "before concatenating and so is a different operation from the fold above rather "
+    "than the same one with an argument",
 )
 
 # ---------------------------------------------------------------------------
