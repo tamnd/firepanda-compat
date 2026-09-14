@@ -1095,6 +1095,33 @@ def cut_part(
     return parts.pop(0)
 
 
+def fold_text(
+    column: Series, sep: String, na_rep: String, skip_missing: Bool
+) raises -> DataFrame:
+    """Folds a text column into one string and wraps it as a scalar answer.
+
+    `str.cat` with no others is the only thing on this accessor that answers a
+    scalar, so the answer goes back through the one row one column frame the
+    harness reads scalars out of rather than through `emit_series`.
+
+    Args:
+        column: The column to fold.
+        sep: The text between neighbouring rows.
+        na_rep: The stand in for a missing row, read only when it is not
+            being skipped.
+        skip_missing: Whether a missing row is dropped rather than replaced.
+
+    Returns:
+        The one row frame.
+
+    Raises:
+        Error: If the column is not text.
+    """
+    return string_scalar_frame(
+        "value", column.chars_join(sep, na_rep, skip_missing)
+    )
+
+
 def cut_frame(column: Series, sep: String, from_right: Bool) raises -> DataFrame:
     """Returns all three columns of a partition as a frame.
 
@@ -2629,6 +2656,16 @@ def main() raises:
             emit_frame(cut_frame(frame.column("value"), "-", False), out)
         elif case_id == "strings/rpartition":
             emit_frame(cut_frame(frame.column("value"), "-", True), out)
+        elif case_id == "strings/cat-scalar":
+            emit_scalar(fold_text(frame.column("value"), "|", "", True), out)
+        elif case_id == "strings/cat-default":
+            emit_scalar(fold_text(frame.column("value"), "", "", True), out)
+        elif case_id == "strings/cat-drops-null":
+            emit_scalar(fold_text(frame.column("value"), "|", "", True), out)
+        elif case_id == "strings/cat-na-rep":
+            emit_scalar(fold_text(frame.column("value"), "|", "?", False), out)
+        elif case_id == "strings/cat-na-rep-empty":
+            emit_scalar(fold_text(frame.column("value"), "|", "", False), out)
         elif case_id == "strings/partition-head":
             emit_series(
                 "value", cut_part(frame.column("value"), "o", False, 0), out
