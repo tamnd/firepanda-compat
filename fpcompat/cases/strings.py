@@ -683,6 +683,65 @@ case(
     expr=lambda pd, df: df["value"].str.replace(r"\d+", "N", regex=True),
 )
 case(
+    "strings/replace-anchor",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl", "regex"),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: df["value"].str.replace(r"^[a-z]", "#", regex=True),
+    note="the same pattern as strings/count-anchor on the same frame, and the two "
+    "of them are on the board to say that Arrow answers it twice differently. The "
+    "count cuts the row after every match so the start of the text moves with the "
+    "scan and a row of twenty letters holds twenty matches. The replace does not "
+    "cut it, so the start of the text stays where it was and only the first letter "
+    "of a row is swapped. Nothing anywhere says the two loops disagree and both "
+    "readings look right on their own, so this case is the measurement",
+)
+case(
+    "strings/replace-empty-match",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl", "regex"),
+    frames=("strings_unicode",),
+    expr=lambda pd, df: df["value"].str.replace("[q]*", "-", regex=True),
+    note="the other half of strings/count-empty-match, and the second place the "
+    "two loops disagree. The count steps a byte at a time and answers the bytes of "
+    "a row and one more. The replace steps a character at a time and writes a "
+    "marker before every character and one after the last, so the unicode frame "
+    "answers a different number of markers from the number the count answers on "
+    "the very same row",
+)
+case(
+    "strings/replace-boundary",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl", "regex"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.replace(r"\b", "#", regex=True),
+    note="the third place the two loops disagree, and the one that reads as a bug "
+    "until it is measured. A match of no width landing exactly where the last match "
+    "ended is thrown away, and one character is copied across rather than the scan "
+    "simply stepping, so replacing a boundary in a word marks the two ends of the "
+    "word and nothing in the middle. The count of the same pattern on the same "
+    "frame answers a number per row instead. The row of five hundred letters is the "
+    "one where a scan that dropped the rule writes a row hundreds of characters "
+    "longer than the right one",
+)
+case(
+    "strings/replace-whole-match",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl", "regex"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.replace(r"\d+", r"[\0]", regex=True),
+    note="the replacement has a grammar and it is RE2's rather than Python's, "
+    "where a backslash and a zero is the whole match and Python has no such thing "
+    "at all. strings/replace-backreference beside this one is the numbered groups "
+    "and this is the reference that needs no group in the pattern, so an "
+    "implementation that only kept slots when a group was written fails here and "
+    "passes there",
+)
+case(
     "strings/replace-n",
     "str.replace",
     level="L3",

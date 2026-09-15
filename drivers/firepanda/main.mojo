@@ -69,8 +69,10 @@ from firepanda.kernel.regex.method import (
     METHOD_COUNT,
     METHOD_FULLMATCH,
     METHOD_MATCH,
+    METHOD_REPLACE,
     program_for,
 )
+from firepanda.kernel.regex.replace import parse_rewrite
 from firepanda.kernel.window import WindowEdge, WindowOp, WindowSettings
 
 # The exit status is not the protocol, the JSON line is, and this is only here so
@@ -730,6 +732,46 @@ def pattern_count(column: Series, pattern: String) raises -> Series:
     if not program.ok:
         raise Error(String("pattern ", pattern, " did not compile: ", program.problem))
     return column.chars_count_regex(program)
+
+
+def pattern_replace(
+    column: Series, pattern: String, replacement: String
+) raises -> Series:
+    """Swaps every match of a pattern in each row.
+
+    The fifth method and the first whose answer is text, which is why it takes a
+    replacement as well as a pattern. The replacement is read once here rather
+    than once per row, because it has a grammar of its own that can be refused,
+    and a refusal about the replacement is not a refusal about the pattern even
+    though both arrive as the same error to a caller.
+
+    Args:
+        column: The text column.
+        pattern: The pattern as the case wrote it.
+        replacement: The replacement as the case wrote it, in RE2's rewrite
+            grammar rather than Python's.
+
+    Returns:
+        A text column, with a missing row wherever the text was missing.
+
+    Raises:
+        Error: If the pattern did not compile or the replacement could not be
+            read.
+    """
+    var program = program_for(METHOD_REPLACE, pattern)
+    if not program.ok:
+        raise Error(String("pattern ", pattern, " did not compile: ", program.problem))
+    var rewrite = parse_rewrite(replacement, program.groups)
+    if not rewrite.ok:
+        raise Error(
+            String(
+                "replacement ",
+                replacement,
+                " could not be read: ",
+                rewrite.problem,
+            )
+        )
+    return column.chars_replace_regex(program, rewrite^)
 
 
 def labels_of(frame: DataFrame) raises -> Series:
@@ -2805,6 +2847,63 @@ def main() raises:
             # ordinary call is already a byte search and a rewrite.
             emit_series(
                 "value", frame.column("value").chars_replace("a", "A", -1), out
+            )
+        elif case_id == "strings/replace-regex":
+            # The ordinary regular expression form, and the pattern frame is
+            # where it earns its keep because `abc123` holds a run of digits
+            # that a scan moving to the wrong place after a match cuts up.
+            emit_series(
+                "value",
+                pattern_replace(frame.column("value"), "\\d+", "N"),
+                out,
+            )
+        elif case_id == "strings/replace-anchor":
+            # The first of the three places this loop is not the counting loop.
+            # The row is not cut after a match, so the start of the text stays
+            # where it was and this swaps one letter rather than all of them.
+            emit_series(
+                "value",
+                pattern_replace(frame.column("value"), "^[a-z]", "#"),
+                out,
+            )
+        elif case_id == "strings/replace-empty-match":
+            # The second. The cursor steps a character and not a byte, so this
+            # writes a marker before every character of a row and one after the
+            # last, and the unicode frame is where that differs from the bytes.
+            emit_series(
+                "value",
+                pattern_replace(frame.column("value"), "[q]*", "-"),
+                out,
+            )
+        elif case_id == "strings/replace-boundary":
+            # The third, and the one that looks like a bug. A match of no width
+            # landing exactly where the last one ended is thrown away and a
+            # character is copied across instead, so a word is marked at its two
+            # ends and nowhere in between.
+            emit_series(
+                "value",
+                pattern_replace(frame.column("value"), "\\b", "#"),
+                out,
+            )
+        elif case_id == "strings/replace-whole-match":
+            # The replacement's own grammar, which is RE2's. A backslash and a
+            # zero is the whole match and needs no group in the pattern, so the
+            # capture slots have to be kept even when nobody wrote a group.
+            emit_series(
+                "value",
+                pattern_replace(frame.column("value"), "\\d+", "[\\0]"),
+                out,
+            )
+        elif case_id == "strings/replace-backreference":
+            # The numbered references, which are the reason the machine carries
+            # a pair of slots per group per thread rather than only the end of
+            # the match.
+            emit_series(
+                "value",
+                pattern_replace(
+                    frame.column("value"), "([a-z])(\\d)", "\\2\\1"
+                ),
+                out,
             )
         elif case_id == "strings/replace-n":
             emit_series(
