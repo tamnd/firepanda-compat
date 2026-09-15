@@ -291,6 +291,46 @@ case(
     expr=lambda pd, df: df["value"].str.count(r"\d"),
 )
 case(
+    "strings/count-anchor",
+    "str.count",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: df["value"].str.count(r"^[a-z]"),
+    note="the rest of the row becomes the text after every match, so the start of "
+    "the text moves with the scan and a row of twenty letters holds twenty matches "
+    "of a pattern anchored at the start. Python's re module answers one for every "
+    "row here, so this is the case that says which of the two readings pandas has, "
+    "and the ascii frame is the one whose rows are the same letters at every length",
+)
+case(
+    "strings/count-boundary",
+    "str.count",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.count(r"\b"),
+    note="a boundary has no width and is found ahead of the scan, which counts it "
+    "where it was found and again from there, so a scan that stepped past an empty "
+    "match undercounts and a scan that stepped one byte after every empty match "
+    "overcounts. The row of five hundred letters answers five hundred, which is the "
+    "one row where getting the rule wrong is off by hundreds rather than by one",
+)
+case(
+    "strings/count-empty-match",
+    "str.count",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_unicode",),
+    expr=lambda pd, df: df["value"].str.count("[q]*"),
+    note="the scan steps a byte at a time rather than a character at a time, so a "
+    "pattern that can match nothing counts the bytes of a row and one more. This is "
+    "the other half of strings/count-empty, which asks the same question of the "
+    "literal path, and the two are separate cases because a pattern with a "
+    "metacharacter in it goes to the regular expression engine and takes different "
+    "code to the same answer",
+)
+case(
     "strings/match",
     "str.match",
     level="L3",
