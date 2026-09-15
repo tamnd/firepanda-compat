@@ -67,6 +67,7 @@ from firepanda.kernel.ewm import EwmOp, EwmSpec, alpha_of
 from firepanda.kernel.regex.method import (
     METHOD_CONTAINS,
     METHOD_COUNT,
+    METHOD_EXTRACT,
     METHOD_FULLMATCH,
     METHOD_MATCH,
     METHOD_REPLACE,
@@ -772,6 +773,75 @@ def pattern_replace(
             )
         )
     return column.chars_replace_regex(program, rewrite^)
+
+
+def pattern_extract(column: Series, pattern: String) raises -> DataFrame:
+    """Pulls the groups of the first match out of every row, as a frame.
+
+    The sixth method and the first here whose answer is wider than a column. The
+    width comes off the pattern rather than off the data, so unlike the dummy
+    frame beside it this takes one call and not two.
+
+    The labels are put on here for the same reason `cut_frame` puts its own on.
+    Every column comes back carrying the name of the column it was pulled out
+    of, a frame needs its columns to have distinct names, and the Python layer
+    of firepanda makes the same choice one level up. A named group is labelled
+    with its name and an unnamed one with its own position counted from zero,
+    which is the text of an integer where pandas uses the integer and is
+    `engine/integer-column-labels`.
+
+    Args:
+        column: The text column.
+        pattern: The pattern as the case wrote it.
+
+    Returns:
+        A frame one column wide per capturing group.
+
+    Raises:
+        Error: If the pattern did not compile.
+    """
+    var program = program_for(METHOD_EXTRACT, pattern)
+    if not program.ok:
+        raise Error(String("pattern ", pattern, " did not compile: ", program.problem))
+    var parts = column.chars_extract_regex(program)
+    var named = List[Series](capacity=len(parts))
+    for i in range(len(parts)):
+        var label = program.labels[i].copy()
+        if label == "":
+            label = String(i)
+        named.append(parts.pop(0).rename(label^))
+    return DataFrame.from_series(named^)
+
+
+def pattern_extract_part(
+    column: Series, pattern: String, which: Int
+) raises -> Series:
+    """Returns one of the columns an extract hands back.
+
+    The cases that score the values read a column out by position rather than by
+    label, so that what is compared is the text and not the label the frame case
+    above already carries a divergence for. The extract runs once and the
+    columns that were not asked for are dropped, the same way `cut_part` does it.
+
+    Args:
+        column: The text column.
+        pattern: The pattern as the case wrote it.
+        which: Which group, counted from zero in the order they were opened.
+
+    Returns:
+        That one column, named after the column it was pulled out of so that it
+        lines up with what pandas answers for the same read.
+
+    Raises:
+        Error: If the pattern did not compile.
+    """
+    var program = program_for(METHOD_EXTRACT, pattern)
+    if not program.ok:
+        raise Error(String("pattern ", pattern, " did not compile: ", program.problem))
+    var parts = column.chars_extract_regex(program)
+    for _ in range(which):
+        _ = parts.pop(0)
+    return parts.pop(0)
 
 
 def labels_of(frame: DataFrame) raises -> Series:
@@ -2958,6 +3028,62 @@ def main() raises:
                     Series("keys", category_list(pair^)),
                     Series("values", category_list(crossed^)),
                 ),
+                out,
+            )
+        elif case_id == "strings/extract":
+            emit_frame(
+                pattern_extract(frame.column("value"), "([a-z]+)(\\d+)"), out
+            )
+        elif case_id == "strings/extract-named":
+            emit_frame(
+                pattern_extract(frame.column("value"), "(?P<letters>[a-z]+)"), out
+            )
+        elif case_id == "strings/extract-expand-false":
+            emit_series(
+                "value",
+                pattern_extract_part(frame.column("value"), "([a-z]+)", 0),
+                out,
+            )
+        elif case_id == "strings/extract-first":
+            emit_series(
+                "value",
+                pattern_extract_part(
+                    frame.column("value"), "([a-z]+)(\\d+)", 0
+                ),
+                out,
+            )
+        elif case_id == "strings/extract-second":
+            emit_series(
+                "value",
+                pattern_extract_part(
+                    frame.column("value"), "([a-z]+)(\\d+)", 1
+                ),
+                out,
+            )
+        elif case_id == "strings/extract-optional-group":
+            emit_series(
+                "value",
+                pattern_extract_part(
+                    frame.column("value"), "([a-z])(\\d)?", 1
+                ),
+                out,
+            )
+        elif case_id == "strings/extract-search-not-anchored":
+            emit_series(
+                "value",
+                pattern_extract_part(frame.column("value"), "(\\d+)", 0),
+                out,
+            )
+        elif case_id == "strings/extract-unicode-word":
+            emit_series(
+                "value",
+                pattern_extract_part(frame.column("value"), "(\\w)", 0),
+                out,
+            )
+        elif case_id == "strings/extract-unicode-digit":
+            emit_series(
+                "value",
+                pattern_extract_part(frame.column("value"), "(\\d)", 0),
                 out,
             )
         elif case_id == "strings/partition":
