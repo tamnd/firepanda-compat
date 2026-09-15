@@ -424,6 +424,14 @@ case(
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.findall(r"\d+"),
 )
+EXTRACT_LABELS = (
+    "and the whole frame is compared here, so this case carries "
+    "`engine/integer-column-labels`: pandas labels an unnamed group with its own "
+    "position as an integer and firepanda labels it with the text of that integer. "
+    "The two cases under this one read a column out by position instead, which is "
+    "where the values get scored"
+)
+
 case(
     "strings/extract",
     "str.extract",
@@ -432,7 +440,77 @@ case(
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.extract(r"([a-z]+)(\d+)"),
     note="two groups gives two columns named zero and one, and a row that does not "
-    "match gives nulls rather than being dropped",
+    "match gives nulls rather than being dropped, " + EXTRACT_LABELS,
+)
+case(
+    "strings/extract-first",
+    "str.extract",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.extract(r"([a-z]+)(\d+)").iloc[:, 0].rename("value"),
+    note="the same two groups as the case above read a column at a time, so the values "
+    "are compared without the labels. `abc123` matches and `barfoo` does not, and a row "
+    "that does not match is null in this column and in the one beside it, which is what "
+    "the pair of these two says that neither says alone",
+)
+case(
+    "strings/extract-second",
+    "str.extract",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.extract(r"([a-z]+)(\d+)").iloc[:, 1].rename("value"),
+)
+case(
+    "strings/extract-optional-group",
+    "str.extract",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.extract(r"([a-z])(\d)?").iloc[:, 1].rename("value"),
+    note="the one case where the two columns of a row disagree about whether there was "
+    "a match. `abc123` matches with the optional group left out, because the letter and "
+    "the digit are not next to each other, so the first column holds a letter and this "
+    "one is null on the same row. An implementation that wrote the row's match state "
+    "across the width passes every other extract case on the board and fails this one",
+)
+case(
+    "strings/extract-search-not-anchored",
+    "str.extract",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.extract(r"(\d+)").iloc[:, 0].rename("value"),
+    note="pandas runs search here and match for `str.match`, so a pattern with no "
+    "anchor finds its match in the middle of a row. `abc123` answers `123` and the "
+    "three mask methods on this accessor answer False for the same pattern on the same "
+    "row, which is the pair of behaviours this case pins",
+)
+case(
+    "strings/extract-unicode-word",
+    "str.extract",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_unicode",),
+    expr=lambda pd, df: df["value"].str.extract(r"(\w)").iloc[:, 0].rename("value"),
+    note="this is one of the three names on the accessor that never reach Arrow, so "
+    "`\\w` is read as Python reads it and is 138558 code points rather than the 63 of "
+    "ASCII that `str.count` gets for the same letter on the same column. The Arabic and "
+    "the Chinese rows are where the two readings part, and the row holding a space "
+    "matches under neither",
+)
+case(
+    "strings/extract-unicode-digit",
+    "str.extract",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_unicode",),
+    expr=lambda pd, df: df["value"].str.extract(r"(\d)").iloc[:, 0].rename("value"),
+    note="Python reads `\\d` as exactly what `str.isdecimal` accepts, which is not what "
+    "`str.isdigit` accepts and is 128 code points narrower. The mathematical double "
+    "struck digits are decimal and match, and the half sign and the Roman eight are not "
+    "and do not, which is three rows no ASCII frame can tell apart",
 )
 case(
     "strings/extract-named",
