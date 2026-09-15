@@ -66,6 +66,7 @@ from firepanda.kernel import AggKind, BinaryOp
 from firepanda.kernel.ewm import EwmOp, EwmSpec, alpha_of
 from firepanda.kernel.regex.method import (
     METHOD_CONTAINS,
+    METHOD_COUNT,
     METHOD_FULLMATCH,
     METHOD_MATCH,
     program_for,
@@ -706,6 +707,29 @@ def pattern_mask(column: Series, method: UInt8, pattern: String) raises -> Serie
     if not program.ok:
         raise Error(String("pattern ", pattern, " did not compile: ", program.problem))
     return column.chars_matches_regex(program)
+
+
+def pattern_count(column: Series, pattern: String) raises -> Series:
+    """Counts how many times a pattern matches in each row.
+
+    The fourth method and the one that is not a mask, so it has a helper of its
+    own rather than a fourth code in the one above. A refusal is turned back
+    into an error here for the same reason the one above gives.
+
+    Args:
+        column: The text column.
+        pattern: The pattern as the case wrote it.
+
+    Returns:
+        An int64 column, with a missing row wherever the text was missing.
+
+    Raises:
+        Error: If the pattern did not compile.
+    """
+    var program = program_for(METHOD_COUNT, pattern)
+    if not program.ok:
+        raise Error(String("pattern ", pattern, " did not compile: ", program.problem))
+    return column.chars_count_regex(program)
 
 
 def labels_of(frame: DataFrame) raises -> Series:
@@ -2739,6 +2763,37 @@ def main() raises:
             # count's name would get wrong, and the ascii frame's twenty letter
             # rows hold several of any short pattern.
             emit_series("value", frame.column("value").chars_count("a"), out)
+        elif case_id == "strings/count-regex":
+            # Counting is not asking four times. The pattern is run again from
+            # after each match, and where it starts again is three rules of
+            # Arrow's that firepanda had to be measured into rather than
+            # reasoned into. The pattern frame's `abc123` is the row that holds
+            # several digits in a run, so a scan that moved to the wrong place
+            # after a match answers a number rather than raising.
+            emit_series(
+                "value", pattern_count(frame.column("value"), "\\d"), out
+            )
+        elif case_id == "strings/count-anchor":
+            # The first of the three rules. The rest of the row becomes the
+            # text after a match, so the start of the text moves with the scan
+            # and this answers the length of the row rather than one.
+            emit_series(
+                "value", pattern_count(frame.column("value"), "^[a-z]"), out
+            )
+        elif case_id == "strings/count-boundary":
+            # The third rule, and the one that two simpler rules get wrong in
+            # opposite directions. A boundary found ahead of the scan is
+            # counted where it was found and again from there.
+            emit_series(
+                "value", pattern_count(frame.column("value"), "\\b"), out
+            )
+        elif case_id == "strings/count-empty-match":
+            # The second rule. The scan steps a byte and not a character, so
+            # this counts the bytes of a row and one more, and the unicode
+            # frame is the one where those two numbers differ.
+            emit_series(
+                "value", pattern_count(frame.column("value"), "[q]*"), out
+            )
         elif case_id == "strings/count-empty":
             # Counted in bytes and not in characters, which is Arrow's rule and
             # pandas' answer. The unicode frame is the one that can tell them
