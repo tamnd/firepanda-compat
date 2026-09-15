@@ -424,6 +424,118 @@ case(
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.findall(r"\d+"),
 )
+case(
+    "strings/contains-inline-ignorecase",
+    "str.contains",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_folding", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.contains("(?i)strasse"),
+    note="the flag is written inside the pattern rather than passed as the case "
+    "argument, and the two are not the same call: this one stays on Arrow whatever "
+    "else is passed with it and the argument moves some methods to Python. The row "
+    "holding a long s matches because that letter folds onto a plain s, which is "
+    "the row that separates a fold table from an ascii shortcut",
+)
+case(
+    "strings/contains-inline-ignorecase-sigma",
+    "str.contains",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_folding",),
+    expr=lambda pd, df: df["value"].str.contains("(?i)\u03c3"),
+    note="Greek sigma has three cases and not two, so a fold table built on the "
+    "assumption that a letter has one other case answers the capital and the "
+    "medial form and misses the final one. 1399 of the 1468 groups are pairs and "
+    "24 of them are threes, and this is the row where that difference is visible",
+)
+case(
+    "strings/contains-inline-ignorecase-negated",
+    "str.contains",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_folding",),
+    expr=lambda pd, df: df["value"].str.contains("(?i)[^s]"),
+    note="the set is folded and then negated and never negated and then folded. "
+    "Under the wrong order the complement of a single letter is folded, which adds "
+    "that letter back in through the other case of every letter beside it, and a "
+    "negated class then matches almost everything and still looks like a column of "
+    "booleans",
+)
+case(
+    "strings/contains-inline-ignorecase-turkish",
+    "str.contains",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_folding",),
+    expr=lambda pd, df: df["value"].str.contains("(?i)i"),
+    note="RE2 folds the dotted capital I and the dotless small i onto nothing at "
+    "all and Python folds all four of the family together, and those four code "
+    "points are the entire difference between the two fold tables. This is the "
+    "Arrow half of that and strings/extract-inline-ignorecase-turkish is the "
+    "Python half, and the two answer differently for the same letter on the same "
+    "rows in the same accessor",
+)
+case(
+    "strings/match-inline-ignorecase",
+    "str.match",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_folding",),
+    expr=lambda pd, df: df["value"].str.match("(?i)s"),
+    note="match anchors by rewriting the pattern before the flag is read, so the "
+    "anchor lands outside the group the rewrite builds and the flag still reaches "
+    "every letter inside it. A rewrite that put the anchor in front of the flag "
+    "would produce a pattern whose flag applies to nothing",
+)
+case(
+    "strings/fullmatch-inline-ignorecase",
+    "str.fullmatch",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_folding",),
+    expr=lambda pd, df: df["value"].str.fullmatch("(?i)[a-z]+"),
+    note="a range is folded member by member rather than as an interval, so the "
+    "rows that are entirely ascii letters in either case match and the row holding "
+    "an eszett does not. Folding the two endpoints and keeping the range would "
+    "answer the same here and differently for the Kelvin sign, which is why the "
+    "compiler does it the slow way",
+)
+case(
+    "strings/count-inline-ignorecase",
+    "str.count",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_folding",),
+    expr=lambda pd, df: df["value"].str.count("(?i)s"),
+    note="the same fold as the contains case above counted rather than asked, "
+    "because count runs a scan that restarts after every match and contains stops "
+    "at the first one, so the two take different code to the same table",
+)
+case(
+    "strings/replace-inline-ignorecase",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl", "regex"),
+    frames=("strings_folding",),
+    expr=lambda pd, df: df["value"].str.replace("(?i)s", "-", regex=True),
+    note="the flag written inside the pattern keeps this on Arrow, where the case "
+    "argument would move it to Python's re module for the same column. That is a "
+    "routing difference upstream rather than a spelling one, and it is why the two "
+    "ways of asking for a folded replace are separate cases",
+)
+case(
+    "strings/extract-inline-ignorecase-turkish",
+    "str.extract",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_folding",),
+    expr=lambda pd, df: df["value"].str.extract("(?i)(i)").iloc[:, 0].rename("value"),
+    note="extract never reaches Arrow, so the four dotted I code points fold "
+    "together here and stand apart in strings/contains-inline-ignorecase-turkish. "
+    "The row holding a dotted capital I answers a letter in this case and False in "
+    "that one, which is one accessor giving two readings of one flag",
+)
 EXTRACT_LABELS = (
     "and the whole frame is compared here, so this case carries "
     "`engine/integer-column-labels`: pandas labels an unnamed group with its own "

@@ -2863,6 +2863,90 @@ def main() raises:
                 pattern_mask(frame.column("value"), METHOD_FULLMATCH, "(?m)[a-z]+"),
                 out,
             )
+        elif case_id == "strings/contains-inline-ignorecase":
+            # The flag is spent while the pattern compiles and never reaches a
+            # row, so what this scores is a table rather than a mode. The row
+            # holding a long s matches because that letter folds onto a plain s,
+            # which is the row an ascii shortcut gets wrong.
+            emit_series(
+                "value",
+                pattern_mask(
+                    frame.column("value"), METHOD_CONTAINS, "(?i)strasse"
+                ),
+                out,
+            )
+        elif case_id == "strings/contains-inline-ignorecase-sigma":
+            # Greek sigma has three cases and not two. A table that stored one
+            # other case per letter answers the capital and the medial form and
+            # misses the final one, and 24 of the 1468 groups are this shape.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_CONTAINS, "(?i)σ"),
+                out,
+            )
+        elif case_id == "strings/contains-inline-ignorecase-negated":
+            # Folded and then negated. The other order folds the complement of
+            # one letter, which puts that letter back in through the other case
+            # of every letter beside it and matches almost everything.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_CONTAINS, "(?i)[^s]"),
+                out,
+            )
+        elif case_id == "strings/contains-inline-ignorecase-turkish":
+            # The Arrow half of the four code points the two engines disagree
+            # about. RE2 leaves the dotted capital and the dotless small letter
+            # alone, so the row opening with the dotted capital is False here
+            # and the extract case with the same letter answers a letter.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_CONTAINS, "(?i)i"),
+                out,
+            )
+        elif case_id == "strings/match-inline-ignorecase":
+            # The rewrite anchors by hoisting the flag group to the front and
+            # writing the anchors `\A` and `\z`, so the flag still covers every
+            # letter of the pattern after the move.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_MATCH, "(?i)s"),
+                out,
+            )
+        elif case_id == "strings/fullmatch-inline-ignorecase":
+            # A range is folded member by member rather than by its endpoints,
+            # which answers the same thing here and differently for the Kelvin
+            # sign, and is why the compiler walks the range.
+            emit_series(
+                "value",
+                pattern_mask(
+                    frame.column("value"), METHOD_FULLMATCH, "(?i)[a-z]+"
+                ),
+                out,
+            )
+        elif case_id == "strings/count-inline-ignorecase":
+            # The same fold counted rather than asked, which is the counting
+            # scan over a folded set rather than a second table.
+            emit_series(
+                "value", pattern_count(frame.column("value"), "(?i)s"), out
+            )
+        elif case_id == "strings/replace-inline-ignorecase":
+            # The flag written inside the pattern keeps this on Arrow where the
+            # case argument would move it to Python's engine upstream, so the
+            # two ways of asking for a folded replace are two cases.
+            emit_series(
+                "value",
+                pattern_replace(frame.column("value"), "(?i)s", "-"),
+                out,
+            )
+        elif case_id == "strings/extract-inline-ignorecase-turkish":
+            # The Python half. This engine folds all four of the dotted I family
+            # together, so the row the contains case answers False for answers a
+            # letter here, in the same accessor for the same flag.
+            emit_series(
+                "value",
+                pattern_extract_part(frame.column("value"), "(?i)(i)", 0),
+                out,
+            )
         elif case_id == "strings/match-literal":
             # The ascii frame holds a row that is exactly `a`, so the three
             # questions about where a pattern sits give three different answers
