@@ -309,6 +309,41 @@ case(
     expr=lambda pd, df: df["value"].str.fullmatch(r"[a-z]+"),
 )
 case(
+    "strings/contains-regex",
+    "str.contains",
+    level="L3",
+    covers=("pat", "regex"),
+    frames=("strings_pattern", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.contains(r"[0-9]+"),
+    note="the corpus had a literal contains and a regex match and fullmatch and no "
+    "regex contains at all, which left the one method of the three that needs no "
+    "rewrite as the one with nothing regular expression shaped pointed at it",
+)
+case(
+    "strings/match-alternation",
+    "str.match",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_pattern", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.match("a|b"),
+    note="match anchors the whole pattern and not its first arm, because pandas "
+    "answers it by wrapping the pattern in a group before it puts the anchor on, so "
+    "a row holding a b later and starting with neither letter is False here and "
+    "would be True under the anchor without the group",
+)
+case(
+    "strings/fullmatch-flag-group",
+    "str.fullmatch",
+    level="L3",
+    covers=("pat",),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.fullmatch("(?m)[a-z]+"),
+    note="the anchors fullmatch adds are the ends of the row and not the ends of a "
+    "line even though the pattern asked for m, because pandas adds them outside the "
+    "group the flag sits in, and the row holding a newline is the only row in the "
+    "corpus that can tell those two readings apart",
+)
+case(
     "strings/match-literal",
     "str.match",
     level="L3",

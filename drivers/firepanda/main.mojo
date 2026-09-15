@@ -64,6 +64,12 @@ from firepanda.frame.groupby import AggSpec
 from firepanda.io import read_arrow, write_arrow
 from firepanda.kernel import AggKind, BinaryOp
 from firepanda.kernel.ewm import EwmOp, EwmSpec, alpha_of
+from firepanda.kernel.regex.method import (
+    METHOD_CONTAINS,
+    METHOD_FULLMATCH,
+    METHOD_MATCH,
+    program_for,
+)
 from firepanda.kernel.window import WindowEdge, WindowOp, WindowSettings
 
 # The exit status is not the protocol, the JSON line is, and this is only here so
@@ -671,6 +677,35 @@ def emit_array(var column: Series, path: String) raises:
     series.append(column^.rename("__value__"))
     write_arrow(DataFrame.from_series(series^), path)
     print('{"status":"ok","kind":"array"}')
+
+
+def pattern_mask(column: Series, method: UInt8, pattern: String) raises -> Series:
+    """Runs one of the three pattern questions through the regular expression engine.
+
+    The library compiles a pattern into a value rather than raising, because a
+    refusal is an answer the caller is entitled to see and a caller that asked
+    for `contains` is not asking about RE2. A driver has nowhere to put that
+    answer, since the board scores a column and not a message, so a refusal is
+    turned back into an error here and the case reports as broken. That is the
+    right reading: every pattern below is one this engine is supposed to
+    compile, so a refusal is a regression rather than a gap.
+
+    Args:
+        column: The text column.
+        method: `METHOD_CONTAINS`, `METHOD_MATCH` or `METHOD_FULLMATCH`, which
+            decide how the pattern is rewritten before it is compiled.
+        pattern: The pattern as the case wrote it.
+
+    Returns:
+        A boolean column, with a missing row wherever the text was missing.
+
+    Raises:
+        Error: If the pattern did not compile.
+    """
+    var program = program_for(method, pattern)
+    if not program.ok:
+        raise Error(String("pattern ", pattern, " did not compile: ", program.problem))
+    return column.chars_matches_regex(program)
 
 
 def labels_of(frame: DataFrame) raises -> Series:
@@ -2633,6 +2668,63 @@ def main() raises:
             emit_series(
                 "value",
                 frame.column("value").chars_full_match_folded("straße"),
+                out,
+            )
+        elif case_id == "strings/contains-na":
+            # The one case in the accessor that asks what a missing row answers
+            # and then says what it should answer instead, so it is the one
+            # place `engine/string-predicate-null` is filled rather than
+            # registered. `na` is a fill and not an argument the search knows
+            # about, which is why it is a one row column broadcast over the
+            # answer rather than anything passed down.
+            var no = Array[DType.bool](1)
+            no[0] = False
+            emit_series(
+                "value",
+                frame.column("value").chars_contains("a").fill_null(
+                    Series("value", no^)
+                ),
+                out,
+            )
+        elif case_id == "strings/contains-regex":
+            # The one of the three that needs no rewrite, so what this scores is
+            # the engine on its own with nothing in front of it.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_CONTAINS, "[0-9]+"),
+                out,
+            )
+        elif case_id == "strings/match":
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_MATCH, "[a-z]+"),
+                out,
+            )
+        elif case_id == "strings/fullmatch":
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_FULLMATCH, "[a-z]+"),
+                out,
+            )
+        elif case_id == "strings/match-alternation":
+            # The rewrite wraps the pattern in a group before it anchors, so this
+            # asks whether a row starts with either letter. Anchoring the first
+            # arm alone answers yes for every row holding a `b` anywhere, which
+            # the pattern frame has five of.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_MATCH, "a|b"),
+                out,
+            )
+        elif case_id == "strings/fullmatch-flag-group":
+            # The hoist. Upstream leaves the flag group inside the group it adds,
+            # so the anchors it adds are the ends of the row, and this library
+            # moves the group to the front and writes those anchors `\A` and
+            # `\z` so that moving it cannot make them the ends of a line. The row
+            # holding a newline is the only one that can tell the two apart.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_FULLMATCH, "(?m)[a-z]+"),
                 out,
             )
         elif case_id == "strings/match-literal":
