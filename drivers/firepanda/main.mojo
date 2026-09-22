@@ -3170,24 +3170,73 @@ def main() raises:
                 pattern_extract_part(frame.column("value"), "(?<=a)(b+)", 0),
                 out,
             )
-        elif case_id == "divergences/regex/lookaround-backreference":
-            # Refused, and the refusal is the answer the case wants. The nested
-            # machine that runs an assertion is the ordinary machine, which
-            # cannot read a backreference, so the two constructs written beside
-            # each other are a gap where either one alone is not.
+        elif case_id == "strings/contains-lookahead-backreference":
+            # An assertion beside a backreference, which used to be refused
+            # because neither engine could take the program: the machine cannot
+            # read the reference and the backtracker would not run the
+            # assertion. The backtracker runs the inner search itself now, on
+            # the stack it already has, which is document 120.
             emit_series(
                 "value",
                 pattern_mask(
-                    frame.column("value"), METHOD_CONTAINS, "a(?=b)(.)\\1"
+                    frame.column("value"), METHOD_CONTAINS, "(?=o)(.)\\1"
                 ),
                 out,
             )
-        elif case_id == "divergences/regex/lookaround-atomic":
-            # The same shape with the other engine inside the assertion.
+        elif case_id == "strings/contains-lookbehind-backreference":
+            # The same pairing looking the other way. A lookbehind starts the
+            # inner search at a position worked out from the body's width
+            # rather than at the one the path is standing on, so it is a
+            # different line of the branch and not the same one twice.
             emit_series(
                 "value",
                 pattern_mask(
-                    frame.column("value"), METHOD_CONTAINS, "(?=a(?>b+))c"
+                    frame.column("value"), METHOD_CONTAINS, "(?<=f)(.)\\1"
+                ),
+                out,
+            )
+        elif case_id == "strings/replace-lookahead-backreference":
+            # The pairing where the answer is text rather than a bit, so the
+            # engine has to report where the match started as well as that
+            # there was one.
+            emit_series(
+                "value",
+                pattern_replace(frame.column("value"), "(?=o)(.)\\1", "X"),
+                out,
+            )
+        elif case_id == "strings/contains-lookahead-atomic":
+            # An assertion beside an atomic group, which is the second of the
+            # three pairings. The cut gives nothing back, so the first `f` of
+            # `foofoobar` starts a run the pattern cannot shorten and the match
+            # is the one found at the second `f`.
+            emit_series(
+                "value",
+                pattern_mask(
+                    frame.column("value"), METHOD_CONTAINS, "(?=f)(?>fo+)bar"
+                ),
+                out,
+            )
+        elif case_id == "strings/contains-atomic-inside-lookahead":
+            # The same two constructs with the cut inside the body rather than
+            # beside it, which is the arrangement that says the inner search is
+            # a search. The body runs from the height the stack stood at and
+            # forgets its own marks on the way out.
+            emit_series(
+                "value",
+                pattern_mask(
+                    frame.column("value"), METHOD_CONTAINS, "(?=(?>fo+)b)f"
+                ),
+                out,
+            )
+        elif case_id == "strings/contains-lookahead-conditional":
+            # The third pairing, a test on whether a group took part beside an
+            # assertion, where the group the test asks about is the one written
+            # inside the assertion. The body's groups are kept only because the
+            # assertion is the positive form, which is document 119's rule.
+            emit_series(
+                "value",
+                pattern_mask(
+                    frame.column("value"), METHOD_CONTAINS, "(?=(o))(?(1)oo|xx)"
                 ),
                 out,
             )

@@ -735,6 +735,92 @@ case(
     "engine/integer-column-labels, which is where strings/extract already scores it",
 )
 
+# These six were the rest of `divergences/regex/*`, on the narrower grounds that the
+# machine running the body of an assertion is the ordinary machine and cannot read a
+# backreference, a cut or a test, so the two constructs written together had nowhere
+# to go even though either on its own was answered. That stopped being true as well.
+# The bounded backtracker runs the inner search itself now, on the stack it already
+# has, so the pairing is answered whichever way round it is written and whether the
+# second construct stands beside the assertion or inside its body.
+#
+# Six rather than two because the divergence only ever held one arrangement of each
+# pairing and the arrangements are different code. Beside and inside are a different
+# branch, a lookbehind measures a width where a lookahead does not, and replace has to
+# report where the match started as well as whether there was one.
+
+case(
+    "strings/contains-lookahead-backreference",
+    "str.contains",
+    level="L3",
+    covers=("pat", "regex"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.contains(r"(?=o)(.)\1", regex=True),
+    note="an assertion in front of a backreference, which used to be refused because "
+    "neither engine could take the program: the machine cannot read the reference and "
+    "the backtracker would not run the assertion. The three rows holding a doubled o "
+    "answer true and the rest answer false",
+)
+case(
+    "strings/contains-lookbehind-backreference",
+    "str.contains",
+    level="L3",
+    covers=("pat", "regex"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.contains(r"(?<=f)(.)\1", regex=True),
+    note="the same pairing with the assertion looking the other way, which is here "
+    "because a lookbehind starts the inner search at a position the compiler worked "
+    "out from the body's width rather than at the one the path is standing on",
+)
+case(
+    "strings/replace-lookahead-backreference",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl", "regex"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.replace(r"(?=o)(.)\1", "X", regex=True),
+    note="the pairing on the side of the accessor that has to report where the match "
+    "started, which is a different code path from the predicate and is the reason the "
+    "plain backreference has a replace case beside it too",
+)
+case(
+    "strings/contains-lookahead-atomic",
+    "str.contains",
+    level="L3",
+    covers=("pat", "regex"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.contains(r"(?=f)(?>fo+)bar", regex=True),
+    note="an assertion in front of an atomic group, which is the second of the three "
+    "pairings. foobar and foofoobar answer true and barfoo answers false because its "
+    "run of o is at the end and there is no bar behind it. foofoobar is the row where "
+    "the cut has to be obeyed, since the first f starts a run the cut will not give "
+    "any of back and the match is the one found at the second f instead",
+)
+case(
+    "strings/contains-atomic-inside-lookahead",
+    "str.contains",
+    level="L3",
+    covers=("pat", "regex"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.contains(r"(?=(?>fo+)b)f", regex=True),
+    note="the same two constructs with the cut inside the body of the assertion "
+    "rather than beside it, which is the arrangement that says the inner search is a "
+    "search and not a second pass. foofoobar is the row worth having, since at its "
+    "first f the body takes foo and will not give any of it back, so the b it needs is "
+    "an f and the assertion has to fail there and hold at the second f",
+)
+case(
+    "strings/contains-lookahead-conditional",
+    "str.contains",
+    level="L3",
+    covers=("pat", "regex"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.contains(r"(?=(o))(?(1)oo|xx)", regex=True),
+    note="the third pairing, an assertion in front of a test on whether a group took "
+    "part, and the group the test asks about is the one written inside the assertion. "
+    "The row reading (group) is the one worth having, because it holds an o that the "
+    "assertion matches and a following letter that the branch the test picks does not",
+)
+
 # ---------------------------------------------------------------------------
 # Slicing and splitting
 # ---------------------------------------------------------------------------
