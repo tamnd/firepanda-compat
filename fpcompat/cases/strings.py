@@ -654,6 +654,88 @@ case(
 )
 
 # ---------------------------------------------------------------------------
+# Lookaround and backreferences
+# ---------------------------------------------------------------------------
+
+# These six were the `divergences/regex/*` cases, on the grounds that RE2 has neither
+# construct and firepanda's engine has RE2 semantics. The premise stopped being true.
+# firepanda answers a backreference with a bounded backtracker picked per program, and
+# it answers a lookaround by running a nested machine at the position the assertion
+# sits at, so both constructs are matched rather than refused and the linear time
+# guarantee is kept for every pattern that does not use them. The entry they were under
+# is now about what is left, which is the two constructs written beside each other.
+
+case(
+    "strings/contains-backreference",
+    "str.contains",
+    level="L3",
+    covers=("pat", "regex"),
+    frames=("strings_pattern", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.contains(r"(.)\1", regex=True),
+    note="a doubled character, which needs the engine to remember what the first group "
+    "matched rather than only where it ended",
+)
+case(
+    "strings/replace-backreference-pattern",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl", "regex"),
+    frames=("strings_pattern", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.replace(r"(.)\1", "X", regex=True),
+    note="the same construct on the side of the accessor that has to report where the "
+    "match started as well as whether there was one, which is a different code path "
+    "and the case beside it is the reason both are here",
+)
+case(
+    "strings/contains-lookahead",
+    "str.contains",
+    level="L3",
+    covers=("pat", "regex"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.contains(r"a(?=b)", regex=True),
+    note="the assertion holds or it does not and either way nothing is consumed, so a "
+    "row where the letter is there and the one after it is wrong has to answer false "
+    "with the letter still unread",
+)
+case(
+    "strings/contains-negative-lookahead",
+    "str.contains",
+    level="L3",
+    covers=("pat", "regex"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.contains(r"a(?!b)", regex=True),
+    note="the same assertion inverted, which is the one of the pair that can be right "
+    "by accident, since a pattern that never runs the inner machine answers true here "
+    "on every row the positive form answers false on",
+)
+case(
+    "strings/contains-lookbehind",
+    "str.contains",
+    level="L3",
+    covers=("pat", "regex"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.contains(r"(?<=a)b", regex=True),
+    note="the construct a user is most likely to have written, and the half of the "
+    "pair that has to be matched backwards from the position rather than forwards",
+)
+case(
+    "strings/extract-lookbehind",
+    "str.extract",
+    level="L3",
+    covers=("pat", "expand"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: (
+        df["value"].str.extract(r"(?<=a)(b+)", expand=True).iloc[:, 0].rename("value")
+    ),
+    note="an assertion in front of the only group there is, so the answer is the text "
+    "the group covered and not the text the assertion looked at, which is the mistake "
+    "a lookbehind implemented as an ordinary group makes. The one column is taken out "
+    "by position the way every other extract case here takes it, so that the case "
+    "scores the pattern and leaves the integer column label to "
+    "engine/integer-column-labels, which is where strings/extract already scores it",
+)
+
+# ---------------------------------------------------------------------------
 # Slicing and splitting
 # ---------------------------------------------------------------------------
 
