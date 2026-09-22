@@ -350,36 +350,20 @@ case(
 # linear time guarantee the whole argument was about. The six moved to
 # fpcompat/cases/strings.py and score.
 #
-# What is left is narrower and it is the two constructs written beside each other. The
-# nested machine that runs a lookaround is the ordinary machine, so a lookaround whose
-# body needs the backtracker, or whose body is an atomic group, is a machine this
-# engine cannot put inside the other one yet. The third is a different thing entirely:
-# RE2 answers a non word boundary between two bytes of one character, which needs the
-# engine to stand at a position no character begins at, and document 113 over in the
-# library measured the rule exactly and said what it would cost.
+# Two of the three that were left have since gone the same way. They were the two
+# constructs written beside each other, on the narrower grounds that the machine
+# running the body of an assertion is the ordinary machine and cannot read a
+# backreference, a cut or a test. The bounded backtracker runs the inner search itself
+# now, on the stack it already has, so the pairing is answered whichever way round it
+# is written. Those two cases became six in fpcompat/cases/strings.py and score.
+#
+# What is left under this entry is one thing and it is not about a construct at all.
+# RE2 runs on bytes, so it answers a non word boundary at a position halfway through a
+# character, and answering it the same way needs an engine that can stand where no
+# character begins. Document 113 over in the library measured the rule exactly and
+# said what it would cost, which is every character instruction becoming a sequence of
+# byte instructions.
 
-case(
-    "divergences/regex/lookaround-backreference",
-    "str.contains",
-    level="L3",
-    covers=("pat", "regex"),
-    frames=("strings_pattern",),
-    expr=lambda pd, df: df["value"].str.contains(r"a(?=b)(.)\1", regex=True),
-    note="either construct on its own is answered and the two written together are "
-    "not, because the machine that runs the assertion is the one that cannot read a "
-    "backreference",
-)
-case(
-    "divergences/regex/lookaround-atomic",
-    "str.contains",
-    level="L3",
-    covers=("pat", "regex"),
-    frames=("strings_pattern",),
-    expr=lambda pd, df: df["value"].str.contains(r"(?=a(?>b+))c", regex=True),
-    note="the same shape with the other engine inside the assertion, and pandas "
-    "answers it because an atomic group is Python syntax and the pattern therefore "
-    "never reaches RE2 at all",
-)
 case(
     "divergences/regex/non-boundary",
     "str.contains",
