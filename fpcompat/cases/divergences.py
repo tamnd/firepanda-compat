@@ -339,65 +339,57 @@ case(
 )
 
 # ---------------------------------------------------------------------------
-# Regex lookaround and backreferences
+# Regex constructs written beside each other
 # ---------------------------------------------------------------------------
 
-# RE2 semantics. Both constructs need backtracking, backtracking is what makes a regex
-# engine take exponential time on an adversarial pattern, and a dataframe library
-# running a user's pattern over a hundred million rows is exactly where that matters.
+# This block used to hold six cases asserting that firepanda refused a backreference
+# and refused a lookaround, on the grounds that RE2 has neither and the engine has RE2
+# semantics. Both are answered now. A backreference is run by a bounded backtracker
+# picked per program rather than per row, and a lookaround is run by a nested machine
+# at the position the assertion sits at, and a pattern using neither still gets the
+# linear time guarantee the whole argument was about. The six moved to
+# fpcompat/cases/strings.py and score.
+#
+# What is left is narrower and it is the two constructs written beside each other. The
+# nested machine that runs a lookaround is the ordinary machine, so a lookaround whose
+# body needs the backtracker, or whose body is an atomic group, is a machine this
+# engine cannot put inside the other one yet. The third is a different thing entirely:
+# RE2 answers a non word boundary between two bytes of one character, which needs the
+# engine to stand at a position no character begins at, and document 113 over in the
+# library measured the rule exactly and said what it would cost.
 
 case(
-    "divergences/regex/backreference-replace",
-    "str.replace",
-    level="L3",
-    covers=("pat", "repl", "regex"),
-    frames=("strings_pattern", "strings_ascii"),
-    expr=lambda pd, df: df["value"].str.replace(r"(.)\1", "X", regex=True),
-    note="a doubled character, which needs the engine to remember what the first group "
-    "matched, which is the thing RE2 does not do",
-)
-case(
-    "divergences/regex/backreference-contains",
-    "str.contains",
-    level="L3",
-    covers=("pat", "regex"),
-    frames=("strings_pattern", "strings_ascii"),
-    expr=lambda pd, df: df["value"].str.contains(r"(.)\1", regex=True),
-)
-case(
-    "divergences/regex/lookahead",
+    "divergences/regex/lookaround-backreference",
     "str.contains",
     level="L3",
     covers=("pat", "regex"),
     frames=("strings_pattern",),
-    expr=lambda pd, df: df["value"].str.contains(r"a(?=b)", regex=True),
+    expr=lambda pd, df: df["value"].str.contains(r"a(?=b)(.)\1", regex=True),
+    note="either construct on its own is answered and the two written together are "
+    "not, because the machine that runs the assertion is the one that cannot read a "
+    "backreference",
 )
 case(
-    "divergences/regex/negative-lookahead",
+    "divergences/regex/lookaround-atomic",
     "str.contains",
     level="L3",
     covers=("pat", "regex"),
     frames=("strings_pattern",),
-    expr=lambda pd, df: df["value"].str.contains(r"a(?!b)", regex=True),
+    expr=lambda pd, df: df["value"].str.contains(r"(?=a(?>b+))c", regex=True),
+    note="the same shape with the other engine inside the assertion, and pandas "
+    "answers it because an atomic group is Python syntax and the pattern therefore "
+    "never reaches RE2 at all",
 )
 case(
-    "divergences/regex/lookbehind",
+    "divergences/regex/non-boundary",
     "str.contains",
     level="L3",
     covers=("pat", "regex"),
-    frames=("strings_pattern",),
-    expr=lambda pd, df: df["value"].str.contains(r"(?<=a)b", regex=True),
-    note="the construct a user is most likely to have written, and the message has to "
-    "name it rather than say the pattern is invalid, because it is not invalid, it is "
-    "unsupported and those are different words",
-)
-case(
-    "divergences/regex/lookaround-extract",
-    "str.extract",
-    level="L3",
-    covers=("pat", "expand"),
-    frames=("strings_pattern",),
-    expr=lambda pd, df: df["value"].str.extract(r"(?<=a)(b+)", expand=True),
+    frames=("strings_unicode",),
+    expr=lambda pd, df: df["value"].str.contains(r"\B", regex=True),
+    note="a non word boundary is a position between two bytes to RE2 and between two "
+    "characters to this engine, and the frame is the unicode one because the two "
+    "readings cannot part on a row that is entirely ASCII",
 )
 
 # ---------------------------------------------------------------------------

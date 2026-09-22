@@ -3114,6 +3114,93 @@ def main() raises:
                 ),
                 out,
             )
+        elif case_id == "strings/contains-backreference":
+            # A backreference needs the engine to remember the text a group
+            # covered and not only where it ended, which neither the machine nor
+            # the state cache can do, so this is the bounded backtracker. The
+            # program picks the engine and not the row, which is document 95.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_CONTAINS, "(.)\\1"),
+                out,
+            )
+        elif case_id == "strings/replace-backreference-pattern":
+            # The same construct where the answer is text rather than a bit, so
+            # the engine has to report where the match started as well as that
+            # there was one. The replacement holds no reference of its own on
+            # purpose, so what is scored here is the pattern and nothing else.
+            emit_series(
+                "value",
+                pattern_replace(frame.column("value"), "(.)\\1", "X"),
+                out,
+            )
+        elif case_id == "strings/contains-lookahead":
+            # An assertion consumes nothing, so the row `abc123` has to answer
+            # true with the `a` still unread and `a.b.c` has to answer false
+            # with the `a` still unread, and an implementation that consumed the
+            # `b` gets the first of those right and nothing else.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_CONTAINS, "a(?=b)"),
+                out,
+            )
+        elif case_id == "strings/contains-negative-lookahead":
+            # The half of the pair that can be right by accident, since an
+            # engine that never runs the inner machine answers true here on
+            # every row the case above answers false on.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_CONTAINS, "a(?!b)"),
+                out,
+            )
+        elif case_id == "strings/contains-lookbehind":
+            # Matched backwards from the position rather than forwards from it,
+            # which is the whole difference between the two halves.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_CONTAINS, "(?<=a)b"),
+                out,
+            )
+        elif case_id == "strings/extract-lookbehind":
+            # The assertion sits in front of the only group there is, so the
+            # answer is the text the group covered and not the text the
+            # assertion looked at.
+            emit_series(
+                "value",
+                pattern_extract_part(frame.column("value"), "(?<=a)(b+)", 0),
+                out,
+            )
+        elif case_id == "divergences/regex/lookaround-backreference":
+            # Refused, and the refusal is the answer the case wants. The nested
+            # machine that runs an assertion is the ordinary machine, which
+            # cannot read a backreference, so the two constructs written beside
+            # each other are a gap where either one alone is not.
+            emit_series(
+                "value",
+                pattern_mask(
+                    frame.column("value"), METHOD_CONTAINS, "a(?=b)(.)\\1"
+                ),
+                out,
+            )
+        elif case_id == "divergences/regex/lookaround-atomic":
+            # The same shape with the other engine inside the assertion.
+            emit_series(
+                "value",
+                pattern_mask(
+                    frame.column("value"), METHOD_CONTAINS, "(?=a(?>b+))c"
+                ),
+                out,
+            )
+        elif case_id == "divergences/regex/non-boundary":
+            # RE2 answers this between two bytes of one character and this
+            # engine stands between characters, so the two readings part on any
+            # row holding a character outside ASCII. Document 113 in the library
+            # has the predicate and the scan rule measured.
+            emit_series(
+                "value",
+                pattern_mask(frame.column("value"), METHOD_CONTAINS, "\\B"),
+                out,
+            )
         elif case_id == "strings/extract":
             emit_frame(
                 pattern_extract(frame.column("value"), "([a-z]+)(\\d+)"), out
