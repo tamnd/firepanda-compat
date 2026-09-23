@@ -535,14 +535,10 @@ def test_the_committed_registry_loads():
     it now and that member runs over frames whose types both vocabularies do have a
     word for, which it still has to get exactly right.
 
-    `engine/integer-widening` is the twenty seventh and is the other half of the same
-    subject, which is not what a type is called but what a gap does to it. An integer
-    column with one missing row in it is read as float64 by pandas, at every width and
-    both signednesses, because numpy has no way to say an integer is absent and a float
-    does. firepanda carries absence in a validity bitmap beside the values, so the width
-    survives the gap. Two controls sit under the entry and have to pass, the same widths
-    with no gap in them and the float widths with a gap in them, which is what keeps it
-    an entry about the gap.
+    `engine/integer-widening` was the twenty seventh and has gone. An integer column
+    with a gap in it was read as float64 by pandas and kept its width here, and
+    `DataFrame.from_arrow` now reads it the way pandas does, so the cases under it match
+    and stay as ordinary cases.
 
     `engine/nbytes` is the twenty eighth and is the third about the type system, or
     rather about the memory under it. firepanda counts the Arrow buffers the data is
@@ -560,9 +556,9 @@ def test_the_committed_registry_loads():
     has nowhere else to put absence, a NaT where a timestamp uses a sentinel, None in an
     object column, and `<NA>` in every one of its nullable types. A firepanda column is
     an Arrow array with a validity bitmap, so `<NA>` is pandas' own word for a column
-    that works this way. The float case reads a frame holding a genuine NaN beside two
-    holes and tells them apart, which pandas cannot do at all, and the control beside it
-    is that both libraries agree on which rows are missing.
+    that works this way. The float cases left it when `DataFrame.from_arrow` began reading
+    a float gap as NaN, and the control beside it is that both libraries agree on which
+    rows are missing.
 
     `engine/integer-column-labels` is the thirtieth and is the first about a label
     rather than about a value. A pandas column label is any hashable object and a
@@ -579,7 +575,7 @@ def test_the_committed_registry_loads():
     It names two frames, because every other frame the case runs on is a float column
     or small enough that the cast is exact, and on those the two engines agree."""
     entries = divergences.registry()
-    assert len(entries) == 31
+    assert len(entries) == 30
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

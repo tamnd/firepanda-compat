@@ -373,17 +373,6 @@ instead = "a column is named by its Arrow type, so text is string rather than st
 since = "2026-09-13"
 
 [[divergence]]
-id = "engine/integer-widening"
-cases = ["divergences/integer-widening/column-*", "divergences/integer-widening/frame-*", "basics/series-dtypes"]
-frames = ["int8_half_null", "int16_half_null", "int32_half_null", "int64_half_null", "uint8_half_null", "uint16_half_null", "uint32_half_null", "uint64_half_null"]
-kind = "engine"
-reason = "An integer column with a missing row in it is read as float64 by pandas and as itself by firepanda, at every width and both signednesses. The reason is that numpy has no way to say that an integer is absent. A float has one, which is nan, so pandas has always handled a gap in a numeric column by promoting the column to float64 and putting a nan in the hole, and reading an Arrow int8 with one null in it therefore produces a float64 column in pandas whatever the file said. firepanda stores a validity bitmap beside the values, which is what Arrow is, so absence costs a bit per row and costs the type nothing, and an int8 with a gap in it stays an int8. Following pandas here would mean an eight times widening on the read, a value of 9007199254740993 coming back as 9007199254740992 because a double cannot hold it, and a library that cannot round trip a file it just opened. It would also be a change pandas itself is trying to get out of, since the nullable extension dtypes exist for exactly this and pandas does not use them by default. The two control cases beside these are the point of the entry. The same widths with no gap in them agree exactly, and the float widths with a gap in them agree exactly, so what is registered here is what a gap does to an integer and not anything wider than that."
-spec = "06-pandas-parity.md#the-genuine-omissions"
-expect = "differs"
-instead = "an integer keeps the width it was read at and carries its missing rows in a validity bitmap, so an int8 column with a gap in it is still int8 and not float64."
-since = "2026-09-13"
-
-[[divergence]]
 id = "engine/nbytes"
 cases = ["divergences/nbytes/column", "divergences/nbytes/text-column", "divergences/nbytes/index", "divergences/nbytes/frame", "divergences/nbytes/series-usage"]
 kind = "engine"
@@ -399,12 +388,12 @@ since = "2026-09-13"
 
 [[divergence]]
 id = "engine/missing-spelling"
-cases = ["divergences/missing-spelling/float-*", "divergences/missing-spelling/text-column", "divergences/missing-spelling/timestamp-column"]
+cases = ["divergences/missing-spelling/text-column", "divergences/missing-spelling/timestamp-column"]
 kind = "engine"
-reason = "pandas does not have a spelling for a missing value, it has four, and which one a column gives you says what that column is made of rather than what happened to the row. A numpy float array has nowhere to record absence, so the hole is the floating point NaN itself and prints NaN. A timestamp plays the same trick with a sentinel integer and prints NaT. An object column holds the Python object and prints None. And every one of pandas' nullable types, which keep absence in a mask beside the values, prints <NA>. Every firepanda column is an Arrow array with a validity bitmap, so the closest thing pandas has to a firepanda column is a pyarrow backed one, and pandas prints <NA> for that. The spelling here is pandas' own word for a column that works the way ours do, not a word this library invented. It is also not only about printing. The float64_half_null corpus frame holds a genuine NaN in one row and a missing value in another, and reading the column out as a list gives [nan, nan] in pandas against [nan, None] here, because by the time a pandas float column exists the two rows are the same float and nothing can tell them apart. Printing them the same way would make the rendering claim something about the column that is not true. What it costs is width: <NA> is one character longer than NaN, so a column with a gap in it is one wider here and every value in it moves one place, which is why the printing cases in the basics section were written to stay off the null bearing frames until this entry existed."
+reason = "pandas does not have a spelling for a missing value, it has four, and which one a column gives you says what that column is made of rather than what happened to the row. A numpy float array has nowhere to record absence, so the hole is the floating point NaN itself and prints NaN. A timestamp plays the same trick with a sentinel integer and prints NaT. An object column holds the Python object and prints None. And every one of pandas' nullable types, which keep absence in a mask beside the values, prints <NA>. Every firepanda column is an Arrow array with a validity bitmap, so the closest thing pandas has to a firepanda column is a pyarrow backed one, and pandas prints <NA> for that. The spelling here is pandas' own word for a column that works the way ours do, not a word this library invented. A float column used to be under this entry as well and is not any more, because DataFrame.from_arrow reads a float gap as NaN the way pandas does, so a float column read that way prints NaN and reads out as nan on both sides. What it costs is width: <NA> is one character longer than NaN, so a column with a gap in it is one wider here and every value in it moves one place, which is why the printing cases in the basics section were written to stay off the null bearing frames until this entry existed."
 spec = "63-what-a-missing-value-is-called.md#2-pandas-has-four-spellings-and-one-of-them-is-ours"
 expect = "differs"
-instead = "a missing value is written <NA> whatever the column holds, where pandas writes NaN on a float or a text column, NaT on a temporal one and <NA> only on its nullable types. Read out as a Python object it is None rather than nan or NaT. Asking whether a value is missing agrees on both sides, including on a genuine NaN."
+instead = "a missing value is written <NA> whatever the column holds, where pandas writes NaN on a text column, NaT on a temporal one and <NA> only on its nullable types. Read out as a Python object it is None rather than nan or NaT. Asking whether a value is missing agrees on both sides, including on a genuine NaN."
 since = "2026-09-14"
 
 # The thirtieth, and the first that is about a label rather than about a value. It came
