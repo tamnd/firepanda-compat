@@ -64,6 +64,16 @@ from firepanda.frame.groupby import AggSpec
 from firepanda.io import read_arrow, write_arrow
 from firepanda.kernel import AggKind, BinaryOp
 from firepanda.kernel.ewm import EwmOp, EwmSpec, alpha_of
+from firepanda.kernel.temporal import (
+    IN_A_GAP_FORWARD,
+    IN_A_GAP_NULL,
+    IN_A_GAP_RAISE,
+    ON_A_FOLD_EARLIER,
+    ON_A_FOLD_LATER,
+    ON_A_FOLD_NULL,
+    ON_A_FOLD_RAISE,
+    ZonePolicy,
+)
 from firepanda.kernel.regex.method import (
     METHOD_CONTAINS,
     METHOD_COUNT,
@@ -588,6 +598,29 @@ def emit_series(name: String, var column: Series, path: String) raises:
         + ',"name":'
         + quote(name)
         + "}"
+    )
+
+
+def emit_localized(
+    frame: DataFrame, zone: String, policy: ZonePolicy, path: String
+) raises:
+    """Writes the frame's naive column placed on a rule zone under a policy.
+
+    The seven policy cases all read the same column and differ only in the zone
+    and in what a reading the clock skipped or repeated should become, which is
+    the whole of what they are testing, so the rest is written once here.
+
+    Args:
+        frame: The frame, which has the naive column the cases localize.
+        zone: The zone the readings are placed on.
+        policy: What to do with a skipped or repeated reading.
+        path: Where to write the answer.
+
+    Raises:
+        Error: If a reading is refused under the policy or cannot be written.
+    """
+    emit_series(
+        "naive", frame.column("naive").dt_tz_localize(zone, policy), path
     )
 
 
@@ -2259,8 +2292,9 @@ def main() raises:
         # The zone entries that need no zone database, which is more of them than
         # it sounds. Converting keeps the instant and changes the name it is read
         # against, so it never asks what the offset is and works for every zone
-        # there is. Localising to UTC needs the offset and UTC's is zero. What is
-        # missing is the rest of `tz_localize`, where the offset is a rule.
+        # there is. Localising to UTC needs the offset and UTC's is zero. The
+        # rest of `tz_localize` reads the offset off a rule, and the policy
+        # cases say what happens to a reading the clock skipped or repeated.
         elif case_id == "temporal/tz":
             emit_scalar(
                 string_scalar_frame("value", frame.column("zoned").dt_tz()),
@@ -2285,6 +2319,52 @@ def main() raises:
         elif case_id == "temporal/tz-localize":
             emit_series(
                 "second", frame.column("second").dt_tz_localize("UTC"), out
+            )
+        elif case_id == "temporal/tz-localize-none":
+            emit_series(
+                "zoned", frame.column("zoned").dt_tz_localize_none(), out
+            )
+        elif case_id == "temporal/tz-localize-nonexistent-shift":
+            emit_localized(
+                frame,
+                "America/New_York",
+                ZonePolicy(ON_A_FOLD_RAISE, IN_A_GAP_FORWARD, 0),
+                out,
+            )
+        elif case_id == "temporal/tz-localize-nonexistent-nat":
+            emit_localized(
+                frame,
+                "America/New_York",
+                ZonePolicy(ON_A_FOLD_RAISE, IN_A_GAP_NULL, 0),
+                out,
+            )
+        elif case_id == "temporal/tz-localize-ambiguous-true":
+            emit_localized(
+                frame,
+                "America/New_York",
+                ZonePolicy(ON_A_FOLD_EARLIER, IN_A_GAP_RAISE, 0),
+                out,
+            )
+        elif case_id == "temporal/tz-localize-ambiguous-false":
+            emit_localized(
+                frame,
+                "America/New_York",
+                ZonePolicy(ON_A_FOLD_LATER, IN_A_GAP_RAISE, 0),
+                out,
+            )
+        elif case_id == "temporal/tz-localize-ambiguous-nat":
+            emit_localized(
+                frame,
+                "America/New_York",
+                ZonePolicy(ON_A_FOLD_NULL, IN_A_GAP_RAISE, 0),
+                out,
+            )
+        elif case_id == "temporal/tz-localize-lord-howe":
+            emit_localized(
+                frame,
+                "Australia/Lord_Howe",
+                ZonePolicy(ON_A_FOLD_NULL, IN_A_GAP_NULL, 0),
+                out,
             )
         # The stats section. Almost every case here answers with a scalar, which is
         # the one answer shape that does not go through an index, so this is the
