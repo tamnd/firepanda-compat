@@ -571,9 +571,13 @@ def test_the_committed_registry_loads():
     measured from it: pandas casts an int64 column to float64 and then takes the
     skewness, and near two to the sixty second that cast moves each value by hundreds.
     It names two frames, because every other frame the case runs on is a float column
-    or small enough that the cast is exact, and on those the two engines agree."""
+    or small enough that the cast is exact, and on those the two engines agree.
+
+    `engine/implicit-index` is retired, which leaves twenty seven. It said firepanda had
+    no index nobody asked for, and firepanda has pandas' default one now, so `reindex`
+    and `reset_index` against it answer what pandas answers."""
     entries = divergences.registry()
-    assert len(entries) == 28
+    assert len(entries) == 27
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

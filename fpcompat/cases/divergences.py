@@ -305,8 +305,14 @@ case(
 )
 
 # ---------------------------------------------------------------------------
-# No implicit index
+# No implicit index, which there is now
 # ---------------------------------------------------------------------------
+
+IMPLICIT_INDEX = (
+    "in process, because the driver has no entry for it. This was registered as "
+    "`engine/implicit-index` when firepanda had no index nobody asked for, and firepanda "
+    "has pandas' default one now, so the case stayed to keep it answering the same"
+)
 
 case(
     "divergences/implicit-index/reindex",
@@ -315,17 +321,19 @@ case(
     covers=("index",),
     frames=("tall",),
     expr=lambda pd, df: df.reindex([0, 2, 4, 9999]),
+    in_process=True,
     note="reindexing against labels that were never declared, where the missing one "
-    "comes back as a row of nulls rather than as an error",
+    "comes back as a row of nothing rather than as an error. " + IMPLICIT_INDEX,
 )
 case(
     "divergences/implicit-index/loc-default",
     "DataFrame.loc",
     frames=("tall",),
     expr=lambda pd, df: df.loc[3],
+    in_process=True,
     note="the default index is positions pretending to be labels, so this reads as a "
     "position and is not one, and the difference only shows once the frame has been "
-    "sorted or filtered",
+    "sorted or filtered. " + IMPLICIT_INDEX,
 )
 case(
     "divergences/implicit-index/reset-index-keeps-old",
@@ -334,8 +342,9 @@ case(
     covers=("drop",),
     frames=("tall",),
     expr=lambda pd, df: df.sort_values("value").reset_index(drop=False).head(5),
+    in_process=True,
     note="the old positions survive as a column, which is only meaningful because the "
-    "index existed without anybody asking for it",
+    "index existed without anybody asking for it. " + IMPLICIT_INDEX,
 )
 
 # ---------------------------------------------------------------------------

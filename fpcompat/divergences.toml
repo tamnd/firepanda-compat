@@ -52,16 +52,6 @@ raises = "NotImplementedError"
 since = "2026-09-04"
 
 [[divergence]]
-id = "engine/implicit-index"
-cases = ["divergences/implicit-index/*"]
-kind = "engine"
-reason = "pandas gives every frame an index whether or not anybody asked for one, and then performs operations against it, so loc reads as a label lookup on numbers that are actually positions and reindex against a label nobody declared returns a row of nulls. firepanda has no implicit index, so the operations that need one either take an explicit key or work positionally, and the places where that is visible are fewer than the size of this decision suggests."
-spec = "06-pandas-parity.md#the-genuine-omissions"
-expect = "differs"
-instead = "there is no index unless one was declared. loc takes a declared key or raises, reindex against undeclared labels raises rather than manufacturing null rows, and reset_index has nothing to move into a column."
-since = "2026-09-04"
-
-[[divergence]]
 id = "engine/regex-lookaround"
 cases = ["divergences/regex/*"]
 kind = "engine"
