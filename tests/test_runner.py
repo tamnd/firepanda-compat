@@ -526,3 +526,34 @@ def test_a_filter_that_matches_nothing_is_not_a_silent_success():
     """Zero of zero is not a hundred percent, and the runner has to say so."""
     with pytest.raises(RuntimeError, match="matches no cases"):
         runner.run("pandas", True, "nothing/matches/this")
+
+
+class Unreading(Lying):
+    """An engine that refuses the frame, from as deep inside its reader as it likes."""
+
+    def frame(self, name):
+        def deeper():
+            def deepest():
+                raise NotImplementedError("nested columns are not supported yet")
+
+            deepest()
+
+        deeper()
+
+
+def test_a_frame_the_subject_cannot_read_is_a_gap_at_any_depth():
+    """The reader's refusal is about the reader, so its traceback depth is not asked."""
+    record = runner.run_case(build(), ORACLE, Unreading(), "two")
+    assert record["outcome"] == runner.UNIMPLEMENTED
+    assert "nested columns" in record["detail"]
+
+
+def test_a_frame_the_subject_cannot_read_does_not_answer_a_declared_error():
+    """An L4 case wants the operation to refuse, and a refused read never reached it."""
+    case = build(
+        level="L4",
+        expr=lambda pd, df: df["nothing"],
+        raises=("KeyError", "nothing"),
+    )
+    record = runner.run_case(case, ORACLE, Unreading(), "two")
+    assert record["outcome"] == runner.UNIMPLEMENTED

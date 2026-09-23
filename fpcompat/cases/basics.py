@@ -207,9 +207,8 @@ case(
     in_process=True,
     note="the plural name on a thing with one type, which is what `dtype` answers and "
     "is run over every width for the same reason `dtype` is. The widths with gaps in "
-    "them are back now that `engine/integer-widening` is registered, and the entry has "
-    "a frame list on it, so the eight integer widths are allowed to differ and the two "
-    "float widths beside them are not. " + MEASURING,
+    "them read as float64 on both sides, since `DataFrame.from_arrow` widens a gap the "
+    "way pandas does. " + MEASURING,
 )
 case(
     "basics/series-axes",

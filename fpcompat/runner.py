@@ -174,6 +174,17 @@ def _name_is_not_there(error: BaseException) -> bool:
     return not hasattr(obj, name)
 
 
+class Unreadable(NotImplementedError):
+    """The subject refused to read the corpus frame the case runs on.
+
+    A refusal there is a gap in the reader rather than in the name the case is about,
+    and it is recognised by type for the reason `Absent` is. How many frames the
+    reader's traceback has is a fact about how the reader is written, and going
+    through `DataFrame.from_arrow` rather than the module level `from_arrow` added one
+    and turned every case on a nested frame from a gap into a failure.
+    """
+
+
 def _unimplemented(error: BaseException) -> bool:
     """Whether an exception means the name does not exist yet.
 
@@ -207,7 +218,7 @@ def _unimplemented(error: BaseException) -> bool:
     Returns:
         Whether this counts as unimplemented rather than as a failure.
     """
-    if isinstance(error, Absent):
+    if isinstance(error, (Absent, Unreadable)):
         return True
     if _name_is_not_there(error):
         return True
@@ -300,7 +311,10 @@ def run_expression(
         try:
             if _out_of_process(engine, case):
                 return engine.run(case, frame_name), None, list(caught)
-            frame = engine.frame(frame_name)
+            try:
+                frame = engine.frame(frame_name)
+            except NotImplementedError as error:
+                raise Unreadable(f"{type(error).__name__}: {error}") from error
             value = case.expr(engine.module(), frame)
             return _shaped(engine, value), None, list(caught)
         except BaseException as error:  # noqa: BLE001  a crash in the subject is a result
@@ -395,7 +409,7 @@ def run_case(
     declared_by_case = (
         case.raises is not None
         and actual_error is not None
-        and not isinstance(actual_error, Absent)
+        and not isinstance(actual_error, (Absent, Unreadable))
         and bool(check_error(actual_error, *case.raises, exact=False))
     )
     if (

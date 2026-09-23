@@ -566,9 +566,9 @@ case says so by running on all eight.
 """
 
 INTEGER_WIDENING = (
-    "in process, because the divergence is in the read rather than in the member. The "
-    "driver's own read widens the way pandas does, so an arm here would agree with "
-    "pandas by doing the thing the case is about"
+    "in process, because the question is what the read does. This was registered as "
+    "`engine/integer-widening` until `DataFrame.from_arrow` started reading a gap in an "
+    "integer column into float64 the way pandas does, and the cases stayed to keep it so"
 )
 
 case(
@@ -577,8 +577,8 @@ case(
     frames=GAPPED_INTEGERS,
     expr=lambda pd, df: str(df["value"].dtype),
     in_process=True,
-    note="an integer column with one missing row in it is still that integer here and "
-    "is float64 in pandas, at every width and both signednesses. " + INTEGER_WIDENING,
+    note="an integer column with one missing row in it is float64 on both sides, at "
+    "every width and both signednesses. " + INTEGER_WIDENING,
 )
 case(
     "divergences/integer-widening/frame-type",
@@ -712,10 +712,10 @@ case(
     frames=("float64_half_null",),
     expr=lambda pd, df: repr(df["value"].head(5)),
     in_process=True,
-    note="the clearest form of it. Row zero holds a genuine NaN and rows one and three "
-    "hold nothing at all, and the rendering here tells those apart while pandas cannot, "
-    "because in a numpy float column they are the same float by the time the column "
-    "exists. " + MISSING_SPELLING,
+    note="row zero holds a genuine NaN and rows one and three hold nothing at all. "
+    "This was the clearest form of the entry until `DataFrame.from_arrow` read the holes "
+    "as NaN the way pandas does, and now the two renderings agree and it stays to keep "
+    "them agreeing.",
 )
 case(
     "divergences/missing-spelling/float-values",
@@ -723,9 +723,8 @@ case(
     frames=("float64_half_null",),
     expr=lambda pd, df: df["value"].head(5).tolist(),
     in_process=True,
-    note="the same five rows read out as Python objects, which is where this stops "
-    "being about printing. pandas gives a NaN for the hole and firepanda gives None, so "
-    "a caller can ask which rows were computed and which were never there. " + MISSING_SPELLING,
+    note="the same five rows read out as Python objects. Both sides give a NaN for the "
+    "hole now, since the pandas door widens a float gap into NaN on the read.",
 )
 case(
     "divergences/missing-spelling/text-column",

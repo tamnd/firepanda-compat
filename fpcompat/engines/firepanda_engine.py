@@ -254,6 +254,16 @@ class FirepandaEngine:
         were reading the bytes by two different paths, so a difference in the answer
         could be a difference in the loading. One reader and one handover removes that.
 
+        The handover is `DataFrame.from_arrow`, which is pandas' name, and not the
+        module level `firepanda.from_arrow`, which is firepanda's own. The pandas side
+        is handed `to_pandas()`, which widens an integer column with a gap to float64
+        and holds every numeric gap as a NaN, and `DataFrame.from_arrow` does the same
+        in both libraries. The module level door keeps Arrow's types on purpose, so an
+        `in_process` case read through it started from different data than pandas did
+        on every frame with a numeric gap in it, which is the difference the driver's
+        `widen_for_missing` was added to remove. A firepanda old enough not to have
+        the pandas door is read through the other one, as it always was.
+
         Args:
             name: The corpus frame name.
 
@@ -263,7 +273,10 @@ class FirepandaEngine:
         Raises:
             EngineUnavailable: When there is no firepanda.
         """
-        return self.module().from_arrow(corpus.load(name))
+        module = self.module()
+        frame_type = getattr(module, "DataFrame", None)
+        door = getattr(frame_type, "from_arrow", None) or module.from_arrow
+        return door(corpus.load(name))
 
     def shape_of(self, answer: Any) -> str | None:
         """Which of firepanda's three types an answer is, if it is one of them.

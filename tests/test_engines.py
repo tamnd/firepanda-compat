@@ -118,13 +118,27 @@ def test_a_corpus_frame_is_read_once_and_handed_over(module_form):
 def test_the_engine_asks_firepanda_for_nothing_firepanda_does_not_have(module_form):
     """The test that would have caught `read_arrow`.
 
-    `from_arrow` is the only name the engine is allowed to reach for when it loads a
-    frame. Anything else is a name somebody assumed, and the module has nothing else on
-    it, so an assumption fails here rather than turning a whole run into zeroes.
+    `from_arrow` is the only name the engine is sure to find when it loads a frame, and
+    `DataFrame.from_arrow` is asked for only if it is there. Anything else is a name
+    somebody assumed, and the module has nothing else on it, so an assumption fails here
+    rather than turning a whole run into zeroes.
     """
     engine = module_form(fake(from_arrow=lambda table: "frame"))
 
     assert engine.frame("two") == "frame"
+
+
+def test_the_engine_prefers_the_door_pandas_reads_through(module_form):
+    """`DataFrame.from_arrow` when the module has it, because it reads what pandas reads.
+
+    The module level door keeps Arrow's types, so an integer column with a gap in it
+    would start as an integer here and as float64 on the pandas side, and every case on
+    such a frame would be comparing two different inputs.
+    """
+    frame_type = types.SimpleNamespace(from_arrow=lambda table: "widened")
+    engine = module_form(fake(from_arrow=lambda table: "kept", DataFrame=frame_type))
+
+    assert engine.frame("two") == "widened"
 
 
 def test_the_module_form_evaluates_the_case_expression_in_this_process(module_form):
