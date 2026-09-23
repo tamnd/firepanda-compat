@@ -351,6 +351,9 @@ case(
     "DataFrame.count",
     frames=("two", "float64_half_null", "strings_null_heavy"),
     expr=lambda pd, df: df.count(),
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 case(
     "stats/monotonic",

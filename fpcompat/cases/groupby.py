@@ -413,6 +413,9 @@ case(
         tolerance=Tolerance.STATISTICAL,
         reason="an interpolated quantile is an average of two neighbours",
     ),
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 case(
     "groupby/value-counts",
