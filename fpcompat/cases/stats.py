@@ -150,6 +150,7 @@ for method in ("linear", "lower", "higher", "nearest", "midpoint"):
         ),
         note="sixty four rows means the quarter quantile falls between two elements, "
         "which is the only situation where these five differ",
+        in_process=method != "linear",
     )
 
 case(
@@ -165,6 +166,7 @@ case(
     ),
     note="a list of quantiles gives a Series indexed by the quantile, which is a "
     "float index and the only one in the corpus",
+    in_process=True,
 )
 case(
     "stats/quantile-frame",
