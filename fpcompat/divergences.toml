@@ -81,7 +81,7 @@ since = "2026-09-04"
 id = "engine/moment-precision"
 cases = ["divergences/moment-precision/*"]
 kind = "engine"
-reason = "The variance, the standard deviation, the standard error and the skewness are computed from deviations around each group's mean, and the mean is a sum divided by a count, so it is near the true mean and is not it. pandas leaves that error in. firepanda sums the plain deviations alongside the squared ones and subtracts the residual, which costs one addition per row and makes the answer independent of how accurate the centre was. On ordinary columns the two agree to the last bit and the correction is worth nothing. On a column of large values with a small spread it is worth a great deal, and the two engines part company: on five values at two to the fifty second pandas gives a variance of 37.25 where the true value is 37.2, and a skewness of 1.4863469519931585 where the true value is 1.3253147098134046, which is twelve percent. On the suite's own int64 corpus frames, where the groups are large enough that numpy's pairwise summation gives pandas a better centre than firepanda's plain accumulation does, the correction moves firepanda towards pandas rather than away: pandas is 5.9e-6 from the true skewness of int64_half_null and firepanda is now 1.2e-16. This entry exists because on the shape of column above, and only on that shape, firepanda answers something pandas does not."
+reason = "The variance, the standard deviation, the standard error and the skewness are computed from deviations around each group's mean, and the mean is a sum divided by a count, so it is near the true mean and is not it. pandas leaves that error in. firepanda sums the plain deviations alongside the squared ones and subtracts the residual, which costs one addition per row and makes the answer independent of how accurate the centre was. On ordinary columns the two agree to the last bit and the correction is worth nothing. On a column of large values with a small spread it is worth a great deal, and the two engines part company: on five values at two to the fifty second pandas gives a variance of 37.25 where the true value is 37.2, and a skewness of 1.4863469519931585 where the true value is 1.3253147098134046, which is twelve percent. This entry is about a float column, where the values are exact and only the centre can be wrong. An integer column has a second source of error before the centre is taken, and that one is engine/integer-moments."
 spec = "06-pandas-parity.md#the-genuine-omissions"
 expect = "differs"
 instead = "the moments are corrected for the centre they were measured around, so the answer does not change when a constant is added to the column. Where the two disagree, firepanda is the one nearer the value exact arithmetic gives."
@@ -420,3 +420,18 @@ spec = "70-an-answer-that-is-wider-than-a-column.md#6-where-the-two-cannot-agree
 expect = "differs"
 instead = "a column label is always text, so an integer label is the text of that integer, and the three columns of a partition are labelled '0', '1' and '2' where pandas labels them 0, 1 and 2."
 since = "2026-09-15"
+
+# The thirty first, and the second about the moments. The first is a centre that was
+# rounded, this is a value that was rounded before anything was measured from it, and it
+# is split out because it is scoped to two corpus frames rather than to a case of its own.
+
+[[divergence]]
+id = "engine/integer-moments"
+cases = ["stats/skew"]
+frames = ["int64_no_nulls", "int64_half_null"]
+kind = "engine"
+reason = "pandas computes a skewness by casting the column to float64 first and measuring every value from the mean afterwards. The two int64 corpus frames sit near minus two to the sixty second with a spread of about four billion, and down there neighbouring float64 values are a thousand and twenty four apart, so the cast moves each value by up to five hundred and twelve before the arithmetic starts. A variance hardly notices, because the error is small against the spread and enters squared. A skewness notices in its seventh digit, because the third moment of a column that is nearly symmetric is a small difference of large sums. firepanda measures each value from a whole number beside the mean as an integer, which is exact, and casts only the difference, which is small enough to be a float without rounding. Measured with exact rational arithmetic, the true skewness of int64_no_nulls is 0.24718404221495238, pandas answers 0.2471839475025952, which is 3.8e-7 out, and firepanda answers the true value. On int64_half_null the true value is 0.1205624517525931 and pandas is 5.8e-6 out. Every other frame the case runs on is either a float column or small enough that the cast is exact, and on those the two agree."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "differs"
+instead = "the skewness of an integer column is measured before the values are rounded to float64, so on a column of large integers with a small spread it is the value exact arithmetic gives and pandas' is a few parts in ten million away."
+since = "2026-09-23"
