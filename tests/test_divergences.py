@@ -570,9 +570,16 @@ def test_the_committed_registry_loads():
     every frame here is an Arrow frame. It is visible in two places: a frame built from
     a dictionary with integer keys, which is the general form, and the three columns
     `str.partition` hands back, which pandas labels 0, 1 and 2 and which found this. The
-    control is that reading those three by position rather than by label agrees."""
+    control is that reading those three by position rather than by label agrees.
+
+    `engine/integer-moments` is the thirty first and the second about the moments. The
+    first is a centre that was rounded, and this is a value rounded before anything was
+    measured from it: pandas casts an int64 column to float64 and then takes the
+    skewness, and near two to the sixty second that cast moves each value by hundreds.
+    It names two frames, because every other frame the case runs on is a float column
+    or small enough that the cast is exact, and on those the two engines agree."""
     entries = divergences.registry()
-    assert len(entries) == 30
+    assert len(entries) == 31
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
