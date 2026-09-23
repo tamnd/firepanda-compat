@@ -1,7 +1,7 @@
 {
   "fail": 3,
   "l3": {
-    "basics": 26,
+    "basics": 27,
     "categorical": 3,
     "errors": 0,
     "groupby": 0,

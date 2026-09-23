@@ -706,6 +706,12 @@ for name in ("sum", "mean", "min", "max", "count", "median", "std", "var", "prod
         "returns nan, and no amount of reasoning tells you that in advance",
     )
 
+FLAG_IN_PYTHON = (
+    "the flag is a rule the Python layer applies to the answer the core gives, so the "
+    "driver has no core call to make and the case runs in process, as document 36 allows"
+)
+"""Why the flag cases on a reduction run in process rather than through the driver."""
+
 case(
     "basics/sum-skipna-false",
     "Series.sum",
@@ -713,6 +719,8 @@ case(
     covers=("skipna",),
     frames=NUMERIC + FLOATS,
     expr=lambda pd, df: df["value"].sum(skipna=False),
+    in_process=True,
+    note=FLAG_IN_PYTHON,
 )
 case(
     "basics/sum-min-count",
@@ -721,7 +729,9 @@ case(
     covers=("min_count",),
     frames=NUMERIC + FLOATS,
     expr=lambda pd, df: df["value"].sum(min_count=1),
-    note="min_count is the parameter that makes an all null sum return null instead of zero",
+    in_process=True,
+    note="min_count is the parameter that makes an all null sum return null instead of zero. "
+    + FLAG_IN_PYTHON,
 )
 case(
     "basics/mean-skipna-false",
@@ -730,6 +740,8 @@ case(
     covers=("skipna",),
     frames=FLOATS,
     expr=lambda pd, df: df["value"].mean(skipna=False),
+    in_process=True,
+    note=FLAG_IN_PYTHON,
 )
 case(
     "basics/sum-tall",
@@ -926,6 +938,8 @@ case(
     covers=("dropna",),
     frames=("strings_null_heavy", "keys_awkward"),
     expr=lambda pd, df: df.iloc[:, 0].nunique(dropna=False),
+    in_process=True,
+    note=FLAG_IN_PYTHON,
 )
 
 # ---------------------------------------------------------------------------
@@ -963,6 +977,8 @@ case(
     covers=("how",),
     frames=("two", "int64_all_null"),
     expr=lambda pd, df: df.dropna(how="all"),
+    in_process=True,
+    note=FLAG_IN_PYTHON,
 )
 case(
     "basics/fillna",
