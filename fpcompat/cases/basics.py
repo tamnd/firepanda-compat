@@ -1239,6 +1239,13 @@ case(
     expr=lambda pd, df: -df["value"],
 )
 
+COMPARISON_IN_PYTHON = (
+    "The kernel answers null on a missing row and the Python layer gives pandas' answer "
+    "for it, so the rule the case asks about is one the driver cannot reach and the case "
+    "runs in process, as document 36 allows"
+)
+"""Why the comparison cases on a gap run in process rather than through the driver."""
+
 for name, symbol in (
     ("eq", lambda s: s == 3),
     ("ne", lambda s: s != 3),
@@ -1252,8 +1259,9 @@ for name, symbol in (
         f"Series.{name}",
         frames=("int64_half_null", "float64_half_null"),
         expr=(lambda op: lambda pd, df: op(df["value"]))(symbol),
+        in_process=True,
         note="a comparison against a null is false rather than null, which is the "
-        "numpy answer and not the SQL one",
+        "numpy answer and not the SQL one. " + COMPARISON_IN_PYTHON,
     )
 
 # ---------------------------------------------------------------------------

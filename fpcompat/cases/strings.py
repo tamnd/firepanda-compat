@@ -1430,6 +1430,9 @@ case(
     "Series.lt",
     frames=ALL,
     expr=lambda pd, df: df["value"] < "m",
+    in_process=True,
+    note="the missing rows answer False, which the Python layer gives and the kernel "
+    "does not, so the case runs in process as document 36 allows",
 )
 case(
     "strings/max",
