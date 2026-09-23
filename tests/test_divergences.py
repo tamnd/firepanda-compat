@@ -425,15 +425,13 @@ def test_the_committed_registry_loads():
     `engine/zero-divisor` are the two that arrived first, and both of them are cases
     where firepanda answers something pandas does not rather than refusing to answer.
 
-    `engine/category-code-width` and `engine/comparison-null` are the two newest, and
-    they arrived together because the category cases are the first ones in the suite
-    to reach either. Neither is about categories. The first is that firepanda writes
-    int32 codes whatever the number of categories, where pandas picks the width from
-    the cardinality, which is a decision about the dtype vocabulary rather than about
-    the encoder. The second is that a comparison against a missing value answers null
-    rather than False, which is the whole library and not this section: pandas has a
-    numpy bool array with nowhere to say a third thing and firepanda has a validity
-    bitmap that does.
+    `engine/category-code-width` arrived with the category cases, and it is not about
+    categories. firepanda writes int32 codes whatever the number of categories, where
+    pandas picks the width from the cardinality, which is a decision about the dtype
+    vocabulary rather than about the encoder. `engine/comparison-null` arrived beside
+    it and has since gone: a comparison against a missing row answers False, as it
+    does in pandas, because a mask with a third state gave nothing back that `isna`
+    does not already say.
 
     `engine/string-count-width` is the eleventh, and it is the ninth again from the
     other direction. There the row with no answer was one divided by zero, here it is
@@ -575,7 +573,7 @@ def test_the_committed_registry_loads():
     It names two frames, because every other frame the case runs on is a float column
     or small enough that the cast is exact, and on those the two engines agree."""
     entries = divergences.registry()
-    assert len(entries) == 30
+    assert len(entries) == 29
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

@@ -206,13 +206,19 @@ case(
     "Series.lt",
     frames=ORDERED,
     expr=lambda pd, df: df["value"] < df["value"].cat.categories[-1],
+    in_process=True,
+    note="the missing rows answer False, which the Python layer gives and the kernel "
+    "does not, so the case runs in process as document 36 allows",
 )
 case(
     "categorical/compare-eq",
     "Series.eq",
     frames=BOTH,
     expr=lambda pd, df: df["value"] == df["value"].cat.categories[0],
-    note="equality works on an unordered categorical, which is why it is here and less than is not",
+    in_process=True,
+    note="equality works on an unordered categorical, which is why it is here and less than "
+    "is not. The missing rows answer False, which the Python layer gives and the kernel does "
+    "not, so the case runs in process as document 36 allows",
 )
 case(
     "categorical/sort-unordered",
