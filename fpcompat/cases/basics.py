@@ -1658,7 +1658,12 @@ case(
     level="L3",
     covers=("drop",),
     frames=("two", "keys_10"),
-    expr=lambda pd, df: df.sort_values(df.columns[0]).reset_index(drop=True),
+    expr=lambda pd, df: df.sort_values(list(df.columns)).reset_index(drop=True),
+    note="sorted on every column and not only the first, because pandas sorts with an "
+    "unstable kind by default and keys_10 has a thousand rows on each key, so the first "
+    "column alone would compare an order of ties pandas does not promise rather than "
+    "the new index. In process because the driver has no entry for this call",
+    in_process=True,
 )
 case(
     "basics/transpose",
@@ -2157,15 +2162,22 @@ case(
     "Series.add",
     frames=("tall", "float64_no_nulls"),
     expr=lambda pd, df: _top(df)["value"] + _bottom(df)["value"],
-    note="two halves of one column added together. Every value in the answer is null, "
+    note="two halves of one column added together. Every value in the answer is NaN, "
     "because no label appears in both, and the answer is twice as long as either "
-    "operand. A user who meant to add them elementwise gets no error at all",
+    "operand. A user who meant to add them elementwise gets no error at all. In process "
+    "because firepanda turns the gaps into NaN in its Python layer, which the driver "
+    "cannot reach",
+    in_process=True,
 )
 case(
     "basics/alignment-frame-add",
     "DataFrame.add",
     frames=("float64_no_nulls",),
     expr=lambda pd, df: _top(df) + _bottom(df),
+    in_process=True,
+    note="two halves of one frame added together, so every row is a gap and the integer "
+    "row column widens to float64 to hold a NaN in each. In process because firepanda "
+    "turns the gaps into NaN in its Python layer, which the driver cannot reach",
 )
 case(
     "basics/alignment-subtract-shifted",
