@@ -119,7 +119,15 @@ case(
     "labels on their own, because a right list of types under wrong labels reads as a "
     "pass. " + MEASURING,
 )
-case("basics/index", "DataFrame.index", frames=SHAPES, expr=lambda pd, df: df.index)
+case(
+    "basics/index",
+    "DataFrame.index",
+    frames=SHAPES,
+    expr=lambda pd, df: df.index,
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
+)
 case(
     "basics/empty",
     "DataFrame.empty",
@@ -749,6 +757,9 @@ case(
     frames=("tall",),
     expr=lambda pd, df: df["value"].sum(),
     rules=ACCUMULATED,
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 case(
     "basics/mean-tall",
@@ -756,6 +767,9 @@ case(
     frames=("tall",),
     expr=lambda pd, df: df["value"].mean(),
     rules=ACCUMULATED,
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 case(
     "basics/frame-sum",
@@ -769,7 +783,9 @@ case(
     "empty string here and as None in pandas, so the comparison failed on the name "
     "whatever the numbers did. The name is right now and what is left is the "
     "parameter: numeric_only refuses, because dropping the columns a reduction cannot "
-    "read is not written yet. The cases below are the same reductions without it",
+    "read is not written yet. The cases below are the same reductions without it. In process "
+    "because the driver has no entry for this call",
+    in_process=True,
 )
 case(
     "basics/any",
@@ -956,7 +972,9 @@ case(
     frames=("float64_no_nulls", "float32_no_nulls"),
     expr=lambda pd, df: df["value"].isna(),
     note="the float frames carry a nan at offset zero and no null anywhere, so this is "
-    "the case that says whether a nan counts as missing, which it does",
+    "the case that says whether a nan counts as missing, which it does. In process because the "
+    "driver has no entry for this call",
+    in_process=True,
 )
 case(
     "basics/dropna",
@@ -1205,6 +1223,9 @@ case(
     "Series.abs",
     frames=FLOATS + NUMERIC,
     expr=lambda pd, df: df["value"].abs(),
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 case(
     "basics/round",
@@ -1237,6 +1258,9 @@ case(
     "Series.__neg__",
     frames=FLOATS + NUMERIC,
     expr=lambda pd, df: -df["value"],
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 
 COMPARISON_IN_PYTHON = (
@@ -1351,6 +1375,9 @@ case(
     "DataFrame.sort_index",
     frames=("keys_10", "two"),
     expr=lambda pd, df: df.sort_values("value" if "value" in df else "b").sort_index(),
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 case(
     "basics/rank",

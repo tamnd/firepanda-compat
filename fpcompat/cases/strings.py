@@ -273,6 +273,9 @@ case(
     covers=("pat",),
     frames=PLAIN,
     expr=lambda pd, df: df["value"].str.startswith(("a", "b")),
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 case(
     "strings/find",
@@ -1460,6 +1463,9 @@ case(
     "Series.max",
     frames=ALL,
     expr=lambda pd, df: df["value"].max(),
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 case(
     "strings/value-counts",

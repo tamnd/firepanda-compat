@@ -59,13 +59,18 @@ case(
     frames=BOTH,
     expr=lambda pd, df: df["value"].nunique(),
     note="the number of used categories and not the number of categories, which is the "
-    "difference between this and the length of the categories index",
+    "difference between this and the length of the categories index. In process because "
+    "firepanda counts the codes in its Python layer, which the driver cannot reach",
+    in_process=True,
 )
 case(
     "categorical/count",
     "Series.count",
     frames=BOTH,
     expr=lambda pd, df: df["value"].count(),
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 case(
     "categorical/isna",
@@ -102,7 +107,9 @@ case(
     frames=BOTH,
     expr=lambda pd, df: df["value"].cat.add_categories(["zzz"]).cat.categories,
     note="a category nothing uses, which is legal and which changes what a groupby "
-    "produces without changing a single row",
+    "produces without changing a single row. In process because the driver has no entry for this "
+    "call",
+    in_process=True,
 )
 case(
     "categorical/remove-categories",
@@ -112,7 +119,8 @@ case(
     frames=BOTH,
     expr=lambda pd, df: df["value"].cat.remove_categories([df["value"].cat.categories[0]]),
     note="the rows that used it become nulls rather than raising, which is the thing "
-    "that surprises people",
+    "that surprises people. In process because the driver has no entry for this call",
+    in_process=True,
 )
 case(
     "categorical/remove-unused",
@@ -194,12 +202,18 @@ case(
     "Series.min",
     frames=ORDERED,
     expr=lambda pd, df: df["value"].min(),
+    note="in process because firepanda turns the smallest code back into its "
+    "category in its Python layer, which the driver cannot reach",
+    in_process=True,
 )
 case(
     "categorical/max",
     "Series.max",
     frames=ORDERED,
     expr=lambda pd, df: df["value"].max(),
+    note="in process because firepanda turns the largest code back into its "
+    "category in its Python layer, which the driver cannot reach",
+    in_process=True,
 )
 case(
     "categorical/compare-lt",
@@ -318,6 +332,9 @@ case(
     "str.upper",
     frames=BOTH,
     expr=lambda pd, df: df["value"].astype("str").str.upper(),
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 case(
     "categorical/from-codes",

@@ -205,6 +205,9 @@ case(
     frames=("tall",),
     expr=lambda pd, df: df[["value"]].rolling(6).mean(),
     rules=RUNNING,
+    note="in process because the driver has no entry for this call, and the module answers it the "
+    "way pandas does on every frame",
+    in_process=True,
 )
 case(
     "windows/rolling-time",
