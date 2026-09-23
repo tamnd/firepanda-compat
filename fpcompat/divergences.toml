@@ -135,21 +135,9 @@ expect = "differs"
 instead = "str.len, str.find, str.rfind and str.count answer int64 with a null on a missing row, rather than float64 with a NaN. The counts and positions themselves agree. str.count joined the entry when it landed rather than being registered on its own, because how many times a pattern appears in a row that is not there is the same unanswerable question as how long that row is, and it is answered here the same way."
 since = "2026-09-11"
 
-# The thirteenth, and the first entry in the file to narrow itself to a frame. It says
-# the same thing the eleventh does, about a different kind of predicate and by way of a
-# different pandas decision, and it is separate from it because the eleventh is true on
-# every frame it covers and this one is only true where a row is missing.
-
-[[divergence]]
-id = "engine/string-predicate-null"
-cases = ["strings/startswith", "strings/endswith", "strings/isspace", "strings/islower", "strings/isupper", "strings/istitle", "strings/isascii", "strings/isalpha", "strings/isnumeric", "strings/isdigit", "strings/isdecimal", "strings/isalnum", "strings/contains", "strings/match-literal", "strings/fullmatch-literal", "strings/contains-case-false", "strings/match-case-false", "strings/fullmatch-case-false"]
-frames = ["strings_null_heavy"]
-kind = "engine"
-reason = "Asking whether a missing string starts with a letter, or what case it is written in, has no answer, and firepanda writes a null because the result is an Arrow column with a validity bitmap and there is a place to say so. pandas writes False, and the road it takes there is worth naming because it is not the numpy one a comparison takes. A comparison used to be in this file for the same reason and now answers False the way pandas does, so this entry is the last place a missing row turns a mask into three states. pandas has two string backends. Its default str dtype carries missing values as NaN and its predicates fill those rows with False deliberately, while its own nullable string dtype answers NA and agrees with firepanda exactly. So this is a difference from one of pandas' two answers rather than from both, and a user who wants the firepanda behaviour in pandas can already have it by asking for the other dtype. It matters to anyone counting the False rows, since that count folds the rows that had no answer in with the rows that genuinely did not match and there is no way back from the number to either one."
-spec = "30-a-position-in-a-string.md#the-library-already-counted-and-it-counted-bytes"
-expect = "differs"
-instead = "str.startswith, str.endswith and the three questions about case answer null on a missing row rather than False, so the mask has three states and a caller can tell a row that did not match from a row that had nothing to match. The three about case were added to this entry when they landed rather than registered on their own, because the difference is the same difference and it arrives by the same road, and so were istitle and isascii when they landed after them. isascii is worth a second look inside this entry, because it is the one question here that answers True on an empty row, and it still answers null on a missing one. Being made of nothing and being absent are different things, and a library that folds them together cannot tell you which row you are looking at. The five questions about what a character is joined the entry last, on the same terms, which means every question the str accessor asks about a row now sits here and none of them needed a reason of its own. contains, match and fullmatch came in after them and are the first three here that take a pattern rather than only a column, and they ask the same thing of a missing row and get the same null, so the pattern makes no difference to why they are in this entry. The same three with case=False joined last, and they needed no argument at all: folding the comparison changes which rows match and changes nothing about a row there is nothing to compare."
-since = "2026-09-11"
+# The thirteenth sat here, and said a string question asked of a missing row answered
+# null. It went once the accessor answered False there, the way pandas' default str
+# dtype does, and the twelfth above is the first entry in the file to name a frame.
 
 # The thirteenth and fourteenth, and the second time after the eighth that firepanda is
 # the one giving the answer arithmetic gives. They are one difference split into two

@@ -436,12 +436,12 @@ def test_the_committed_registry_loads():
     `engine/string-count-width` is the eleventh, and it is the ninth again from the
     other direction. There the row with no answer was one divided by zero, here it is
     a missing string, and both times pandas widens the column to float64 and firepanda
-    writes a null and keeps the width. `engine/string-predicate-null` is the twelfth
-    and says what the tenth says about a comparison, about a string predicate, by way
-    of a pandas decision rather than a numpy one.
+    writes a null and keeps the width. `engine/string-predicate-null` arrived beside
+    it, saying a string question asked of a missing row answered null, and went the
+    way the comparison entry did once the accessor answered False there as pandas does.
 
-    Those two are also the first entries in the file to name a frame. A difference can
-    be real and still not be visible everywhere: with nothing missing from a column
+    The string count entry is also the first in the file to name a frame. A difference
+    can be real and still not be visible everywhere: with nothing missing from a column
     pandas has no reason to widen it and the two engines agree to the last bit, so an
     entry with no frame list would be telling the suite that those runs have to differ
     and failing them for agreeing.
@@ -573,7 +573,7 @@ def test_the_committed_registry_loads():
     It names two frames, because every other frame the case runs on is a float column
     or small enough that the cast is exact, and on those the two engines agree."""
     entries = divergences.registry()
-    assert len(entries) == 29
+    assert len(entries) == 28
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

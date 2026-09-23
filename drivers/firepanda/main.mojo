@@ -2888,11 +2888,12 @@ def main() raises:
             )
         elif case_id == "strings/contains-na":
             # The one case in the accessor that asks what a missing row answers
-            # and then says what it should answer instead, so it is the one
-            # place `engine/string-predicate-null` is filled rather than
-            # registered. `na` is a fill and not an argument the search knows
-            # about, which is why it is a one row column broadcast over the
-            # answer rather than anything passed down.
+            # and then says what it should answer instead. The kernel answers
+            # null there and the Python layer fills it, so the other string
+            # questions run in process, and this one fills it here. `na` is a
+            # fill and not an argument the search knows about, which is why it
+            # is a one row column broadcast over the answer rather than
+            # anything passed down.
             var no = Array[DType.bool](1)
             no[0] = False
             emit_series(

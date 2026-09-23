@@ -142,6 +142,13 @@ case(
     expr=lambda pd, df: df["value"].str.repeat(3),
 )
 
+PREDICATE_IN_PYTHON = (
+    "a missing row answers False, which the Python layer writes and the kernel does not, "
+    "so the case runs in process as document 36 allows"
+)
+"""Why the string questions on a gap run in process rather than through the driver."""
+
+
 # ---------------------------------------------------------------------------
 # Searching
 # ---------------------------------------------------------------------------
@@ -153,8 +160,9 @@ case(
     covers=("pat",),
     frames=ALL,
     expr=lambda pd, df: df["value"].str.contains("a"),
-    note="a null gives a null and not a false, and the result is a nullable boolean "
-    "because of it, which changes what a mask built from this does",
+    in_process=True,
+    note="a null gives False rather than a null, so the answer is a plain boolean and a "
+    "mask built from it picks rows without a fill. " + PREDICATE_IN_PYTHON,
 )
 case(
     "strings/contains-regex-false",
@@ -172,8 +180,10 @@ case(
     covers=("pat", "case"),
     frames=CASED,
     expr=lambda pd, df: df["value"].str.contains("A", case=False),
+    in_process=True,
     note="an ASCII pattern, which every plausible fold agrees about, so this one is "
-    "the baseline and the three below it are the ones that can tell the folds apart",
+    "the baseline and the three below it are the ones that can tell the folds apart. "
+    + PREDICATE_IN_PYTHON,
 )
 case(
     "strings/contains-case-false-longer",
@@ -213,6 +223,8 @@ case(
     covers=("pat", "case"),
     frames=CASED,
     expr=lambda pd, df: df["value"].str.match("straße", case=False),
+    in_process=True,
+    note=PREDICATE_IN_PYTHON,
 )
 case(
     "strings/fullmatch-case-false",
@@ -221,9 +233,10 @@ case(
     covers=("pat", "case"),
     frames=CASED,
     expr=lambda pd, df: df["value"].str.fullmatch("straße", case=False),
+    in_process=True,
     note="a folded match can cover a different number of bytes than the pattern, since "
     "long s is two bytes and is compared as the one byte s, so this cannot be decided "
-    "by comparing lengths the way the case sensitive one can",
+    "by comparing lengths the way the case sensitive one can. " + PREDICATE_IN_PYTHON,
 )
 case(
     "strings/contains-na",
@@ -240,6 +253,8 @@ case(
     covers=("pat",),
     frames=ALL,
     expr=lambda pd, df: df["value"].str.startswith("a"),
+    in_process=True,
+    note=PREDICATE_IN_PYTHON,
 )
 case(
     "strings/endswith",
@@ -248,6 +263,8 @@ case(
     covers=("pat",),
     frames=ALL,
     expr=lambda pd, df: df["value"].str.endswith("z"),
+    in_process=True,
+    note=PREDICATE_IN_PYTHON,
 )
 case(
     "strings/startswith-tuple",
@@ -390,9 +407,10 @@ case(
     covers=("pat",),
     frames=ALL,
     expr=lambda pd, df: df["value"].str.match("a"),
+    in_process=True,
     note="the same pattern the contains and fullmatch cases use, because the three "
     "questions differ only in where the pattern is allowed to sit and a case that "
-    "uses a different pattern for each of them cannot show that",
+    "uses a different pattern for each of them cannot show that. " + PREDICATE_IN_PYTHON,
 )
 case(
     "strings/fullmatch-literal",
@@ -401,8 +419,9 @@ case(
     covers=("pat",),
     frames=ALL,
     expr=lambda pd, df: df["value"].str.fullmatch("a"),
+    in_process=True,
     note="the ascii frame holds a row that is exactly this pattern, which is the "
-    "only row in the corpus where fullmatch and match disagree",
+    "only row in the corpus where fullmatch and match disagree. " + PREDICATE_IN_PYTHON,
 )
 case(
     "strings/count-empty",
@@ -1268,9 +1287,11 @@ for name in (
         f"str.{name}",
         frames=ALL,
         expr=(lambda method: lambda pd, df: getattr(df["value"].str, method)())(name),
+        in_process=True,
         note="digit, decimal and numeric are three different questions and the unicode "
         "frame carries a row for each of the three answers they can give, which it did "
-        "not until these arms were written and the corpus was checked rather than trusted",
+        "not until these arms were written and the corpus was checked rather than trusted. "
+        + PREDICATE_IN_PYTHON,
     )
 
 case(
