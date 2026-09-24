@@ -8,16 +8,17 @@ mutation rather than the return value, which is None on every engine for half of
 and is the object itself for the other half.
 
 The reason the block is driven by a table rather than written out one call at a time
-is the same reason it was before. Thirty one callables take the parameter and a hand
-written list of thirty one is missing three of them within a month. The table is
+is the same reason it was before. Thirty three callables take the parameter and a hand
+written list of thirty three is missing three of them within a month. The table is
 checked against the committed pandas inventory by a test in `tests/test_divergences.py`
 that looks for every case declaring it covers the parameter, wherever that case lives,
 so a callable pandas adds shows up as a failing test with the name in it.
 
-Four callables are still in the divergence registry and they are the four whose method
-is not in firepanda at all: `eval` and `query` on a frame, `interpolate` on a frame and
-on a column. `MultiIndex.rename`, `MultiIndex.set_names` and `pandas.eval` are there
-for the same reason. None of those is about the parameter.
+Two callables are still in the divergence registry and they are the two whose method
+is not in firepanda at all: `interpolate` on a frame and on a column. `eval` and
+`query` on a frame were there too until firepanda grew the methods.
+`MultiIndex.rename`, `MultiIndex.set_names` and `pandas.eval` are there for the same
+reason. None of those is about the parameter.
 
 The split in what pandas answers is undocumented and is asserted at the bottom of this
 file. `drop`, `dropna`, `drop_duplicates`, `sort_values`, `sort_index`, `reset_index`,
@@ -82,6 +83,7 @@ SETTLES = (
         lambda pd, d: d.drop_duplicates(subset=["key"], inplace=True),
     ),
     ("DataFrame.dropna", "frame-dropna", NUMERIC, lambda pd, d: d.dropna(inplace=True)),
+    ("DataFrame.eval", "frame-eval", PLAIN, lambda pd, d: d.eval("d = a + 1", inplace=True)),
     ("DataFrame.ffill", "frame-ffill", NUMERIC, lambda pd, d: d.ffill(inplace=True)),
     ("DataFrame.fillna", "frame-fillna", NUMERIC, lambda pd, d: d.fillna(0.0, inplace=True)),
     ("DataFrame.mask", "frame-mask", WHOLE, lambda pd, d: d.mask(d > 0, -1, inplace=True)),
@@ -97,6 +99,7 @@ SETTLES = (
         PLAIN,
         lambda pd, d: d.rename_axis("row", inplace=True),
     ),
+    ("DataFrame.query", "frame-query", PLAIN, lambda pd, d: d.query("a > 1", inplace=True)),
     ("DataFrame.replace", "frame-replace", PLAIN, lambda pd, d: d.replace(1, 100, inplace=True)),
     (
         "DataFrame.reset_index",

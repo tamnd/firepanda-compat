@@ -374,6 +374,11 @@ case(
     note="ten keys over sixty four rows means the fourth largest is a tie, which is "
     "exactly when keep starts to matter",
 )
+QUERY = (
+    "In process because the driver has no entry for it, and firepanda's query is its Python "
+    "layer reading the expression with Python's own parser and working each node out over "
+    "whole columns"
+)
 case(
     "indexing/query",
     "DataFrame.query",
@@ -382,6 +387,8 @@ case(
     frames=("tall", "keys_1000"),
     expr=lambda pd, df: df.query("key > 3"),
     rules=STRICT,
+    in_process=True,
+    note=QUERY,
 )
 case(
     "indexing/query-and",
@@ -391,6 +398,8 @@ case(
     frames=("tall",),
     expr=lambda pd, df: df.query("key > 3 and value < 0"),
     rules=STRICT,
+    in_process=True,
+    note=QUERY,
 )
 case(
     "indexing/filter-like",

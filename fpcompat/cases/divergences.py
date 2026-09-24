@@ -162,12 +162,12 @@ case(
 # `inplace` parameter in a future pandas shows up as a failing test rather than as a
 # quiet hole.
 #
-# Four callables are left here and they are the four whose method is not in firepanda
-# at all: `eval` and `query` on a frame, and `interpolate` on a frame and on a column.
-# The other thirty one moved to `fpcompat/cases/inplace.py` when firepanda started
-# honouring the parameter, which document 51 over there is the argument for. Nothing
-# below is about the parameter. Each of these refuses because the method is missing,
-# and each will leave this file for the same reason the thirty one did.
+# Two callables are left here and they are the two whose method is not in firepanda
+# at all: `interpolate` on a frame and on a column. The other thirty three moved to
+# `fpcompat/cases/inplace.py` when firepanda started honouring the parameter, which
+# document 51 over there is the argument for, `eval` and `query` last, when the methods
+# arrived. Nothing below is about the parameter. Each of these refuses because the
+# method is missing, and each will leave this file for the same reason the others did.
 #
 # Each expression returns the object after the mutation rather than the return value of
 # the call, because the return value of an inplace call is None for half of these and
@@ -195,14 +195,12 @@ def _mutating(call):
 
 
 INPLACE = (
-    ("DataFrame.eval", "frame-eval", PLAIN, lambda pd, d: d.eval("d = a + 1", inplace=True)),
     (
         "DataFrame.interpolate",
         "frame-interpolate",
         NUMERIC,
         lambda pd, d: d.interpolate(inplace=True),
     ),
-    ("DataFrame.query", "frame-query", PLAIN, lambda pd, d: d.query("a > 1", inplace=True)),
     (
         "Series.interpolate",
         "series-interpolate",
