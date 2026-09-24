@@ -1034,8 +1034,7 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.idxmin(axis=1),
     in_process=True,
-    note="the column holding each row's minimum, the first on a tie. "
-    + FRAME_POSITIONS_IN_PROCESS,
+    note="the column holding each row's minimum, the first on a tie. " + FRAME_POSITIONS_IN_PROCESS,
 )
 REPEAT_IN_PROCESS = (
     "In process because firepanda turns the counts into positions in its Python layer "
@@ -2866,4 +2865,35 @@ case(
     in_process=True,
     note="both parameters at once, which turns the answer into plain tuples of the "
     "values with no label in front. " + WALKING,
+)
+TO_NUMPY_IN_PROCESS = (
+    "In process because firepanda builds the numpy array in its Python layer, which the "
+    "driver cannot reach. The case answers the numpy type and the values as a list, so "
+    "the type is checked as well as what is in the array"
+)
+case(
+    "basics/to-numpy",
+    "Series.to_numpy",
+    frames=("int64_no_nulls", "float64_half_null"),
+    expr=lambda pd, df: [str(df["value"].to_numpy().dtype), df["value"].to_numpy().tolist()],
+    in_process=True,
+    note="whole numbers stay whole and floats keep NaN in a gap. " + TO_NUMPY_IN_PROCESS,
+)
+case(
+    "basics/to-numpy-fill",
+    "Series.to_numpy",
+    covers=("na_value",),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].to_numpy(na_value=0.0).tolist(),
+    in_process=True,
+    note="a gap answered as the value given. " + TO_NUMPY_IN_PROCESS,
+)
+case(
+    "basics/frame-to-numpy",
+    "DataFrame.to_numpy",
+    frames=("keys_10",),
+    expr=lambda pd, df: [str(df.to_numpy().dtype), df.to_numpy().tolist()],
+    in_process=True,
+    note="a row per row in the one type the columns share, objects when text is one of "
+    "them. " + TO_NUMPY_IN_PROCESS,
 )
