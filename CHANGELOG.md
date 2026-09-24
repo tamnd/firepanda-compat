@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `reshape/combine-first`, `reshape/align` and `basics/alignment-align` run in process now and all their runs pass, against firepanda #1114, which adds `combine_first` on a frame and a column, and #1115, which adds `align` with pandas' joins, axes and fill.
+- Board, with the pandas layer from firepanda #1115 staged over the #1075 driver: 3509 passing runs of 4725 from 3499 of 4725, L3 152, L2 274, and the six failures are the same six as before.
 - `indexing/index-searchsorted` and `stats/searchsorted` run in process now and both runs pass, against firepanda #1112, which adds `Series.searchsorted`, and #1113, which answers several values with an array of positions.
 - Board, with the pandas layer from firepanda #1113 staged over the #1075 driver: 3499 passing runs of 4725 from 3496 of 4725, L3 151, L2 273, and the six failures are the same six as before.
 - `temporal/date-range` and `temporal/date-range-tz` run in process now and all three runs pass, against firepanda #1111, which adds `date_range` with pandas' unit, zone and inclusive rules on fixed steps.
