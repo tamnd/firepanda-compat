@@ -7,7 +7,7 @@
     "groupby": 1,
     "indexing": 28,
     "nested": 0,
-    "reshape": 1,
+    "reshape": 2,
     "stats": 20,
     "strings": 22,
     "temporal": 18,
