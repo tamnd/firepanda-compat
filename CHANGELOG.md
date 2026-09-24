@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `cut` and `qcut`: basics/cut-codes, basics/cut-text-labels and basics/qcut-codes, passing with firepanda #1132, which adds both. errors/cut-integer-bins-with-infinity now passes too, and reshape/cut and reshape/qcut stay unimplemented because they ask for pandas' Interval labels.
+- Board: 3802 passing runs of 4781, L3 154, L2 312, L1 717 and L0 762, with the same six failures as before.
 - Cases for `crosstab`, `from_dummies` and `lreshape`: basics/crosstab, basics/crosstab-normalize, basics/from-dummies and basics/lreshape, passing with firepanda #1131, which adds the three reshaping functions.
 - Board: 3794 passing runs of 4778, L3 154, L2 310, L1 715 and L0 760, with the same six failures as before.
 - Cases for pandas' options: basics/get-option and basics/option-context, passing with firepanda #1130, which adds `get_option`, `set_option`, `reset_option`, `describe_option`, `option_context` and `options`. #1130 also makes the resolution and signature cases for those six names pass.
