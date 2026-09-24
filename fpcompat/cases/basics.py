@@ -3098,3 +3098,52 @@ case(
     in_process=True,
     note="the values that differ, side by side. " + UPDATE_IN_PROCESS,
 )
+case(
+    "basics/pivot-text-columns",
+    "DataFrame.pivot",
+    covers=("index", "columns", "values"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.drop_duplicates(subset=["left", "right"]).pivot(
+        index="right", columns="left", values="value"
+    ),
+    in_process=True,
+    note="the text key across so each column is named by text, which firepanda needs. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/pivot-table-text-columns",
+    "DataFrame.pivot_table",
+    covers=("index", "columns", "values", "aggfunc"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.pivot_table(
+        index="right", columns="left", values="value", aggfunc="sum"
+    ),
+    in_process=True,
+    note="the repeated pairs summed, with the text key across. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/to-numeric-text",
+    "pandas.to_numeric",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.to_numeric(df["value"].astype(str)),
+    in_process=True,
+    note="whole numbers written as text read back as int64. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/to-numeric-coerce",
+    "pandas.to_numeric",
+    covers=("errors",),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: pd.to_numeric(df["value"], errors="coerce"),
+    in_process=True,
+    note="text that is not a number read as NaN. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/to-numeric-downcast",
+    "pandas.to_numeric",
+    covers=("downcast",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.to_numeric(df["value"] % 100, downcast="integer"),
+    in_process=True,
+    note="the smallest whole type that holds every value. " + UPDATE_IN_PROCESS,
+)
