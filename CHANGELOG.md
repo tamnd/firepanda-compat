@@ -8,6 +8,9 @@ divergence registry format.
 
 ### Added
 
+- `stats/interpolate` runs in process now and passes, against firepanda #1106 and #1107, which fill each gap on numpy's straight line with pandas' limit, direction and area rules and leave the gaps they do not fill as NaN rather than null.
+- `divergences/inplace/frame-interpolate` and `divergences/inplace/series-interpolate` moved to `fpcompat/cases/inplace.py` as `inplace/frame-interpolate` and `inplace/series-interpolate`, and both pass. `engine/inplace` now covers three callables, `MultiIndex.rename`, `MultiIndex.set_names` and `pandas.eval`.
+- Board, with the pandas layer from firepanda #1107 staged over the #1075 driver: 3484 passing runs of 4725 from 3477 of 4725, L3 147, L2 270, and the six failures are the same six as before.
 - `stats/corr-pearson`, `stats/corr-frame`, `stats/corr-with-nulls`, `stats/cov`, `stats/cov-frame` and `stats/autocorr` run in process now and all nine runs pass, against firepanda #1105, which pairs columns over the rows where both hold a value and lines two columns up by label first.
 - Board, with the pandas layer from firepanda #1105 staged over the #1075 driver: 3477 passing runs of 4725 from 3463 of 4725, L3 145, L2 268, and the six failures are the same six as before.
 - `stats/quantile-frame`, `errors/missing-label`, `errors/position-out-of-bounds`, `errors/quantile-on-boolean` and `indexing/loc-after-sort` run in process now, against firepanda #1103 and #1104, which read one row of a frame as a series named by the row's label and keep a number as a series name. Every run passes except `indexing/loc-after-sort` on the tall frame, whose row mixes a flag, a float and an int and which pandas answers with an object column. `indexing/iloc-row` stays out of process, since every one of its frames is such a row.
