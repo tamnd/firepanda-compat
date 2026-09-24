@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Five basics cases look rows up by instants and spans in the labels: a Timestamp, text naming a month, a slice with text bounds, zoned labels read with naive text, and text for a span. All five pass since tamnd/firepanda#1144.
+- Board: 3853 passing, 858 unimplemented, 93 divergent, the same 6 failing.
 - `basics/merge-ordered`, `basics/merge-ordered-how` and `basics/merge-outer-instants` check `pandas.merge_ordered` with `left_by`, `how` and `fill_method`, and an outer `pandas.merge` on a key of instants, and `reshape/merge-ordered` now runs in process.
 - Board: firepanda passes all four since tamnd/firepanda#1143.
 - `basics/merge-asof`, `basics/merge-asof-direction`, `basics/merge-asof-nearest` and `basics/merge-asof-tolerance` check `pandas.merge_asof` with `by`, `left_by` and `right_by`, every direction, `allow_exact_matches` and `tolerance`, on trades and quotes built from literals.
