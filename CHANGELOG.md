@@ -8,6 +8,9 @@ divergence registry format.
 
 ### Added
 
+- `basics/unique`, `categorical/unique` and `reshape/factorize` run in process now and all eight runs pass, against firepanda #1101, which answers `unique` with an array of values in first seen order, a categorical keeping every category, and `factorize` with int64 codes from a group by and an index of uniques.
+- The runner shapes a tuple answer part by part, so the index `factorize` answers beside its codes is compared as an index rather than as an array, since only the engine can say which of its objects is an index.
+- Board, with the pandas layer from firepanda #1101 staged over the #1075 driver: 3459 passing runs of 4725 from 3438 of 4725, L3 139, L2 262, and the four failures are the same four as before.
 - `indexing/query`, `indexing/query-and`, `inplace/frame-query` and `inplace/frame-eval` run in process now and every run passes, since firepanda #1098 reads a query with Python's own parser and works each node out with whole column arithmetic, and `inplace=True` on both methods now rebinds the frame, which leaves thirty three callables in the `engine/inplace` divergence.
 - `errors/undefined-variable` runs in process now and is recorded under `engine/pandas-exception-classes`, because firepanda raises its own `UndefinedVariableError`, a `NameError` with pandas' message, which a pandas class cannot catch.
 - Board, with the pandas layer from firepanda #1100 staged over the #1075 driver: 3438 passing runs of 4725 from 3349 of 4725, L3 138, L2 260, and the four failures are the same four as before.

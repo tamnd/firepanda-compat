@@ -314,8 +314,10 @@ case(
     "Series.unique",
     frames=BOTH,
     expr=lambda pd, df: df["value"].unique(),
+    in_process=True,
     note="unique on a categorical gives a categorical back and it keeps the full "
-    "category set, which is not what unique does anywhere else",
+    "category set, which is not what unique does anywhere else. In process for the "
+    "reason basics/unique gives",
 )
 case(
     "categorical/concat-same",

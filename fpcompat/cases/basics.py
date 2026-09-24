@@ -2256,7 +2256,9 @@ case(
     "Series.unique",
     frames=("keys_10", "keys_awkward", "strings_null_heavy"),
     expr=lambda pd, df: df.iloc[:, 0].unique(),
-    note="unique keeps first seen order, which is the part people get wrong",
+    in_process=True,
+    note="unique keeps first seen order, which is the part people get wrong. In process "
+    "because firepanda #1101 writes it as a duplicated mask in its Python layer",
 )
 case(
     "basics/value-counts",
