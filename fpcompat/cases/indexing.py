@@ -505,6 +505,8 @@ case(
     covers=("value",),
     frames=("keys_unique",),
     expr=lambda pd, df: df.set_index("key").sort_index().index.searchsorted(5),
+    in_process=True,
+    note="an index read out of a frame is searched by the index's own kernel",
 )
 case(
     "indexing/index-isin",

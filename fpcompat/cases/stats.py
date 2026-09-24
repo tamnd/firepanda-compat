@@ -473,6 +473,8 @@ case(
     covers=("value",),
     frames=("keys_unique",),
     expr=lambda pd, df: df["key"].sort_values().searchsorted([0, 5, 1000]),
+    in_process=True,
+    note="several values answer an array of positions, as pandas answers a numpy array",
 )
 
 
