@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `to_csv`: basics/to-csv, basics/to-csv-options and basics/series-to-csv, passing with firepanda #1133, which adds `DataFrame.to_csv` and `Series.to_csv`.
+- Board: 3809 passing runs of 4784, L3 154, L2 314, L1 719 and L0 764, with the same six failures as before.
 - Cases for `cut` and `qcut`: basics/cut-codes, basics/cut-text-labels and basics/qcut-codes, passing with firepanda #1132, which adds both. errors/cut-integer-bins-with-infinity now passes too, and reshape/cut and reshape/qcut stay unimplemented because they ask for pandas' Interval labels.
 - Board: 3802 passing runs of 4781, L3 154, L2 312, L1 717 and L0 762, with the same six failures as before.
 - Cases for `crosstab`, `from_dummies` and `lreshape`: basics/crosstab, basics/crosstab-normalize, basics/from-dummies and basics/lreshape, passing with firepanda #1131, which adds the three reshaping functions.
