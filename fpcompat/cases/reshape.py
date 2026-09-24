@@ -3,9 +3,9 @@
 A join is the operation where an implementation has the most freedom to be wrong in a
 way that still looks plausible. The row count coming out of an inner join on keys that
 repeat is a product and not a sum, the row order pandas produces is a consequence of
-how it hashes rather than a promise, and a null key never matches another null key
-even though a null value compares equal to itself in a groupby. Those three facts are
-what most of this section is about.
+how it hashes rather than a promise, and a null key matches another null key, which
+is the opposite of what SQL does. Those three facts are what most of this section is
+about.
 
 Every join here joins a frame against a shape of itself, because the corpus has no
 pair of frames designed to be joined and inventing one at case time would put the
@@ -23,6 +23,12 @@ JOIN_ORDER = Rules(
     relaxations=frozenset({"row_order"}),
     reason="pandas does not promise the row order out of a merge, it is a consequence "
     "of the hash table, so the rows are compared as a multiset",
+)
+
+
+MERGE_NOTE = (
+    "In process because firepanda does the pandas half of a merge in its Python layer, "
+    "around the join in its core, and the driver cannot reach it"
 )
 
 
@@ -45,7 +51,8 @@ for how in ("inner", "left", "right", "outer"):
         expr=(lambda kind: lambda pd, df: pd.merge(df, _right(df), on="key", how=kind))(how),
         rules=JOIN_ORDER,
         note="the ten key frame is the one where the row count is a product, since "
-        "roughly six rows on each side of every key gives thirty six out",
+        "roughly six rows on each side of every key gives thirty six out. " + MERGE_NOTE,
+        in_process=True,
     )
 
 case(
@@ -56,8 +63,9 @@ case(
     frames=("keys_awkward",),
     expr=lambda pd, df: pd.merge(df, _right(df), on="key", how="outer"),
     rules=JOIN_ORDER,
-    note="a null key does not match another null key, which is the SQL rule and the "
-    "opposite of what groupby does with the same column",
+    note="a null key matches another null key, which is the opposite of the SQL rule "
+    "and the same as what groupby does with the same column. " + MERGE_NOTE,
+    in_process=True,
 )
 case(
     "reshape/merge-two-keys",
@@ -67,6 +75,8 @@ case(
     frames=("keys_two_column",),
     expr=lambda pd, df: pd.merge(df, _right(df), on=["left", "right"]),
     rules=JOIN_ORDER,
+    note=MERGE_NOTE,
+    in_process=True,
 )
 case(
     "reshape/merge-suffixes",
@@ -77,7 +87,8 @@ case(
     expr=lambda pd, df: pd.merge(df, df, on="key", suffixes=("_a", "_b")),
     rules=JOIN_ORDER,
     note="an overlapping column name that is not a key gets a suffix, and what happens "
-    "when the suffixed name collides with an existing one is the next case up",
+    "when the suffixed name collides with an existing one is the next case up. " + MERGE_NOTE,
+    in_process=True,
 )
 case(
     "reshape/merge-indicator",
@@ -98,6 +109,8 @@ case(
     frames=("keys_two_column",),
     expr=lambda pd, df: pd.merge(df, df, left_on="left", right_on="left"),
     rules=JOIN_ORDER,
+    note=MERGE_NOTE,
+    in_process=True,
 )
 case(
     "reshape/merge-index",
@@ -118,6 +131,8 @@ case(
     frames=("keys_unique",),
     expr=lambda pd, df: pd.merge(df, _right(df), on="key", validate="one_to_one"),
     rules=JOIN_ORDER,
+    note=MERGE_NOTE,
+    in_process=True,
 )
 case(
     "reshape/merge-method",
@@ -127,7 +142,9 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.merge(_right(df), on="key", how="left"),
     rules=JOIN_ORDER,
-    note="the method spelling of the same thing, which has to agree with the function",
+    note="the method spelling of the same thing, which has to agree with the function. "
+    + MERGE_NOTE,
+    in_process=True,
 )
 case(
     "reshape/join",
