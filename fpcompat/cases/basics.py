@@ -3420,3 +3420,68 @@ case(
     note="one column as text, with and without its name, type and length line. "
     + UPDATE_IN_PROCESS,
 )
+
+
+def _trades(pd):
+    """Trades and quotes on whole number times for two tickers, both sorted by time."""
+    trades = pd.DataFrame(
+        {"time": [1, 3, 5, 5, 8, 12], "ticker": list("ABABAC"), "qty": [10, 20, 30, 40, 50, 60]}
+    )
+    quotes = pd.DataFrame(
+        {
+            "time": [0, 2, 3, 5, 7, 9],
+            "ticker": list("ABABAB"),
+            "bid": [1.5, 2.5, 3.5, 4.5, 5.5, 6.5],
+            "size": [1, 2, 3, 4, 5, 6],
+        }
+    )
+    return trades, quotes
+
+
+case(
+    "basics/merge-asof",
+    "pandas.merge_asof",
+    frames=("two",),
+    expr=lambda pd, df: pd.merge_asof(*_trades(pd), on="time", by="ticker"),
+    in_process=True,
+    note="each trade takes the last quote at or before its time with the same ticker, and a "
+    "trade with no quote keeps gaps, its integer column widened to float64. " + BUILT,
+)
+case(
+    "basics/merge-asof-direction",
+    "pandas.merge_asof",
+    covers=("direction",),
+    frames=("two",),
+    expr=lambda pd, df: pd.merge_asof(*_trades(pd), on="time", direction="forward"),
+    in_process=True,
+    note="forward takes the first quote at or after the trade. " + BUILT,
+)
+case(
+    "basics/merge-asof-nearest",
+    "pandas.merge_asof",
+    covers=("direction", "allow_exact_matches"),
+    frames=("two",),
+    expr=lambda pd, df: pd.merge_asof(
+        *_trades(pd), on="time", direction="nearest", allow_exact_matches=False
+    ),
+    in_process=True,
+    note="nearest takes the closer quote with ties going backward, and allow_exact_matches=False "
+    "skips a quote at the same time. " + BUILT,
+)
+case(
+    "basics/merge-asof-tolerance",
+    "pandas.merge_asof",
+    covers=("tolerance", "left_by", "right_by", "suffixes"),
+    frames=("two",),
+    expr=lambda pd, df: pd.merge_asof(
+        _trades(pd)[0].rename(columns={"ticker": "sym"}),
+        _trades(pd)[1],
+        on="time",
+        left_by="sym",
+        right_by="ticker",
+        tolerance=1,
+    ),
+    in_process=True,
+    note="a quote further than the tolerance is no match, and by columns with different names "
+    "on each side are both kept. " + BUILT,
+)

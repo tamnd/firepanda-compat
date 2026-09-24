@@ -220,7 +220,9 @@ case(
         df.sort_values("key"), _right(df).sort_values("key"), on="key"
     ),
     note="the nearest earlier key rather than an equal one, which is a different "
-    "algorithm and not a variation on the join",
+    "algorithm and not a variation on the join. In process because firepanda pairs the "
+    "rows in its Python layer and hands them to merge, and the driver cannot reach it",
+    in_process=True,
 )
 case(
     "reshape/merge-ordered",
