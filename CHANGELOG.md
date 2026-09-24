@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases `basics/read-json`, `basics/read-json-split`, `basics/read-json-lines`, `basics/read-json-inference` and `basics/read-json-series` check `read_json` against pandas, including its float decoder and its inference of numbers and dates.
+- Board: 3823 passing, 870 unimplemented, 93 divergent, 6 failing after firepanda#1137 and firepanda#1138.
 - Cases `basics/to-json`, `basics/to-json-orients` and `basics/series-to-json` check `to_json` text against pandas across orients, precision, lines and indent.
 - Board: 3816 passing, 872 unimplemented, 93 divergent, 6 failing after firepanda#1136.
 - Cases for `to_csv`: basics/to-csv, basics/to-csv-options and basics/series-to-csv, passing with firepanda #1133, which adds `DataFrame.to_csv` and `Series.to_csv`.

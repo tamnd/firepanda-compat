@@ -3303,3 +3303,56 @@ case(
     in_process=True,
     note="one column as JSON by label and split into name, labels and data. " + UPDATE_IN_PROCESS,
 )
+case(
+    "basics/read-json",
+    "pandas.read_json",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: pd.read_json(io.StringIO(df.to_json())),
+    in_process=True,
+    note="what to_json writes by column reads back with pandas' float decoder. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/read-json-split",
+    "pandas.read_json",
+    covers=("orient",),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: pd.read_json(io.StringIO(df.to_json(orient="split")), orient="split"),
+    in_process=True,
+    note="the split orient to_json writes reads back with its labels. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/read-json-lines",
+    "pandas.read_json",
+    covers=("lines",),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: pd.read_json(
+        io.StringIO(df.to_json(orient="records", lines=True)), lines=True
+    ),
+    in_process=True,
+    note="one record per line reads back. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/read-json-inference",
+    "pandas.read_json",
+    covers=("convert_dates",),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: pd.read_json(
+        io.StringIO(
+            '{"n":{"0":"1","1":"2"},"f":{"0":1.0,"1":2.0},'
+            '"date":{"0":1577836800000,"1":null},"t":{"0":"x","1":null}}'
+        )
+    ),
+    in_process=True,
+    note="numeric text becomes numbers, whole floats integers, a date column instants. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/read-json-series",
+    "pandas.read_json",
+    covers=("typ",),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: pd.read_json(io.StringIO('{"x":1.5,"y":2}'), typ="series"),
+    in_process=True,
+    note="a mapping read as a column labelled by its keys. " + UPDATE_IN_PROCESS,
+)
