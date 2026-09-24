@@ -360,7 +360,31 @@ case(
     ),
     note="value_name is given rather than left at its default, because the default is "
     "the string value and half the corpus has a column called that. What happens then "
-    "is in the errors section",
+    "is in the errors section. In process because the driver has no entry for it, and "
+    "firepanda stacks one frame a value column with concat in its Python layer",
+    in_process=True,
+)
+case(
+    "reshape/melt-default-values",
+    "DataFrame.melt",
+    level="L3",
+    covers=("id_vars", "var_name", "value_name"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.melt(id_vars="left", var_name="column", value_name="amount"),
+    note="Every column that is not an id is melted when value_vars is left out, in the "
+    "frame's order. In process because the driver has no entry for it",
+    in_process=True,
+)
+case(
+    "reshape/melt-keep-index",
+    "DataFrame.melt",
+    level="L3",
+    covers=("ignore_index",),
+    frames=("two",),
+    expr=lambda pd, df: df.set_index("c").melt(value_vars=["a", "b"], ignore_index=False),
+    note="With ignore_index=False the row labels repeat once a value column, and the int "
+    "and float columns stack as float64. In process because the driver has no entry for it",
+    in_process=True,
 )
 case(
     "reshape/melt-function",
