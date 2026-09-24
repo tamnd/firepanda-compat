@@ -3384,3 +3384,39 @@ case(
     in_process=True,
     note="text that is not a span becomes missing under coerce. " + UPDATE_IN_PROCESS,
 )
+case(
+    "basics/to-string",
+    "DataFrame.to_string",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df.to_string(),
+    in_process=True,
+    note="the frame as a table of text, floats trimmed across each column and gaps as NaN. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/to-string-options",
+    "DataFrame.to_string",
+    covers=("index", "header", "na_rep", "float_format", "justify", "show_dimensions"),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: [
+        df.assign(third=1 / 3).to_string(index=False, float_format="%.2f"),
+        df.to_string(header=False, na_rep="-"),
+        df.to_string(justify="left", show_dimensions=True),
+    ],
+    in_process=True,
+    note="no labels, no header, a float format, a gap marker, left headers and the size line. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/series-to-string",
+    "Series.to_string",
+    covers=("name", "dtype", "length"),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: [
+        df["value"].to_string(),
+        df["value"].rename("v").to_string(name=True, dtype=True, length=True),
+    ],
+    in_process=True,
+    note="one column as text, with and without its name, type and length line. "
+    + UPDATE_IN_PROCESS,
+)
