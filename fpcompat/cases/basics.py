@@ -1731,6 +1731,35 @@ case(
     "DataFrame.assign",
     frames=("two", "tall"),
     expr=lambda pd, df: df.assign(extra=df.iloc[:, 0]),
+    note="in process because the driver has no entry for this call, and the module adds "
+    "the column beside the others without copying them",
+    in_process=True,
+)
+case(
+    "basics/assign-chained",
+    "DataFrame.assign",
+    level="L3",
+    covers=("kwargs",),
+    frames=("keys_10", "tall"),
+    expr=lambda pd, df: df.assign(
+        double=lambda f: f.value * 2, more=lambda f: f.double + 1, value=0
+    ),
+    note="each keyword sees the frame the ones before it made, and a replaced column "
+    "keeps its place while a new one goes on the end. In process because the driver has "
+    "no entry for this call",
+    in_process=True,
+)
+case(
+    "basics/assign-aligned",
+    "DataFrame.assign",
+    level="L3",
+    covers=("kwargs",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.assign(back=df["value"].iloc[::-1].head(len(df) // 2)),
+    note="a series is lined up on the row labels, so a reversed half lands on the rows it "
+    "came from and the rest are missing. In process because the driver has no entry for "
+    "this call",
+    in_process=True,
 )
 case(
     "basics/insert-by-assignment",
@@ -1738,7 +1767,9 @@ case(
     frames=("two", "tall"),
     expr=lambda pd, df: df.assign(**{"new": 1}),
     note="the assign spelling, because a case that mutates its frame would change the "
-    "input of the next case if frames were ever cached",
+    "input of the next case if frames were ever cached, and in process because the "
+    "driver has no entry for this call",
+    in_process=True,
 )
 case(
     "basics/astype-float",
