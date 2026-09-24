@@ -1015,6 +1015,72 @@ case(
     in_process=True,
     note="pandas 3 raises where pandas 2 answered NaN. " + POSITIONS_IN_PROCESS,
 )
+FRAME_POSITIONS_IN_PROCESS = (
+    "In process because firepanda reads each column's extreme, or each row's, in its "
+    "Python layer, which the driver cannot reach"
+)
+case(
+    "basics/frame-idxmax",
+    "DataFrame.idxmax",
+    frames=("keys_10", "float64_half_null"),
+    expr=lambda pd, df: df.idxmax(),
+    in_process=True,
+    note="each column's first maximum, a gap passed over. " + FRAME_POSITIONS_IN_PROCESS,
+)
+case(
+    "basics/frame-idxmin-across",
+    "DataFrame.idxmin",
+    covers=("axis",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.idxmin(axis=1),
+    in_process=True,
+    note="the column holding each row's minimum, the first on a tie. "
+    + FRAME_POSITIONS_IN_PROCESS,
+)
+REPEAT_IN_PROCESS = (
+    "In process because firepanda turns the counts into positions in its Python layer "
+    "and takes them, which the driver cannot reach"
+)
+case(
+    "basics/repeat",
+    "Series.repeat",
+    frames=("int64_no_nulls", "keys_awkward"),
+    expr=lambda pd, df: df["value"].head(5).repeat(2),
+    in_process=True,
+    note="each value and its label twice, in order. " + REPEAT_IN_PROCESS,
+)
+case(
+    "basics/repeat-each",
+    "Series.repeat",
+    covers=("repeats",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].head(3).repeat([0, 1, 2]),
+    in_process=True,
+    note="one count per value, and a count of nought drops the value. " + REPEAT_IN_PROCESS,
+)
+SET_AXIS_IN_PROCESS = (
+    "In process because firepanda puts the labels on in its Python layer, which the "
+    "driver cannot reach"
+)
+case(
+    "basics/set-axis-rows",
+    "Series.set_axis",
+    covers=("labels",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].set_axis(list(range(len(df)))[::-1]),
+    in_process=True,
+    note="new row labels, one per row, counting down. " + SET_AXIS_IN_PROCESS,
+)
+case(
+    "basics/set-axis-columns",
+    "DataFrame.set_axis",
+    covers=("labels", "axis"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.set_axis(["value", "key"], axis=1),
+    in_process=True,
+    note="the two column names swapped, so each label has to land on the right column. "
+    + SET_AXIS_IN_PROCESS,
+)
 case(
     "basics/nunique",
     "Series.nunique",

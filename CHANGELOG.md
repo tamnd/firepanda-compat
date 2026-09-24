@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Six new cases in process, all passing against firepanda #1116: `basics/frame-idxmax` and `basics/frame-idxmin-across` for a frame's extremes down the columns and across the rows, `basics/repeat` and `basics/repeat-each` for one count and one count per value, and `basics/set-axis-rows` and `basics/set-axis-columns` for new labels on each axis, with the column names swapped so each label has to land on the right column. #1116 also makes 18 resolution and signature cases pass for `repeat`, `set_axis`, `idxmax`, `idxmin` and `iterrows`.
+- Board, with the pandas layer from firepanda #1116 staged over the #1075 driver: 3534 passing runs of 4733 from 3509 of 4725, L3 153, L2 280, and the six failures are the same six as before.
 - `reshape/combine-first`, `reshape/align` and `basics/alignment-align` run in process now and all their runs pass, against firepanda #1114, which adds `combine_first` on a frame and a column, and #1115, which adds `align` with pandas' joins, axes and fill.
 - Board, with the pandas layer from firepanda #1115 staged over the #1075 driver: 3509 passing runs of 4725 from 3499 of 4725, L3 152, L2 274, and the six failures are the same six as before.
 - `indexing/index-searchsorted` and `stats/searchsorted` run in process now and both runs pass, against firepanda #1112, which adds `Series.searchsorted`, and #1113, which answers several values with an array of positions.
