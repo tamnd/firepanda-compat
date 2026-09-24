@@ -423,6 +423,11 @@ case(
     note="a range that steps over the spring transition, so the wall clock readings "
     "are not evenly spaced even though the instants are",
 )
+RESAMPLE = (
+    "In process because the driver has no entry for it, and firepanda's resample is its "
+    "Python layer's group by on the bin number of every timestamp, reindexed onto every "
+    "bin from the first to the last"
+)
 case(
     "temporal/resample-sum",
     "DataFrame.resample",
@@ -430,26 +435,33 @@ case(
     covers=("rule",),
     frames=RANGE,
     expr=lambda pd, df: df.set_index("second")["row"].resample("D").sum(),
+    in_process=True,
+    note="six centuries of days, most of them empty, and an empty day sums to zero. " + RESAMPLE,
 )
 case(
     "temporal/resample-mean",
     "Resampler.mean",
     frames=RANGE,
     expr=lambda pd, df: df.set_index("second")["row"].resample("6h").mean(),
+    in_process=True,
+    note="an empty bucket is NaN, which widens the int column to float64. " + RESAMPLE,
 )
 case(
     "temporal/resample-count",
     "Resampler.count",
     frames=RANGE,
     expr=lambda pd, df: df.set_index("second")["row"].resample("D").count(),
+    in_process=True,
     note="an empty bucket produces a row with a zero in it rather than no row, which "
-    "is the difference between resampling and grouping by a truncated timestamp",
+    "is the difference between resampling and grouping by a truncated timestamp. " + RESAMPLE,
 )
 case(
     "temporal/resample-ohlc",
     "Resampler.ohlc",
     frames=RANGE,
     expr=lambda pd, df: df.set_index("second")["row"].resample("D").ohlc(),
+    in_process=True,
+    note="four columns, each NaN in an empty bucket and so float64. " + RESAMPLE,
 )
 case(
     "temporal/asfreq",
