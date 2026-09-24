@@ -2624,6 +2624,8 @@ case(
     covers=("other", "join"),
     frames=("float64_no_nulls",),
     expr=lambda pd, df: _top(df).align(_bottom(df), join="outer")[0],
+    in_process=True,
+    note="align is a Python method on the frame, answered in process",
 )
 
 

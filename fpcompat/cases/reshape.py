@@ -495,6 +495,8 @@ case(
     covers=("other",),
     frames=("float64_half_null",),
     expr=lambda pd, df: df.combine_first(df.fillna(0.0)),
+    in_process=True,
+    note="combine_first is a Python method on the frame, answered in process",
 )
 case(
     "reshape/align",
@@ -503,6 +505,8 @@ case(
     covers=("other", "join"),
     frames=("keys_unique",),
     expr=lambda pd, df: df.head(10).align(df.tail(10), join="outer")[0],
+    in_process=True,
+    note="align is a Python method on the frame, answered in process",
     rules=Rules(strict_index=True),
 )
 case(
