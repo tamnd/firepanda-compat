@@ -37,14 +37,20 @@ ACCUMULATED = Rules(
 # describe, which is eight statistics in one call
 # ---------------------------------------------------------------------------
 
+DESCRIBE = (
+    "In process because the driver has no entry for describe, and firepanda builds it in its "
+    "Python layer out of the count, mean, std, min, quantile and max it already has"
+)
+
 case(
     "stats/describe-numeric",
     "Series.describe",
     frames=FLOATS + NUMERIC,
     expr=lambda pd, df: df["value"].describe(),
     rules=SPREAD,
-    note="the all null column is the one to read, because describe on it still has a "
-    "count of zero and seven nulls rather than raising",
+    note=DESCRIBE + ". The all null column is the one to read, because describe on it still "
+    "has a count of zero and seven nulls rather than raising",
+    in_process=True,
 )
 case(
     "stats/describe-frame",
@@ -52,6 +58,8 @@ case(
     frames=("two", "tall"),
     expr=lambda pd, df: df.describe(),
     rules=SPREAD,
+    note=DESCRIBE + ", a column a column over the columns of numbers",
+    in_process=True,
 )
 case(
     "stats/describe-strings",
@@ -69,7 +77,21 @@ case(
     frames=("tall",),
     expr=lambda pd, df: df["value"].describe(percentiles=[0.1, 0.9]),
     rules=SPREAD,
-    note="the median is always in the answer whether or not it was asked for",
+    note=DESCRIBE + ". pandas 3 reports only the percentiles asked for, so the median is "
+    "not in the answer, where pandas 2 always added it",
+    in_process=True,
+)
+case(
+    "stats/describe-percentiles-labels",
+    "Series.describe",
+    level="L3",
+    covers=("percentiles",),
+    frames=FLOATS,
+    expr=lambda pd, df: df["value"].describe(percentiles=[0.333333, 0.25, 0.9999]),
+    rules=SPREAD,
+    note=DESCRIBE + ". Unsorted percentiles that need decimals to stay apart, which is where "
+    "the labels are printed with as many places as it takes",
+    in_process=True,
 )
 case(
     "stats/describe-categorical",
@@ -90,7 +112,17 @@ for name in ("std", "var", "sem", "skew", "kurt"):
         expr=(lambda method: lambda pd, df: getattr(df["value"], method)())(name),
         rules=SPREAD,
         note="the default is the sample form with one degree of freedom taken out, "
-        "which is not what a naive implementation writes",
+        "which is not what a naive implementation writes"
+        + (
+            ". In process because the driver has no entry for kurt, and firepanda sums the "
+            "moments in its Python layer the way pandas' nankurt does. The int64_half_null "
+            "run is a fourth moment of values near 4.6e18 with a spread of 4e9, where the "
+            "order of adding moves the answer by 2e-7 and pandas is itself 1.2e-7 off the "
+            "exact answer over the same floats"
+            if name == "kurt"
+            else ""
+        ),
+        in_process=name == "kurt",
     )
 
 case(
