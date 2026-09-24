@@ -3005,3 +3005,96 @@ case(
     in_process=True,
     note="the most common values of each column, NaN after a column's last. " + MAP_IN_PROCESS,
 )
+UPDATE_IN_PROCESS = (
+    "In process because firepanda lines the other side up and puts the values in from "
+    "its Python layer, which the driver cannot reach"
+)
+
+
+def _updated(df, other, **kwargs):
+    """The frame after `update`, which answers None and changes the frame."""
+    target = df.copy()
+    target.update(other, **kwargs)
+    return target
+
+
+case(
+    "basics/frame-update",
+    "DataFrame.update",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: _updated(df, df.fillna(-1.0) * 2),
+    in_process=True,
+    note="every value that is not missing on the other side put in. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/frame-update-keep",
+    "DataFrame.update",
+    covers=("overwrite",),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: _updated(df, df.fillna(-1.0) * 2, overwrite=False),
+    in_process=True,
+    note="only the gaps filled, what is already there kept. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/from-records",
+    "DataFrame.from_records",
+    covers=("columns", "index"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame.from_records(
+        [(1, "a"), (2, "b")], columns=["n", "s"], index="s"
+    ),
+    in_process=True,
+    note="tuples read against the names given, one column made the labels. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/series-filter",
+    "Series.filter",
+    covers=("like",),
+    frames=("keys_awkward",),
+    expr=lambda pd, df: df.set_index("key")["value"].filter(like="a"),
+    in_process=True,
+    note="the values whose labels hold the text. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/sample-seed",
+    "Series.sample",
+    covers=("random_state",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].sample(5, random_state=42),
+    in_process=True,
+    note="the same seed draws the same rows, because both ask numpy for the positions. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/frame-sample-frac",
+    "DataFrame.sample",
+    covers=("frac", "random_state"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.sample(frac=0.01, random_state=7),
+    in_process=True,
+    note="a share of the rows drawn with a seed. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/case-when",
+    "Series.case_when",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].case_when([(df["value"] < 100, 0), (df["value"] > 900, 1000)]),
+    in_process=True,
+    note="the first condition that holds puts its value in. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/series-dot",
+    "Series.dot",
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: float(df["value"].dot(df["value"])),
+    in_process=True,
+    note="the sum of the products, lined up by label. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/series-compare",
+    "Series.compare",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].compare(df["value"].where(df["value"] % 7 != 0, -1)),
+    in_process=True,
+    note="the values that differ, side by side. " + UPDATE_IN_PROCESS,
+)
