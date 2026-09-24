@@ -32,6 +32,12 @@ MERGE_NOTE = (
 )
 
 
+CONCAT_NOTE = (
+    "In process because firepanda settles the columns, the types and the row labels of a "
+    "concat in its Python layer, around the stack in its core, and the driver cannot reach it"
+)
+
+
 def _right(df, column="key"):
     """The right hand side of a self join, with the value column renamed."""
     return df.rename(columns={"value": "other"})
@@ -188,8 +194,9 @@ case(
     frames=("two", "keys_10", "empty"),
     expr=lambda pd, df: pd.concat([df, df]),
     note="the index repeats rather than being renumbered, which is the default and the "
-    "thing that surprises people",
+    "thing that surprises people. " + CONCAT_NOTE,
     rules=Rules(strict_index=True),
+    in_process=True,
 )
 case(
     "reshape/concat-ignore-index",
@@ -198,6 +205,8 @@ case(
     covers=("objs", "ignore_index"),
     frames=("two", "keys_10"),
     expr=lambda pd, df: pd.concat([df, df], ignore_index=True),
+    note=CONCAT_NOTE,
+    in_process=True,
 )
 case(
     "reshape/concat-columns",
@@ -206,6 +215,8 @@ case(
     covers=("objs", "axis"),
     frames=("two",),
     expr=lambda pd, df: pd.concat([df["a"], df["b"]], axis=1),
+    note=CONCAT_NOTE,
+    in_process=True,
 )
 case(
     "reshape/concat-mismatched",
@@ -215,8 +226,9 @@ case(
     frames=("two",),
     expr=lambda pd, df: pd.concat([df[["a", "b"]], df[["b", "c"]]]),
     note="the union of the columns with nulls in the gaps, and the column order of the "
-    "result is not the order of either input",
+    "result is not the order of either input. " + CONCAT_NOTE,
     rules=Rules(strict_index=True),
+    in_process=True,
 )
 case(
     "reshape/concat-join-inner",
@@ -226,6 +238,8 @@ case(
     frames=("two",),
     expr=lambda pd, df: pd.concat([df[["a", "b"]], df[["b", "c"]]], join="inner"),
     rules=Rules(strict_index=True),
+    note=CONCAT_NOTE,
+    in_process=True,
 )
 case(
     "reshape/concat-keys",
@@ -246,7 +260,8 @@ case(
     frames=("empty",),
     expr=lambda pd, df: pd.concat([df, df]),
     note="concatenating two empty frames has to give an empty frame with the right "
-    "column types, not an empty frame with no columns",
+    "column types, not an empty frame with no columns. " + CONCAT_NOTE,
+    in_process=True,
 )
 
 # ---------------------------------------------------------------------------
