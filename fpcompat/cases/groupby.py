@@ -311,6 +311,9 @@ case(
     covers=("func",),
     frames=("keys_10", "keys_1000"),
     expr=lambda pd, df: df.groupby("key")["value"].transform("sum"),
+    note="In process because firepanda casts a broadcast reduction back to the column's "
+    "own type in its Python layer, and the driver cannot reach it",
+    in_process=True,
 )
 case(
     "groupby/transform-mean",
@@ -323,6 +326,9 @@ case(
         tolerance=Tolerance.ACCUMULATION,
         reason="the tall frame makes each group mean a five thousand element sum",
     ),
+    note="In process because firepanda casts a broadcast reduction back to the column's "
+    "own type in its Python layer, and the driver cannot reach it",
+    in_process=True,
 )
 case(
     "groupby/transform-lambda",
@@ -346,6 +352,9 @@ case(
     "GroupBy.diff",
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key")["value"].diff(),
+    note="In process because firepanda's group by is a Python object the driver cannot "
+    "reach, and a group's first row has no earlier row so it is missing",
+    in_process=True,
 )
 case(
     "groupby/ffill",

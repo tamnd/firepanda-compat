@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `groupby/diff`, `groupby/transform-sum` and `groupby/transform-mean` run in process now, and all five runs pass. firepanda [#1069](https://github.com/tamnd/firepanda/pull/1069), merged as 1edffcad, adds a grouped `diff` that reads each row's earlier row in its group and a `transform` by name that reduces the groups once in a new core `group_broadcast` and gathers by ordinal, cast back to the column's own type the way pandas casts it.
+- Board, with the driver built against 1edffcad: 3085 passing runs of 4636 from 3076, L3 unchanged at 125, L2 237 from 236, failures unchanged at 3, and the oracle at 4636 of 4636.
 - `groupby/cumsum`, `groupby/cumprod`, `groupby/cummax`, `groupby/cummin`, `groupby/cumcount`, `groupby/ngroup` and `groupby/shift` run in process now, and all fourteen runs pass. firepanda [#1068](https://github.com/tamnd/firepanda/pull/1068), merged as 20a904d8, adds a core `group_scan` that runs each fold down the rows once with a carry per group, so nothing is sorted and the answer keeps the frame's rows and labels. `groupby/rank` stays unimplemented.
 - Board, with the driver built against 20a904d8: 3076 passing runs of 4636 from 3048, L3 unchanged at 125 since the transforms score L2 rather than L3 while `rank`, `diff` and `transform` are missing, L2 236 from 229, failures unchanged at 3, and the oracle at 4636 of 4636.
 - `reshape/merge-indicator` runs in process now. firepanda [#1066](https://github.com/tamnd/firepanda/pull/1066), merged as a471de1e, marks each side before the join and makes the two markers one category column after it, with all three categories in pandas' order whether or not they occur, which is what the case's note warned about.
