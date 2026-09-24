@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `update`, `from_records`, `filter`, `sample`, `case_when`, `dot` and `compare`: basics/frame-update, basics/frame-update-keep, basics/from-records, basics/series-filter, basics/sample-seed, basics/frame-sample-frac, basics/case-when, basics/series-dot and basics/series-compare, passing with firepanda #1124 to #1127. The first run found that pandas reads a missing label as the text `nan` in `filter`, so a search for `a` keeps it, which #1125 fixed, and that the signatures of `errors.AbstractMethodError` and `errors.PyperclipWindowsException` failed after #1123, which #1127 fixed.
+- Board: 3755 passing runs of 4767, L3 154, L2 302, L1 702 and L0 747, with the same six failures as before.
 - Cases for `apply`, `agg`, `transform` and `mode`: basics/frame-apply, basics/frame-apply-rows, basics/frame-agg-list, basics/series-agg-list, basics/series-transform and basics/frame-mode, passing with firepanda #1121.
 - Board: 3670 passing runs of 4758, L3 154, L2 294, L1 683 and L0 690, with the same six failures as before.
 - Cases for `map`, `apply` and `combine` on a column and `map` on a frame: basics/map-function, basics/map-dict, basics/map-ignore, basics/apply-function, basics/combine and basics/frame-map, passing with firepanda #1119 and #1120. The first run found that pandas answers NaN in a gap among map's numbers and keeps a mapping's type when no key is found, which #1120 fixed.
