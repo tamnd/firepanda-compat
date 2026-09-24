@@ -194,7 +194,9 @@ case(
     frames=("keys_10", "keys_awkward", "strings_null_heavy"),
     expr=lambda pd, df: df.iloc[:, 0].mode(),
     note="every tied value and not just one of them, sorted, which is why the return "
-    "is a Series and not a scalar",
+    "is a Series and not a scalar. In process because firepanda picks them in its Python "
+    "layer, which the driver cannot reach",
+    in_process=True,
 )
 
 # ---------------------------------------------------------------------------

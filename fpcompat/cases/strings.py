@@ -1472,4 +1472,7 @@ case(
     "Series.value_counts",
     frames=("strings_pattern", "strings_null_heavy"),
     expr=lambda pd, df: df["value"].value_counts().sort_index(),
+    note="In process because firepanda counts in its Python layer, with a group by and a "
+    "stable sort, which the driver cannot reach",
+    in_process=True,
 )

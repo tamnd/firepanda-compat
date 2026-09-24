@@ -64,6 +64,11 @@ MEASURING = (
     "See spec 57 section 1"
 )
 
+VC_NOTE = (
+    "In process because firepanda counts in its Python layer, with a group by and a "
+    "stable sort, which the driver cannot reach"
+)
+
 case(
     "basics/shape",
     "DataFrame.shape",
@@ -2177,6 +2182,8 @@ case(
         reason="the counts are sorted by count and ten keys over sixty four rows means "
         "ties, and pandas does not promise how it breaks them",
     ),
+    note=VC_NOTE,
+    in_process=True,
 )
 case(
     "basics/value-counts-dropna-false",
@@ -2189,6 +2196,8 @@ case(
         relaxations=frozenset({"row_order"}),
         reason="same tie breaking as the case above",
     ),
+    note=VC_NOTE,
+    in_process=True,
 )
 case(
     "basics/value-counts-normalize",
@@ -2202,6 +2211,33 @@ case(
         tolerance=Tolerance.SINGLE,
         reason="same tie breaking as the case above",
     ),
+    note=VC_NOTE,
+    in_process=True,
+)
+case(
+    "basics/value-counts-ascending",
+    "Series.value_counts",
+    level="L3",
+    covers=("sort", "ascending"),
+    frames=("keys_10", "strings_null_heavy"),
+    expr=lambda pd, df: df.iloc[:, 0].value_counts(ascending=True),
+    rules=Rules(
+        relaxations=frozenset({"row_order"}),
+        reason="same tie breaking as the case above",
+    ),
+    note="the least common first. " + VC_NOTE,
+    in_process=True,
+)
+case(
+    "basics/value-counts-unsorted",
+    "Series.value_counts",
+    level="L3",
+    covers=("sort",),
+    frames=("keys_10", "strings_null_heavy"),
+    expr=lambda pd, df: df.iloc[:, 0].value_counts(sort=False),
+    note="in the order each value first appears, which is the order of pandas' hash "
+    "table and has no ties to break, so the rows are compared in order. " + VC_NOTE,
+    in_process=True,
 )
 
 
