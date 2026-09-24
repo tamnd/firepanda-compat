@@ -3356,3 +3356,31 @@ case(
     in_process=True,
     note="a mapping read as a column labelled by its keys. " + UPDATE_IN_PROCESS,
 )
+case(
+    "basics/to-timedelta",
+    "pandas.to_timedelta",
+    covers=("arg",),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: pd.to_timedelta(pd.Series(["1 day", "2h", None, "00:00:03"], name="t")),
+    in_process=True,
+    note="text becomes spans at microsecond resolution, a gap stays missing. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/to-timedelta-unit",
+    "pandas.to_timedelta",
+    covers=("unit",),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: pd.to_timedelta(pd.Series([1, 2, 3]), unit="s"),
+    in_process=True,
+    note="whole numbers with a unit keep that unit. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/to-timedelta-coerce",
+    "pandas.to_timedelta",
+    covers=("errors",),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: pd.to_timedelta(pd.Series(["1s", "oops", "3ms"]), errors="coerce"),
+    in_process=True,
+    note="text that is not a span becomes missing under coerce. " + UPDATE_IN_PROCESS,
+)

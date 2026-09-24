@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases `basics/to-timedelta`, `basics/to-timedelta-unit` and `basics/to-timedelta-coerce` check `to_timedelta` against pandas for text, whole numbers with a unit and coerced mistakes.
+- Board: 3828 passing, 868 unimplemented, 93 divergent, 6 failing after firepanda#1139.
 - Cases `basics/read-json`, `basics/read-json-split`, `basics/read-json-lines`, `basics/read-json-inference` and `basics/read-json-series` check `read_json` against pandas, including its float decoder and its inference of numbers and dates.
 - Board: 3823 passing, 870 unimplemented, 93 divergent, 6 failing after firepanda#1137 and firepanda#1138.
 - Cases `basics/to-json`, `basics/to-json-orients` and `basics/series-to-json` check `to_json` text against pandas across orients, precision, lines and indent.
