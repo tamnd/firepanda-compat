@@ -387,6 +387,9 @@ case(
     frames=("two",),
     expr=lambda pd, df: pd.concat([]),
     raises=("ValueError", "No objects to concatenate"),
+    note="In process because firepanda's concat lives in its Python layer, which the "
+    "driver cannot reach",
+    in_process=True,
 )
 case(
     "errors/quantile-out-of-range",
