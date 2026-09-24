@@ -372,8 +372,19 @@ case(
     "Series.argmax",
     frames=("tall", "keys_10"),
     expr=lambda pd, df: df["value"].argmax(),
+    in_process=True,
     note="a position and not a label, which is the difference from idxmax and the only "
-    "reason both exist",
+    "reason both exist. In process because firepanda finds the row in its Python layer, "
+    "which the driver cannot reach",
+)
+case(
+    "stats/argmin",
+    "Series.argmin",
+    frames=("tall", "keys_10"),
+    expr=lambda pd, df: df["value"].argmin(),
+    in_process=True,
+    note="the smallest the same way. In process because firepanda finds the row in its "
+    "Python layer, which the driver cannot reach",
 )
 case(
     "stats/argsort",
