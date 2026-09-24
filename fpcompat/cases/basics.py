@@ -2411,6 +2411,114 @@ case(
     note="index= beside a mapping picks keys out in its own order, and the key the mapping "
     "does not have makes the integers float64. In process for the same reason",
 )
+
+
+# A frame or a series built from literals. Every one is in process because the driver
+# builds its frames from the corpus and has no entry for one made from literals.
+BUILT = "In process because the driver has no entry for a frame or series made from literals"
+
+
+def _numpy() -> object:
+    """numpy, imported when a case runs rather than when the corpus loads."""
+    import numpy
+
+    return numpy
+
+
+case(
+    "basics/frame-from-records",
+    "pandas.DataFrame",
+    frames=("two",),
+    expr=lambda pd, df: pd.DataFrame([{"a": 1, "b": "x"}, {"b": "y", "c": 2.5}]),
+    in_process=True,
+    note="the keys of every record are the columns in the order they are first seen, and "
+    "the integer column with a record missing it widens to float64. " + BUILT,
+)
+case(
+    "basics/frame-from-rows",
+    "pandas.DataFrame",
+    level="L3",
+    covers=("columns", "index"),
+    frames=("two",),
+    expr=lambda pd, df: pd.DataFrame([(1, "x"), (2, "y")], columns=["a", "b"], index=[5, 6]),
+    in_process=True,
+    note="rows name no columns, so columns= names them, and index= labels the rows. " + BUILT,
+)
+case(
+    "basics/frame-from-array",
+    "pandas.DataFrame",
+    level="L3",
+    covers=("columns", "index"),
+    frames=("two",),
+    expr=lambda pd, df: pd.DataFrame(
+        _numpy().arange(6, dtype="int32").reshape(3, 2), columns=["a", "b"], index=["x", "y", "z"]
+    ),
+    in_process=True,
+    note="a two dimensional array is read column by column and keeps its int32. " + BUILT,
+)
+case(
+    "basics/frame-scalar-broadcast",
+    "pandas.DataFrame",
+    level="L3",
+    covers=("index",),
+    frames=("two",),
+    expr=lambda pd, df: pd.DataFrame({"a": 1, "b": "s"}, index=[5, 6]),
+    in_process=True,
+    note="a single value in the mapping is repeated down the rows index= names. " + BUILT,
+)
+case(
+    "basics/frame-aligned-series",
+    "pandas.DataFrame",
+    frames=("two",),
+    expr=lambda pd, df: pd.DataFrame(
+        {
+            "a": pd.Series([1, 2], index=["x", "y"]),
+            "b": pd.Series([3, 4], index=["z", "y"]),
+        }
+    ),
+    in_process=True,
+    note="series in a mapping are lined up on the sorted union of their labels, and a "
+    "label only one of them has leaves a gap in the other. " + BUILT,
+)
+case(
+    "basics/frame-picked-columns",
+    "pandas.DataFrame",
+    level="L3",
+    covers=("columns",),
+    frames=("two",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2], "b": [3, 4]}, columns=["b", "a"]),
+    in_process=True,
+    note="columns= beside a mapping picks the keys out in its own order. " + BUILT,
+)
+case(
+    "basics/series-scalar-index",
+    "pandas.Series",
+    level="L3",
+    covers=("index",),
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(5.5, index=["a", "b"], name="n"),
+    in_process=True,
+    note="one value is repeated along the index given. " + BUILT,
+)
+case(
+    "basics/series-reindexed",
+    "pandas.Series",
+    level="L3",
+    covers=("index",),
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(pd.Series([1, 2], index=["a", "b"]), index=["b", "c"]),
+    in_process=True,
+    note="a series with index= is a reindex, so the label it does not have makes the "
+    "integers float64. " + BUILT,
+)
+case(
+    "basics/series-from-array",
+    "pandas.Series",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(_numpy().array([1, 2, 250], dtype="uint8")),
+    in_process=True,
+    note="an array keeps its own type rather than the one the values would be read as. " + BUILT,
+)
 case(
     "basics/alignment-power-gap",
     "Series.pow",
