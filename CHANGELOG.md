@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `strings/cat-others` runs in process now and all four runs pass, against firepanda #1109, which answers `str.cat` with `others` by lining the pieces up the way pandas does and joining each row.
+- Board, with the pandas layer from firepanda #1109 staged over the #1075 driver: 3488 passing runs of 4725 from 3484 of 4725, L3 148, L2 270, and the six failures are the same six as before.
 - `stats/interpolate` runs in process now and passes, against firepanda #1106 and #1107, which fill each gap on numpy's straight line with pandas' limit, direction and area rules and leave the gaps they do not fill as NaN rather than null.
 - `divergences/inplace/frame-interpolate` and `divergences/inplace/series-interpolate` moved to `fpcompat/cases/inplace.py` as `inplace/frame-interpolate` and `inplace/series-interpolate`, and both pass. `engine/inplace` now covers three callables, `MultiIndex.rename`, `MultiIndex.set_names` and `pandas.eval`.
 - Board, with the pandas layer from firepanda #1107 staged over the #1075 driver: 3484 passing runs of 4725 from 3477 of 4725, L3 147, L2 270, and the six failures are the same six as before.
