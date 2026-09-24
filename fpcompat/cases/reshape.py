@@ -111,7 +111,9 @@ case(
     expr=lambda pd, df: pd.merge(df, _right(df).head(10), on="key", how="outer", indicator=True),
     rules=JOIN_ORDER,
     note="the indicator column is a categorical with three categories in it whether or "
-    "not all three occur, which is easy to get wrong",
+    "not all three occur, which is easy to get wrong. firepanda marks each side before "
+    "the join and makes the two markers one category column after it",
+    in_process=True,
 )
 case(
     "reshape/merge-left-on-right-on",
