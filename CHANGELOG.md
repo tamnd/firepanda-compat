@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `map`, `apply` and `combine` on a column and `map` on a frame: basics/map-function, basics/map-dict, basics/map-ignore, basics/apply-function, basics/combine and basics/frame-map, passing with firepanda #1119 and #1120. The first run found that pandas answers NaN in a gap among map's numbers and keeps a mapping's type when no key is found, which #1120 fixed.
+- Board: 3643 passing runs of 4750, L3 154, L2 289, L1 674 and L0 681, with the same six failures as before.
 - Cases for `to_numpy` on a column and a frame: basics/to-numpy, basics/to-numpy-fill and basics/frame-to-numpy, which check the numpy type as well as the values, all passing with firepanda #1118.
 - Board: 3622 passing runs of 4743, L3 154, L2 285, L1 668 and L0 674, with the same six failures as before.
 - Five new cases in process, all passing against firepanda #1117: `indexing/index-value-counts`, `indexing/index-argmax` and `indexing/index-where` for the index members that go through the labels as a column, and `temporal/fillna-instant` and `temporal/fillna-instant-text` for filling a column of instants with an instant and with text naming one, on each of the four units. #1117 also makes 66 resolution and signature cases pass for 18 index members on `Index` and `DatetimeIndex`.

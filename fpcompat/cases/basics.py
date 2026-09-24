@@ -2897,3 +2897,60 @@ case(
     note="a row per row in the one type the columns share, objects when text is one of "
     "them. " + TO_NUMPY_IN_PROCESS,
 )
+MAP_IN_PROCESS = (
+    "In process because the function is Python and firepanda calls it on each value in "
+    "its Python layer, as pandas does, which the driver cannot reach"
+)
+case(
+    "basics/map-function",
+    "Series.map",
+    frames=("int64_no_nulls", "float64_half_null"),
+    expr=lambda pd, df: df["value"].head(6).map(lambda v: v * 2),
+    in_process=True,
+    note="a function on each value, a gap reaching it as NaN. " + MAP_IN_PROCESS,
+)
+case(
+    "basics/map-dict",
+    "Series.map",
+    covers=("func",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].head(6).map({0: "zero", 1: "one"}),
+    in_process=True,
+    note="a mapping, a key it lacks answered as missing. " + MAP_IN_PROCESS,
+)
+case(
+    "basics/map-ignore",
+    "Series.map",
+    covers=("na_action",),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].head(6).map(lambda v: v + 1, na_action="ignore"),
+    in_process=True,
+    note="a gap left alone rather than handed to the function. " + MAP_IN_PROCESS,
+)
+case(
+    "basics/apply-function",
+    "Series.apply",
+    covers=("args",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].head(6).apply(lambda v, k: v - k, args=(1,)),
+    in_process=True,
+    note="a function on each value with an extra argument. " + MAP_IN_PROCESS,
+)
+case(
+    "basics/combine",
+    "Series.combine",
+    covers=("fill_value",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].head(4).combine(df["value"].tail(3), max, fill_value=0),
+    in_process=True,
+    note="a function on each pair over both columns' labels, a label one side lacks read "
+    "as the fill. " + MAP_IN_PROCESS,
+)
+case(
+    "basics/frame-map",
+    "DataFrame.map",
+    frames=("keys_10",),
+    expr=lambda pd, df: df.map(lambda v: str(v)[:1]),
+    in_process=True,
+    note="a function on each value of each column. " + MAP_IN_PROCESS,
+)
