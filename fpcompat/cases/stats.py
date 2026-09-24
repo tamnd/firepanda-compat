@@ -328,6 +328,9 @@ case(
     frames=("tall", "keys_10"),
     expr=lambda pd, df: df["value"].rank(pct=True),
     rules=Rules(tolerance=Tolerance.SINGLE, reason="a rank divided by a count"),
+    note="in process because the driver has no entry for this call, and the module ranks "
+    "in one sort and a pass over the ties",
+    in_process=True,
 )
 case(
     "stats/rank-na-option",
@@ -337,7 +340,9 @@ case(
     frames=("float64_half_null",),
     expr=lambda pd, df: df["value"].rank(na_option="bottom"),
     note="where the nulls rank is a choice with three answers and the default is to "
-    "leave them out of the ranking entirely",
+    "leave them out of the ranking entirely, and in process because the driver has no "
+    "entry for this call",
+    in_process=True,
 )
 case(
     "stats/interpolate",

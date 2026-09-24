@@ -1484,6 +1484,9 @@ case(
     "Series.rank",
     frames=("keys_10", "float64_half_null"),
     expr=lambda pd, df: df["value"].rank(),
+    note="in process because the driver has no entry for this call, and the module ranks "
+    "in one sort and a pass over the ties",
+    in_process=True,
 )
 case(
     "basics/rank-method-min",
@@ -1492,6 +1495,9 @@ case(
     covers=("method",),
     frames=("keys_10", "float64_half_null"),
     expr=lambda pd, df: df["value"].rank(method="min"),
+    note="in process because the driver has no entry for this call, and the module ranks "
+    "in one sort and a pass over the ties",
+    in_process=True,
 )
 case(
     "basics/rank-method-dense",
@@ -1500,6 +1506,29 @@ case(
     covers=("method",),
     frames=("keys_10",),
     expr=lambda pd, df: df["key"].rank(method="dense"),
+    note="in process because the driver has no entry for this call, and the module ranks "
+    "in one sort and a pass over the ties",
+    in_process=True,
+)
+case(
+    "basics/frame-rank",
+    "DataFrame.rank",
+    frames=("keys_10", "float64_half_null"),
+    expr=lambda pd, df: df.rank(),
+    note="in process because the driver has no entry for this call, and the module ranks "
+    "in one sort and a pass over the ties",
+    in_process=True,
+)
+case(
+    "basics/frame-rank-numeric",
+    "DataFrame.rank",
+    level="L3",
+    covers=("numeric_only", "method", "ascending"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.rank(numeric_only=True, method="max", ascending=False),
+    note="in process because the driver has no entry for this call, and the module ranks "
+    "in one sort and a pass over the ties",
+    in_process=True,
 )
 
 # ---------------------------------------------------------------------------
