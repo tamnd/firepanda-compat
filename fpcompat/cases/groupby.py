@@ -301,6 +301,7 @@ for name in ("cumsum", "cumcount", "cummax", "cummin", "cumprod", "ngroup", "ran
         expr=(lambda method: lambda pd, df: getattr(df.groupby("key")["value"], method)())(name),
         note="a transform gives back the original row count in the original order, "
         "which is the property that separates it from an aggregation",
+        in_process=name != "rank",
     )
 
 case(
@@ -338,6 +339,7 @@ case(
     expr=lambda pd, df: df.groupby("key")["value"].shift(),
     note="shifting within a group and not across the frame, so every group's first row "
     "is a null no matter where it sits in the frame",
+    in_process=True,
 )
 case(
     "groupby/diff",
