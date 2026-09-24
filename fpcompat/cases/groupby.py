@@ -424,17 +424,47 @@ case(
     "reach, and a group's first row has no earlier row so it is missing",
     in_process=True,
 )
+FILLS = (
+    "In process because the driver has no entry for it, and firepanda finds the last value "
+    "at or before every row with a running largest position within the group and gathers it, "
+    "and a row whose key is missing is in no group so it answers missing"
+)
+
 case(
     "groupby/ffill",
     "GroupBy.ffill",
     frames=("keys_awkward",),
     expr=lambda pd, df: df.groupby("key")["value"].ffill(),
+    note=FILLS,
+    in_process=True,
+)
+case(
+    "groupby/bfill-limit",
+    "GroupBy.bfill",
+    covers=("limit",),
+    frames=("keys_awkward",),
+    expr=lambda pd, df: df.groupby("key").bfill(limit=1),
+    note=FILLS,
+    in_process=True,
 )
 case(
     "groupby/pct-change",
     "GroupBy.pct_change",
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key")["value"].pct_change(),
+    note="In process because the driver has no entry for it, and firepanda divides each "
+    "value by the group's own shift and takes one away, with no fill first as in pandas 3",
+    in_process=True,
+)
+case(
+    "groupby/pct-change-periods",
+    "GroupBy.pct_change",
+    covers=("periods",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.groupby("key").pct_change(periods=-2),
+    note="In process because the driver has no entry for it, and a negative period compares "
+    "each value with the one two rows later in its group",
+    in_process=True,
 )
 
 # ---------------------------------------------------------------------------
@@ -586,6 +616,19 @@ case(
     covers=("func",),
     frames=("keys_10", "keys_1000"),
     expr=lambda pd, df: df.groupby("key").filter(lambda group: len(group) > 5),
+    note="In process because the function is Python, and firepanda calls it once a group on "
+    "the group's rows and keeps the frame's rows of the groups it answers True for",
+    in_process=True,
+)
+case(
+    "groupby/filter-column",
+    "GroupBy.filter",
+    covers=("func",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.groupby("key")["value"].filter(lambda values: values.sum() % 2 == 0),
+    note="In process because the function is Python, and on one column any truthy answer "
+    "keeps the group",
+    in_process=True,
 )
 case(
     "groupby/any",
