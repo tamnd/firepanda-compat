@@ -508,6 +508,38 @@ case(
     in_process=True,
     note="an index read out of a frame is searched by the index's own kernel",
 )
+INDEX_THROUGH_A_COLUMN = (
+    "In process because firepanda answers this for an index by reading the labels as a "
+    "column in its Python layer, which the driver cannot reach"
+)
+case(
+    "indexing/index-value-counts",
+    "Index.value_counts",
+    frames=("keys_10", "keys_awkward"),
+    expr=lambda pd, df: df.set_index("key").index.value_counts(),
+    in_process=True,
+    note="counted as the column of labels would be, the index name on the answer. "
+    + INDEX_THROUGH_A_COLUMN,
+)
+case(
+    "indexing/index-argmax",
+    "Index.argmax",
+    frames=("keys_1000",),
+    expr=lambda pd, df: df.set_index("value").index.argmax(),
+    in_process=True,
+    note="the first largest label's position. " + INDEX_THROUGH_A_COLUMN,
+)
+case(
+    "indexing/index-where",
+    "Index.where",
+    level="L3",
+    covers=("cond", "other"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.set_index("value").index.where((df["key"] > 4).tolist(), -1),
+    in_process=True,
+    note="the labels where the condition holds and minus one elsewhere. "
+    + INDEX_THROUGH_A_COLUMN,
+)
 case(
     "indexing/index-isin",
     "Index.isin",
