@@ -970,18 +970,45 @@ for fold in ("sum", "prod", "min", "max", "any", "all"):
         "a second time of their own per column answers",
     )
 
+POSITIONS_IN_PROCESS = (
+    "In process because firepanda finds the row in its Python layer, from the "
+    "reduction and a filter, which the driver cannot reach"
+)
 case(
     "basics/idxmax",
     "Series.idxmax",
     frames=("float64_no_nulls", "int64_no_nulls", "tall"),
     expr=lambda pd, df: df["value"].idxmax(),
-    note="the first maximum, and which one is first is the whole content of the case",
+    in_process=True,
+    note="the first maximum, and which one is first is the whole content of the case. "
+    + POSITIONS_IN_PROCESS,
 )
 case(
     "basics/idxmin",
     "Series.idxmin",
     frames=("float64_no_nulls", "int64_no_nulls", "tall"),
     expr=lambda pd, df: df["value"].idxmin(),
+    in_process=True,
+    note=POSITIONS_IN_PROCESS,
+)
+case(
+    "basics/idxmax-half-null",
+    "Series.idxmax",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].idxmax(),
+    in_process=True,
+    note="a gap is passed over by default. " + POSITIONS_IN_PROCESS,
+)
+case(
+    "basics/idxmax-skipna-false",
+    "Series.idxmax",
+    level="L4",
+    covers=("skipna",),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].idxmax(skipna=False),
+    raises=("ValueError", "Encountered an NA value with skipna=False"),
+    in_process=True,
+    note="pandas 3 raises where pandas 2 answered NaN. " + POSITIONS_IN_PROCESS,
 )
 case(
     "basics/nunique",
@@ -2117,6 +2144,21 @@ case(
     covers=("left", "right"),
     frames=("float64_no_nulls", "keys_1000"),
     expr=lambda pd, df: df.iloc[:, 1].between(0, 100),
+    in_process=True,
+    note="In process because firepanda writes it as two comparisons and an and in its "
+    "Python layer, which the driver cannot reach",
+)
+case(
+    "basics/between-inclusive",
+    "Series.between",
+    level="L3",
+    covers=("left", "right", "inclusive"),
+    frames=("float64_half_null", "keys_1000"),
+    expr=lambda pd, df: df.iloc[:, 1].between(10, 500, inclusive="neither"),
+    in_process=True,
+    note="both ends open, and a missing value is False. In process because firepanda "
+    "writes it as two comparisons and an and in its Python layer, which the driver "
+    "cannot reach",
 )
 case(
     "basics/unique",
