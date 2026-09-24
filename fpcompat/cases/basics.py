@@ -3214,3 +3214,30 @@ case(
     in_process=True,
     note="two columns stacked into one. " + UPDATE_IN_PROCESS,
 )
+case(
+    "basics/cut-codes",
+    "pandas.cut",
+    covers=("labels",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.cut(df["value"], 4, labels=False),
+    in_process=True,
+    note="the position of each value's bin among four even bins. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/cut-text-labels",
+    "pandas.cut",
+    covers=("labels",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.cut(df["value"], 3, labels=["low", "middle", "high"]).astype(str),
+    in_process=True,
+    note="each value's bin named by a label of its own. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/qcut-codes",
+    "pandas.qcut",
+    covers=("labels",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.qcut(df["value"], 4, labels=False, duplicates="drop"),
+    in_process=True,
+    note="the quartile each value falls in. " + UPDATE_IN_PROCESS,
+)
