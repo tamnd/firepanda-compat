@@ -441,6 +441,15 @@ case(
 # Picking rows out of groups
 # ---------------------------------------------------------------------------
 
+FILTERS = (
+    "In process because the driver has no entry for it, and firepanda numbers the rows of "
+    "every group in its Python layer and keeps the frame's rows that the numbers pick"
+)
+PICKED = (
+    "In process because the driver has no entry for it, and firepanda finds each group's "
+    "largest or smallest value in its Python layer and takes the first label that holds it"
+)
+
 case(
     "groupby/head",
     "GroupBy.head",
@@ -448,6 +457,18 @@ case(
     covers=("n",),
     frames=("keys_10", "keys_1000"),
     expr=lambda pd, df: df.groupby("key").head(2),
+    note=FILTERS,
+    in_process=True,
+)
+case(
+    "groupby/head-negative",
+    "GroupBy.head",
+    level="L3",
+    covers=("n",),
+    frames=SMALL,
+    expr=lambda pd, df: df.groupby("key").head(-1),
+    note=FILTERS + ". A negative n drops that many rows from the end of every group",
+    in_process=True,
 )
 case(
     "groupby/tail",
@@ -456,30 +477,56 @@ case(
     covers=("n",),
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key").tail(2),
+    note=FILTERS,
+    in_process=True,
 )
 case(
     "groupby/nth",
     "GroupBy.nth",
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key").nth(0),
+    note=FILTERS,
+    in_process=True,
 )
 case(
     "groupby/nth-negative",
     "GroupBy.nth",
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key").nth(-1),
+    note=FILTERS,
+    in_process=True,
+)
+case(
+    "groupby/nth-list",
+    "GroupBy.nth",
+    frames=SMALL,
+    expr=lambda pd, df: df.groupby("key").nth[[0, -1]],
+    note=FILTERS + ". Several places at once, read through the indexer form",
+    in_process=True,
 )
 case(
     "groupby/idxmax",
     "GroupBy.idxmax",
     frames=("keys_10", "keys_1000"),
     expr=lambda pd, df: df.groupby("key")["value"].idxmax(),
+    note=PICKED,
+    in_process=True,
 )
 case(
     "groupby/idxmin",
     "GroupBy.idxmin",
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key")["value"].idxmin(),
+    note=PICKED,
+    in_process=True,
+)
+case(
+    "groupby/idxmin-unsorted",
+    "GroupBy.idxmin",
+    frames=SMALL,
+    expr=lambda pd, df: df.groupby("key", sort=False)["value"].idxmin(),
+    note=PICKED + ". The groups in the order they first appear, not the order of the answers",
+    in_process=True,
 )
 case(
     "groupby/quantile",
