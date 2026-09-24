@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases `basics/to-json`, `basics/to-json-orients` and `basics/series-to-json` check `to_json` text against pandas across orients, precision, lines and indent.
+- Board: 3816 passing, 872 unimplemented, 93 divergent, 6 failing after firepanda#1136.
 - Cases for `to_csv`: basics/to-csv, basics/to-csv-options and basics/series-to-csv, passing with firepanda #1133, which adds `DataFrame.to_csv` and `Series.to_csv`.
 - Board: 3809 passing runs of 4784, L3 154, L2 314, L1 719 and L0 764, with the same six failures as before.
 - Cases for `cut` and `qcut`: basics/cut-codes, basics/cut-text-labels and basics/qcut-codes, passing with firepanda #1132, which adds both. errors/cut-integer-bins-with-infinity now passes too, and reshape/cut and reshape/qcut stay unimplemented because they ask for pandas' Interval labels.

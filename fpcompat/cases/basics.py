@@ -3269,3 +3269,37 @@ case(
     in_process=True,
     note="one column as comma separated text. " + UPDATE_IN_PROCESS,
 )
+case(
+    "basics/to-json",
+    "DataFrame.to_json",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df.to_json(),
+    in_process=True,
+    note="the frame as JSON by column, floats in pandas' encoder digits and gaps as null. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/to-json-orients",
+    "DataFrame.to_json",
+    covers=("orient", "double_precision", "indent", "lines"),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: (
+        [
+            df.assign(third=1 / 3).to_json(orient=orient, double_precision=4)
+            for orient in ("index", "records", "split", "values")
+        ]
+        + [df.to_json(orient="records", lines=True), df.to_json(indent=2)]
+    ),
+    in_process=True,
+    note="every orient but table, a shorter precision, one record per line and indenting. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/series-to-json",
+    "Series.to_json",
+    covers=("orient",),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: [df["value"].to_json(), df["value"].to_json(orient="split")],
+    in_process=True,
+    note="one column as JSON by label and split into name, labels and data. " + UPDATE_IN_PROCESS,
+)
