@@ -776,3 +776,152 @@ case(
     "a level is one of the four inplace parameters firepanda honours rather than "
     "refusing. " + A_COPY,
 )
+
+# ---------------------------------------------------------------------------
+# Moments, spans and dates handed out and taken in
+# ---------------------------------------------------------------------------
+
+HANDED = (
+    "a temporal column is stored as counts, and what it hands out has to be a Timestamp "
+    "with its unit and zone, a Timedelta or a date, which is where the count used to leak"
+)
+
+
+def _handed(value):
+    """A value handed out, with the type, unit and zone that came with it.
+
+    Returns:
+        The value's repr, which names the type and carries the unit and zone.
+    """
+    return repr(value)
+
+
+for unit in UNITS:
+    case(
+        f"temporal/tolist-{unit}",
+        "Series.tolist",
+        frames=RESOLUTIONS,
+        expr=(lambda column: lambda pd, df: [_handed(v) for v in df[column].tolist()])(unit),
+        in_process=True,
+        note=HANDED,
+    )
+case(
+    "temporal/tolist-zoned",
+    "Series.tolist",
+    frames=ZONED,
+    expr=lambda pd, df: [_handed(v) for v in df["zoned"].tolist()],
+    in_process=True,
+    note=HANDED + ". The zone has to come out on every value, across the transition",
+)
+case(
+    "temporal/tolist-spans",
+    "Series.tolist",
+    frames=("temporal_durations",),
+    expr=lambda pd, df: [_handed(v) for v in df["value"].tolist()],
+    in_process=True,
+    note=HANDED,
+)
+case(
+    "temporal/iterate",
+    "Series.__iter__",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: [_handed(v) for v in df["ms"]],
+    in_process=True,
+    note=HANDED,
+)
+case(
+    "temporal/items",
+    "Series.items",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: [(k, _handed(v)) for k, v in df["s"].head(4).items()],
+    in_process=True,
+    note=HANDED,
+)
+case(
+    "temporal/iloc-cell",
+    "Series.iloc",
+    frames=RESOLUTIONS + ZONED,
+    expr=lambda pd, df: _handed(df["ns" if "ns" in df else "zoned"].iloc[3]),
+    in_process=True,
+    note=HANDED,
+)
+case(
+    "temporal/iat-cell",
+    "DataFrame.iat",
+    frames=("temporal_durations",),
+    expr=lambda pd, df: _handed(df.iat[5, 1]),
+    in_process=True,
+    note=HANDED,
+)
+for name in ("min", "max", "median"):
+    case(
+        f"temporal/reduce-{name}",
+        f"Series.{name}",
+        frames=RESOLUTIONS + ZONED + ("temporal_durations",),
+        expr=(
+            lambda how: (
+                lambda pd, df: _handed(
+                    getattr(
+                        df["us" if "us" in df else ("zoned" if "zoned" in df else "value")], how
+                    )()
+                )
+            )
+        )(name),
+        in_process=True,
+        note=HANDED + ". A reduction that answers a value of the column's own kind hands it "
+        "out the same way",
+    )
+case(
+    "temporal/itertuples",
+    "DataFrame.itertuples",
+    frames=("temporal_durations",),
+    expr=lambda pd, df: [tuple(_handed(v) for v in row) for row in df.itertuples()],
+    in_process=True,
+    note=HANDED,
+)
+case(
+    "temporal/minus-first",
+    "Series.sub",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: df["ms"] - df["ms"].min(),
+    in_process=True,
+    note="a Timestamp on the other side of an operator is lined up as a column, so the "
+    "span from the first moment is a column of spans at the column's unit",
+)
+case(
+    "temporal/after-a-moment",
+    "Series.gt",
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: df["s"] > df["s"].iloc[5],
+    in_process=True,
+    note="a comparison with one moment taken out of the column",
+)
+case(
+    "temporal/built-from-datetimes",
+    "pandas.Series",
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(
+        [pd.Timestamp("2024-01-01 10:00"), pd.Timestamp("2024-06-01 00:00:00.5")], name="when"
+    ),
+    in_process=True,
+    note="a list of moments is a column of moments at the finest unit any of them is "
+    "quoted at, which pandas infers rather than defaulting to nanoseconds",
+)
+case(
+    "temporal/built-from-spans",
+    "pandas.Series",
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series([pd.Timedelta(seconds=90), pd.Timedelta(days=2)]),
+    in_process=True,
+    note="a list of spans is a column of spans",
+)
+case(
+    "temporal/built-zoned",
+    "pandas.DataFrame",
+    frames=RANGE,
+    expr=lambda pd, df: pd.DataFrame(
+        {"when": [pd.Timestamp("2024-01-01", tz="Asia/Tokyo")] * 2, "n": [1, 2]}
+    ),
+    in_process=True,
+    note="a zone every value shares is kept on the column",
+)
