@@ -3241,3 +3241,31 @@ case(
     in_process=True,
     note="the quartile each value falls in. " + UPDATE_IN_PROCESS,
 )
+case(
+    "basics/to-csv",
+    "DataFrame.to_csv",
+    frames=("strings_ascii",),
+    expr=lambda pd, df: df.to_csv(),
+    in_process=True,
+    note="the frame as comma separated text. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/to-csv-options",
+    "DataFrame.to_csv",
+    covers=("sep", "na_rep", "index", "float_format"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.assign(half=df["value"] / 2).to_csv(
+        sep=";", na_rep="NA", index=False, float_format="%.2f"
+    ),
+    in_process=True,
+    note="another separator, a missing marker, no labels and two float digits. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/series-to-csv",
+    "Series.to_csv",
+    frames=("strings_ascii",),
+    expr=lambda pd, df: df["value"].to_csv(),
+    in_process=True,
+    note="one column as comma separated text. " + UPDATE_IN_PROCESS,
+)
