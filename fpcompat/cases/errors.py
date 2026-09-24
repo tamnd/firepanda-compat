@@ -181,8 +181,10 @@ case(
     frames=("tall",),
     expr=lambda pd, df: df.query("not_a_column > 1"),
     raises=("UndefinedVariableError", "not_a_column"),
+    in_process=True,
     note="the query parser has its own error type, which is a subclass of NameError "
-    "and still has to be exactly itself",
+    "and still has to be exactly itself. In process because the driver has no entry for "
+    "query, which is firepanda's Python layer",
 )
 case(
     "errors/out-of-bounds-datetime",
