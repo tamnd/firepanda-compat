@@ -788,6 +788,48 @@ case(
     in_process=True,
 )
 case(
+    "basics/frame-sum-skipna-false",
+    "DataFrame.sum",
+    level="L3",
+    covers=("skipna", "numeric_only"),
+    frames=NUMERIC + FLOATS,
+    expr=lambda pd, df: df.sum(skipna=False, numeric_only=True),
+    in_process=True,
+    note="a column with a gap is NaN and the answer widens to float64 only when one is. "
+    + FLAG_IN_PYTHON,
+)
+case(
+    "basics/frame-sum-min-count",
+    "DataFrame.sum",
+    level="L3",
+    covers=("min_count", "numeric_only"),
+    frames=NUMERIC + FLOATS,
+    expr=lambda pd, df: df.sum(min_count=2, numeric_only=True),
+    in_process=True,
+    note="a column with fewer than two values is NaN rather than a total. " + FLAG_IN_PYTHON,
+)
+case(
+    "basics/frame-max-skipna-false",
+    "DataFrame.max",
+    level="L3",
+    covers=("skipna", "numeric_only"),
+    frames=NUMERIC + FLOATS,
+    expr=lambda pd, df: df.max(skipna=False, numeric_only=True),
+    in_process=True,
+    note=FLAG_IN_PYTHON,
+)
+case(
+    "basics/frame-sum-whole-min-count",
+    "DataFrame.sum",
+    level="L3",
+    covers=("axis", "min_count", "numeric_only"),
+    frames=NUMERIC + FLOATS,
+    expr=lambda pd, df: df.sum(axis=None, min_count=3, numeric_only=True),
+    in_process=True,
+    note="with axis=None the floor counts every cell in the frame rather than each "
+    "column. " + FLAG_IN_PYTHON,
+)
+case(
     "basics/any",
     "Series.any",
     frames=("tall",),
@@ -2186,6 +2228,29 @@ case(
     expr=lambda pd, df: df["value"] - df["value"].shift(1),
     note="the one alignment that people rely on and that reads correctly, which is why "
     "it was the expensive part of the decision to leave it out",
+)
+case(
+    "basics/alignment-power-gap",
+    "Series.pow",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series([1, 2, 3]).iloc[:2] ** pd.Series([0, 1, 2]).iloc[1:],
+    in_process=True,
+    note="a power across a gap, where the first row is only on the left and is 1, so "
+    "numpy's `1 ** nan` answers 1 rather than NaN. In process because firepanda takes "
+    "the power again over NaN in its Python layer, which the driver cannot reach",
+)
+case(
+    "basics/alignment-power-gap-frame",
+    "DataFrame.pow",
+    frames=("two",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"x": [1, 2], "y": [1, 4]})
+        ** pd.DataFrame({"y": [0, 2], "z": [0, 6]}).iloc[1:]
+    ),
+    in_process=True,
+    note="the frame form, where a 1 on the left and a 0 on the right each answer 1 "
+    "across a gap. In process because firepanda takes the power again over NaN in its "
+    "Python layer, which the driver cannot reach",
 )
 case(
     "basics/alignment-align",
