@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for pandas' options: basics/get-option and basics/option-context, passing with firepanda #1130, which adds `get_option`, `set_option`, `reset_option`, `describe_option`, `option_context` and `options`. #1130 also makes the resolution and signature cases for those six names pass.
+- Board: 3784 passing runs of 4774, L3 154, L2 307, L1 712 and L0 757, with the same six failures as before.
 - Cases for `pivot`, `pivot_table` and `to_numeric`: basics/pivot-text-columns, basics/pivot-table-text-columns, basics/to-numeric-text, basics/to-numeric-coerce and basics/to-numeric-downcast, passing with firepanda #1128 and #1129.
 - Board: 3771 passing runs of 4772, L3 154, L2 305, L1 707 and L0 752, with the same six failures as before.
 - Cases for `update`, `from_records`, `filter`, `sample`, `case_when`, `dot` and `compare`: basics/frame-update, basics/frame-update-keep, basics/from-records, basics/series-filter, basics/sample-seed, basics/frame-sample-frac, basics/case-when, basics/series-dot and basics/series-compare, passing with firepanda #1124 to #1127. The first run found that pandas reads a missing label as the text `nan` in `filter`, so a search for `a` keeps it, which #1125 fixed, and that the signatures of `errors.AbstractMethodError` and `errors.PyperclipWindowsException` failed after #1123, which #1127 fixed.
