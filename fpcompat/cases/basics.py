@@ -3535,3 +3535,60 @@ case(
     in_process=True,
     note="the key an outer join puts together from both sides stays instants. " + BUILT,
 )
+
+
+def _moments(pd, zone=None):
+    """A frame labelled by four instants, the last in the next month."""
+    instants = pd.to_datetime(
+        pd.Series(["2020-01-01 00:00", "2020-01-01 12:00", "2020-01-02 06:00", "2020-02-01 00:00"])
+    )
+    if zone:
+        instants = instants.dt.tz_localize(zone)
+    return pd.DataFrame({"d": instants, "v": [1, 2, 3, 4]}).set_index("d")
+
+
+case(
+    "basics/loc-timestamp",
+    "DataFrame.loc",
+    frames=("two",),
+    expr=lambda pd, df: _moments(pd).loc[pd.Timestamp("2020-01-02 06:00")],
+    in_process=True,
+    note="one instant in the labels picks its row as a column. " + BUILT,
+)
+case(
+    "basics/loc-partial-string",
+    "DataFrame.loc",
+    frames=("two",),
+    expr=lambda pd, df: _moments(pd).loc["2020-01"],
+    in_process=True,
+    note="text naming a month picks every row inside it. " + BUILT,
+)
+case(
+    "basics/loc-slice-strings",
+    "DataFrame.loc",
+    frames=("two",),
+    expr=lambda pd, df: _moments(pd).loc["2020-01-01 06:00":"2020-01-02"],
+    in_process=True,
+    note="a slice with text bounds runs from the first moment to the end of the day the upper "
+    "bound names. " + BUILT,
+)
+case(
+    "basics/loc-zoned-string",
+    "DataFrame.loc",
+    frames=("two",),
+    expr=lambda pd, df: _moments(pd, "Asia/Tokyo").loc["2020-01-01"],
+    in_process=True,
+    note="zoned labels read naive text on their own clock. " + BUILT,
+)
+case(
+    "basics/loc-timedelta",
+    "DataFrame.loc",
+    frames=("two",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"d": pd.to_timedelta(pd.Series(["1D", "2D", "3D"])), "v": [1, 2, 3]}
+    )
+    .set_index("d")
+    .loc["2 days":],
+    in_process=True,
+    note="an index of spans answers the text of a span. " + BUILT,
+)
