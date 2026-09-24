@@ -301,8 +301,23 @@ for name in ("cumsum", "cumcount", "cummax", "cummin", "cumprod", "ngroup", "ran
         expr=(lambda method: lambda pd, df: getattr(df.groupby("key")["value"], method)())(name),
         note="a transform gives back the original row count in the original order, "
         "which is the property that separates it from an aggregation",
-        in_process=name != "rank",
+        in_process=True,
     )
+
+case(
+    "groupby/rank-options",
+    "GroupBy.rank",
+    level="L3",
+    covers=("method", "ascending", "na_option", "pct"),
+    frames=("keys_10", "keys_1000"),
+    expr=lambda pd, df: df.groupby("key")["value"].rank(
+        method="dense", ascending=False, na_option="top", pct=True
+    ),
+    rules=Rules(tolerance=Tolerance.SINGLE, reason="a rank divided by a count"),
+    note="in process because the driver has no entry for this call, and the module ranks "
+    "every group in one sort and a pass over the ties",
+    in_process=True,
+)
 
 case(
     "groupby/transform-sum",

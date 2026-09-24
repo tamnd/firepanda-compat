@@ -4,11 +4,11 @@
     "basics": 29,
     "categorical": 5,
     "errors": 0,
-    "groupby": 1,
+    "groupby": 2,
     "indexing": 28,
     "nested": 0,
     "reshape": 3,
-    "stats": 20,
+    "stats": 22,
     "strings": 22,
     "temporal": 18,
     "windows": 1
