@@ -32,6 +32,12 @@ MERGE_NOTE = (
 )
 
 
+JOIN_NOTE = (
+    "In process because firepanda joins on the row labels by putting them in a column and "
+    "running its merge on columns, all in its Python layer, and the driver cannot reach it"
+)
+
+
 CONCAT_NOTE = (
     "In process because firepanda settles the columns, the types and the row labels of a "
     "concat in its Python layer, around the stack in its core, and the driver cannot reach it"
@@ -128,6 +134,22 @@ case(
         df.set_index("key"), _right(df).set_index("key"), left_index=True, right_index=True
     ),
     rules=JOIN_ORDER,
+    note=JOIN_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/merge-left-on-right-index",
+    "pandas.merge",
+    level="L3",
+    covers=("left", "right", "left_on", "right_index", "how"),
+    frames=("keys_10", "keys_awkward"),
+    expr=lambda pd, df: pd.merge(
+        df, _right(df).set_index("key"), left_on="key", right_index=True, how="outer"
+    ),
+    rules=JOIN_ORDER,
+    note="the answer keeps the left frame's row labels rather than the key, which is the "
+    "surprise in a merge on one index. " + JOIN_NOTE,
+    in_process=True,
 )
 case(
     "reshape/merge-validate",
@@ -160,6 +182,31 @@ case(
     frames=("keys_unique",),
     expr=lambda pd, df: df.set_index("key").join(_right(df).set_index("key"), how="left"),
     rules=JOIN_ORDER,
+    note=JOIN_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/join-inner",
+    "DataFrame.join",
+    level="L3",
+    covers=("other", "how"),
+    frames=("keys_10", "keys_unique"),
+    expr=lambda pd, df: df.set_index("key").join(_right(df).set_index("key"), how="inner"),
+    rules=JOIN_ORDER,
+    note="a key that repeats on both sides gives every pairing, labelled by the key. " + JOIN_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/join-on",
+    "DataFrame.join",
+    level="L3",
+    covers=("other", "on"),
+    frames=("keys_10", "keys_unique", "keys_awkward"),
+    expr=lambda pd, df: df.join(_right(df).set_index("key"), on="key"),
+    rules=JOIN_ORDER,
+    note="a column of this frame against the labels of the other, where a missing key "
+    "matches a missing label. " + JOIN_NOTE,
+    in_process=True,
 )
 case(
     "reshape/merge-asof",
