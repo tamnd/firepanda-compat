@@ -557,3 +557,18 @@ def test_a_frame_the_subject_cannot_read_does_not_answer_a_declared_error():
     )
     record = runner.run_case(case, ORACLE, Unreading(), "two")
     assert record["outcome"] == runner.UNIMPLEMENTED
+
+
+class Claims:
+    """An engine that says an `Index` of pandas' is an index, and nothing else."""
+
+    def shape_of(self, answer):
+        return "index" if isinstance(answer, pd.Index) else None
+
+
+def test_a_tuple_is_shaped_part_by_part():
+    """`factorize` answers codes and an index together, and the index has to stay one."""
+    shaped = runner._shaped(Claims(), (1, pd.Index(["a", "b"])))
+    assert isinstance(shaped, tuple)
+    assert shaped[0] == 1
+    assert shaped[1].kind == "index"

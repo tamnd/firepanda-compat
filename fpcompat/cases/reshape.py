@@ -476,8 +476,10 @@ case(
     covers=("values",),
     frames=("keys_10", "keys_awkward", "strings_null_heavy"),
     expr=lambda pd, df: pd.factorize(df.iloc[:, 0]),
+    in_process=True,
     note="a null gets code minus one and does not appear in the uniques, which is the "
-    "one rule in factorize that is not obvious",
+    "one rule in factorize that is not obvious. In process because firepanda #1101 "
+    "writes it as the group numbers of a group by in its Python layer",
 )
 case(
     "reshape/duplicated-frame",

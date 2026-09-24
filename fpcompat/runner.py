@@ -241,7 +241,9 @@ def _shaped(engine: Any, value: Any) -> Any:
     same way it already does from the out of process form.
 
     An engine that claims nothing, which is pandas and every scalar anything returns,
-    gets its value back untouched and normalized later exactly as before.
+    gets its value back untouched and normalized later exactly as before. A tuple is
+    shaped part by part, since `factorize` answers an array and an index together and
+    the index is only an index when the engine says so.
 
     Args:
         engine: The engine that produced the value.
@@ -250,6 +252,8 @@ def _shaped(engine: Any, value: Any) -> Any:
     Returns:
         An `Answer` when the engine recognised the value, and the value otherwise.
     """
+    if isinstance(value, tuple):
+        return tuple(_shaped(engine, part) for part in value)
     shape_of = getattr(engine, "shape_of", None)
     shape = None if shape_of is None else shape_of(value)
     if shape is None:
