@@ -231,6 +231,9 @@ case(
     covers=("left", "right", "on"),
     frames=("keys_unique",),
     expr=lambda pd, df: pd.merge_ordered(df, _right(df), on="key"),
+    note="an outer join sorted by the key. In process because merge_ordered is firepanda's "
+    "Python layer over merge, and the driver cannot reach it",
+    in_process=True,
 )
 
 # ---------------------------------------------------------------------------

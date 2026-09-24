@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/merge-ordered`, `basics/merge-ordered-how` and `basics/merge-outer-instants` check `pandas.merge_ordered` with `left_by`, `how` and `fill_method`, and an outer `pandas.merge` on a key of instants, and `reshape/merge-ordered` now runs in process.
+- Board: firepanda passes all four since tamnd/firepanda#1143.
 - `basics/merge-asof`, `basics/merge-asof-direction`, `basics/merge-asof-nearest` and `basics/merge-asof-tolerance` check `pandas.merge_asof` with `by`, `left_by` and `right_by`, every direction, `allow_exact_matches` and `tolerance`, on trades and quotes built from literals.
 - Board: firepanda passes all four since tamnd/firepanda#1141, and `reshape/merge-asof` now runs in process and passes too.
 - Cases `basics/to-string`, `basics/to-string-options` and `basics/series-to-string` check `to_string` text against pandas, with and without labels, headers, float formats, gap markers and the footer.
