@@ -1309,8 +1309,34 @@ case(
     frames=FLOATS,
     expr=lambda pd, df: df["value"].round(2),
     note="banker's rounding, and the tolerance is exact on purpose because a rounding "
-    "case that tolerates a difference is testing nothing",
+    "case that tolerates a difference is testing nothing. In process because the driver has "
+    "no entry for this call",
     rules=Rules(tolerance=Tolerance.EXACT),
+    in_process=True,
+)
+case(
+    "basics/round-tens",
+    "Series.round",
+    level="L3",
+    covers=("decimals",),
+    frames=FLOATS + NUMERIC,
+    expr=lambda pd, df: df["value"].round(-1),
+    note="a negative decimals is the one place an integer column rounds, half to even among "
+    "the tens. In process because the driver has no entry for this call",
+    rules=Rules(tolerance=Tolerance.EXACT),
+    in_process=True,
+)
+case(
+    "basics/frame-round",
+    "DataFrame.round",
+    level="L3",
+    covers=("decimals",),
+    frames=FLOATS + NUMERIC,
+    expr=lambda pd, df: df.round(1),
+    note="every column at once, so the text and key columns are the ones that have to come "
+    "back unchanged. In process because the driver has no entry for this call",
+    rules=Rules(tolerance=Tolerance.EXACT),
+    in_process=True,
 )
 case(
     "basics/clip",
