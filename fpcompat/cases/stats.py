@@ -245,6 +245,9 @@ case(
     covers=("other", "method"),
     frames=("tall", "keys_two_column"),
     expr=lambda pd, df: df.iloc[:, -1].corr(df.iloc[:, -2], method="pearson"),
+    in_process=True,
+    note="the two columns are paired over the rows where both hold a value and lined "
+    "up by label first, which here is the same row",
     rules=SPREAD,
 )
 # Spearman and Kendall are not here on purpose. pandas hands both of them to scipy and
@@ -258,6 +261,9 @@ case(
     "DataFrame.corr",
     frames=("tall", "keys_two_column"),
     expr=lambda pd, df: df.corr(numeric_only=True),
+    in_process=True,
+    note="each pair of numeric columns is paired over its own shared rows, so a gap in "
+    "a third column does not move the answer",
     rules=SPREAD,
     level="L3",
     covers=("numeric_only",),
@@ -269,6 +275,8 @@ case(
     covers=("other",),
     frames=("tall", "keys_two_column"),
     expr=lambda pd, df: df.iloc[:, -1].cov(df.iloc[:, -2]),
+    in_process=True,
+    note="the divisor is the shared row count less one, as for the default ddof",
     rules=SPREAD,
 )
 case(
@@ -276,6 +284,9 @@ case(
     "DataFrame.cov",
     frames=("tall",),
     expr=lambda pd, df: df.cov(numeric_only=True),
+    in_process=True,
+    note="with no gap pandas takes numpy's road and with one it takes the pairwise "
+    "road, and the tall frame has none",
     rules=SPREAD,
     level="L3",
     covers=("numeric_only",),
@@ -287,6 +298,8 @@ case(
     covers=("lag",),
     frames=("tall",),
     expr=lambda pd, df: df["value"].autocorr(lag=1),
+    in_process=True,
+    note="the column against itself shifted by the lag, so the first row drops out of the pairing",
     rules=SPREAD,
 )
 case(
@@ -296,6 +309,7 @@ case(
     covers=("other",),
     frames=("float64_half_null",),
     expr=lambda pd, df: df["value"].corr(df["row"].astype("float64")),
+    in_process=True,
     rules=SPREAD,
     note="pairs where either side is null are dropped, so the count going into the "
     "correlation is not the row count",
