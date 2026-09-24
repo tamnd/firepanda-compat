@@ -1264,6 +1264,7 @@ case(
     covers=("others", "sep"),
     frames=ALL,
     expr=lambda pd, df: df["value"].str.cat(df["value"].str.upper(), sep="/"),
+    in_process=True,
     note="the other half of this name, which aligns the two columns on their labels "
     "before concatenating and so is a different operation from the fold above rather "
     "than the same one with an argument",
