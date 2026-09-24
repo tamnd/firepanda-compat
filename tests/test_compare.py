@@ -311,6 +311,16 @@ def test_a_column_label_that_is_a_string_is_not_one_that_is_an_integer():
     assert not compare(pd.Series([1], name=1), pd.Series([1], name="1"))
 
 
+def test_a_numpy_scalar_name_is_the_python_value_it_holds():
+    """pandas names a quantile with `np.float64` and a row read from an index that is
+    not a range with `np.int64`, and an engine answering the Python value is right.
+    The integer and the string stay apart."""
+    assert compare(pd.Series([1], name=np.float64(0.5)), pd.Series([1], name=0.5))
+    assert compare(pd.Series([1], name=np.int64(3)), pd.Series([1], name=3))
+    assert not compare(pd.Series([1], name=np.int64(3)), pd.Series([1], name="3"))
+    assert not compare(pd.Series([1], name=np.int64(3)), pd.Series([1], name=3.0))
+
+
 def test_column_order_is_a_difference():
     left = pd.DataFrame({"a": [1], "b": [2]})
     assert not compare(left, left[["b", "a"]])

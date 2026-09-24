@@ -207,6 +207,9 @@ case(
     covers=("q",),
     frames=("two", "keys_two_column"),
     expr=lambda pd, df: df.quantile(0.5, numeric_only=True),
+    in_process=True,
+    note="the answer is named by the fraction, as a float even when q is written as 1. "
+    "In process because firepanda #1103 names it in its Python layer",
     rules=Rules(tolerance=Tolerance.SINGLE, reason="an interpolated median"),
 )
 case(

@@ -361,12 +361,20 @@ def _label(value: Any) -> str:
     but a note that showed it to a reader without saying what it meant, and that is
     fixed where the note is written rather than here.
 
+    A numpy scalar renders as the Python value it holds, so `np.int64(3)` and `3`
+    are one label, as they are to pandas: each finds the other in an index and
+    they hash alike. pandas hands out the numpy one from an index that is not a
+    range and as the name of a quantile, and an engine that answers Python
+    scalars is not wrong for it. The integer and the string still render apart.
+
     Args:
         value: The label.
 
     Returns:
         The rendering.
     """
+    if type(value).__module__ == "numpy" and hasattr(value, "item"):
+        value = value.item()
     return value if isinstance(value, str) else f"{type(value).__name__}({value!r})"
 
 
