@@ -3147,3 +3147,36 @@ case(
     in_process=True,
     note="the smallest whole type that holds every value. " + UPDATE_IN_PROCESS,
 )
+
+
+def _read_inside_context(pd):
+    """`display.max_rows` read inside an `option_context` and again after it."""
+    with pd.option_context("display.max_rows", 7, "max_colwidth", 20):
+        inside = [pd.get_option("display.max_rows"), pd.options.display.max_colwidth]
+    return pd.Series([*inside, pd.get_option("display.max_rows")])
+
+
+case(
+    "basics/get-option",
+    "pandas.get_option",
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            pd.get_option("display.max_rows"),
+            pd.get_option("display.precision"),
+            pd.options.display.width,
+        ]
+    ),
+    in_process=True,
+    note="three defaults read by full name and by attribute. In process because "
+    "the options are process wide",
+)
+case(
+    "basics/option-context",
+    "pandas.option_context",
+    frames=("single",),
+    expr=lambda pd, df: _read_inside_context(pd),
+    in_process=True,
+    note="two options set for a block and put back after it. In process because the options "
+    "are process wide",
+)
