@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `temporal/date-range` and `temporal/date-range-tz` run in process now and all three runs pass, against firepanda #1111, which adds `date_range` with pandas' unit, zone and inclusive rules on fixed steps.
+- Board, with the pandas layer from firepanda #1111 staged over the #1075 driver: 3496 passing runs of 4725 from 3492 of 4725, L3 150, L2 272, and the six failures are the same six as before.
 - `categorical/value-counts` and `categorical/value-counts-dropna-false` run in process now and all four runs pass, against firepanda #1110, which counts a category column by its categories with a categorical index.
 - Board, with the pandas layer from firepanda #1110 staged over the #1075 driver: 3492 passing runs of 4725 from 3488 of 4725, L3 149, L2 271, and the six failures are the same six as before.
 - `strings/cat-others` runs in process now and all four runs pass, against firepanda #1109, which answers `str.cat` with `others` by lining the pieces up the way pandas does and joining each row.

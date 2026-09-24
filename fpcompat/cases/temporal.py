@@ -410,6 +410,8 @@ case(
     covers=("start", "periods", "freq"),
     frames=RANGE,
     expr=lambda pd, df: pd.date_range(start=df["second"].iloc[0], periods=10, freq="D"),
+    in_process=True,
+    note="a range of days from a start held in seconds, which keeps the answer in seconds",
 )
 case(
     "temporal/date-range-tz",
@@ -420,6 +422,7 @@ case(
     expr=lambda pd, df: pd.date_range(
         start="2024-03-09", periods=6, freq="12h", tz="America/New_York"
     ),
+    in_process=True,
     note="a range that steps over the spring transition, so the wall clock readings "
     "are not evenly spaced even though the instants are",
 )
