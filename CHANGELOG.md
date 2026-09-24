@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `categorical/value-counts` and `categorical/value-counts-dropna-false` run in process now and all four runs pass, against firepanda #1110, which counts a category column by its categories with a categorical index.
+- Board, with the pandas layer from firepanda #1110 staged over the #1075 driver: 3492 passing runs of 4725 from 3488 of 4725, L3 149, L2 271, and the six failures are the same six as before.
 - `strings/cat-others` runs in process now and all four runs pass, against firepanda #1109, which answers `str.cat` with `others` by lining the pieces up the way pandas does and joining each row.
 - Board, with the pandas layer from firepanda #1109 staged over the #1075 driver: 3488 passing runs of 4725 from 3484 of 4725, L3 148, L2 270, and the six failures are the same six as before.
 - `stats/interpolate` runs in process now and passes, against firepanda #1106 and #1107, which fill each gap on numpy's straight line with pandas' limit, direction and area rules and leave the gaps they do not fill as NaN rather than null.

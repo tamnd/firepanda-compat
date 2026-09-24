@@ -83,6 +83,7 @@ case(
     "Series.value_counts",
     frames=BOTH,
     expr=lambda pd, df: df["value"].value_counts().sort_index(),
+    in_process=True,
     note="every category gets a row whether or not anything used it, which is the "
     "single most useful property of the dtype and the easiest one to drop",
 )
@@ -93,6 +94,10 @@ case(
     covers=("dropna",),
     frames=BOTH,
     expr=lambda pd, df: df["value"].value_counts(dropna=False).sort_index(),
+    in_process=True,
+    note="the missing value is one more row after the categories, and only when "
+    "there is one to count, so the frame with no missing value answers what the "
+    "case above answers",
 )
 
 # ---------------------------------------------------------------------------
