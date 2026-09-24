@@ -3485,3 +3485,53 @@ case(
     note="a quote further than the tolerance is no match, and by columns with different names "
     "on each side are both kept. " + BUILT,
 )
+
+
+def _groups(pd):
+    """The pandas documentation's frames for an ordered merge: a left in two groups."""
+    left = pd.DataFrame(
+        {"key": list("aceace"), "lvalue": [1, 2, 3, 1, 2, 3], "group": list("aaabbb")}
+    )
+    return left, pd.DataFrame({"key": ["b", "c", "d"], "rvalue": [1, 2, 3]})
+
+
+case(
+    "basics/merge-ordered",
+    "pandas.merge_ordered",
+    covers=("left_by", "fill_method"),
+    frames=("two",),
+    expr=lambda pd, df: pd.merge_ordered(*_groups(pd), fill_method="ffill", left_by="group"),
+    in_process=True,
+    note="each group of the left is joined with the right in key order, the rows with no left "
+    "match take the left row above, and the group column is filled in for every row. " + BUILT,
+)
+case(
+    "basics/merge-ordered-how",
+    "pandas.merge_ordered",
+    covers=("on", "how", "fill_method"),
+    frames=("two",),
+    expr=lambda pd, df: pd.merge_ordered(
+        pd.DataFrame({"k": [3, 1, 2], "v": [1, 2, 3]}),
+        pd.DataFrame({"k": [2, 5, 0], "w": [1.5, 2.5, float("nan")]}),
+        on="k",
+        how="right",
+        fill_method="ffill",
+    ),
+    in_process=True,
+    note="a right join sorted by the key, where the fill carries the left row down and a "
+    "gap the right side really has stays a gap. " + BUILT,
+)
+case(
+    "basics/merge-outer-instants",
+    "pandas.merge",
+    covers=("how", "on"),
+    frames=("two",),
+    expr=lambda pd, df: pd.merge(
+        pd.DataFrame({"t": pd.to_datetime(pd.Series(["2020-01-01", "2020-01-03"])), "a": [1, 2]}),
+        pd.DataFrame({"t": pd.to_datetime(pd.Series(["2020-01-02", "2020-01-03"])), "b": [1, 2]}),
+        on="t",
+        how="outer",
+    ),
+    in_process=True,
+    note="the key an outer join puts together from both sides stays instants. " + BUILT,
+)
