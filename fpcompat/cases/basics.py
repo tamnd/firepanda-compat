@@ -2252,6 +2252,79 @@ case(
     "across a gap. In process because firepanda takes the power again over NaN in its "
     "Python layer, which the driver cannot reach",
 )
+LOGICAL_IN_PROCESS = (
+    "In process because firepanda answers the three logical operators in its Python "
+    "layer, which the driver cannot reach"
+)
+case(
+    "basics/logical-and-mask",
+    "Series.__and__",
+    frames=("tall",),
+    expr=lambda pd, df: (df["key"] > 50) & df["flag"],
+    in_process=True,
+    note="a mask built from a comparison and a boolean column, which is what `&` is "
+    "mostly written for. " + LOGICAL_IN_PROCESS,
+)
+case(
+    "basics/logical-or-mask",
+    "Series.__or__",
+    frames=("tall",),
+    expr=lambda pd, df: (df["key"] < 10) | df["flag"],
+    in_process=True,
+    note="the same with `|`. " + LOGICAL_IN_PROCESS,
+)
+case(
+    "basics/logical-xor-scalar",
+    "Series.__xor__",
+    frames=("tall",),
+    expr=lambda pd, df: True ^ df["flag"],
+    in_process=True,
+    note="a constant on the left, which Python sends to the reflected form, and which "
+    "flips every row. " + LOGICAL_IN_PROCESS,
+)
+case(
+    "basics/logical-or-gap",
+    "Series.__or__",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series([True, False, True]) | pd.Series([True, False]).iloc[1:],
+    in_process=True,
+    note="a row only the left side has, where pandas reads the right side as False. "
+    + LOGICAL_IN_PROCESS,
+)
+case(
+    "basics/logical-or-gap-reflected",
+    "Series.__or__",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series([True, False]).iloc[1:] | pd.Series([True, False, True]),
+    in_process=True,
+    note="the same two operands the other way round, where the row only the right side "
+    "has answers False even though it is True there, so `a | b` and `b | a` differ. "
+    + LOGICAL_IN_PROCESS,
+)
+case(
+    "basics/logical-and-frame-gap",
+    "DataFrame.__and__",
+    frames=("two",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"a": [True, False, True], "b": [True, True, False]})
+        & pd.DataFrame({"a": [True, True, True], "c": [False, True, True]}).iloc[1:]
+    ),
+    in_process=True,
+    note="two frames with a row and a column each only one side has, where the column "
+    "is all NaN and the row is False. " + LOGICAL_IN_PROCESS,
+)
+case(
+    "basics/logical-xor-frame-series",
+    "DataFrame.__xor__",
+    frames=("two",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"b": [True, False], "a": [False, False]})
+        ^ pd.DataFrame({"k": ["a", "c"], "v": [True, True]}).set_index("k")["v"]
+    ),
+    in_process=True,
+    note="a series lined up against the columns, where the union of the labels comes "
+    "back sorted and a column the frame lacks is all False. " + LOGICAL_IN_PROCESS,
+)
 case(
     "basics/alignment-align",
     "DataFrame.align",
