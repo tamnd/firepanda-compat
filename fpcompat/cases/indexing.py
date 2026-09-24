@@ -96,8 +96,11 @@ case(
     "DataFrame.loc",
     frames=("tall", "keys_10"),
     expr=lambda pd, df: _shuffled(df).loc[3],
+    in_process=True,
     note="sorted first, so the label three and the position three are different rows "
-    "and a case that confused them would fail here",
+    "and a case that confused them would fail here. In process because firepanda #1103 "
+    "reads one row in its Python layer. The tall frame mixes a flag with numbers, which "
+    "pandas answers with an object column, so it is refused there and scored as a fail",
 )
 case(
     "indexing/loc-list-after-sort",

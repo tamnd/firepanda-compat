@@ -8,6 +8,9 @@ divergence registry format.
 
 ### Added
 
+- `stats/quantile-frame`, `errors/missing-label`, `errors/position-out-of-bounds`, `errors/quantile-on-boolean` and `indexing/loc-after-sort` run in process now, against firepanda #1103 and #1104, which read one row of a frame as a series named by the row's label and keep a number as a series name. Every run passes except `indexing/loc-after-sort` on the tall frame, whose row mixes a flag, a float and an int and which pandas answers with an object column. `indexing/iloc-row` stays out of process, since every one of its frames is such a row.
+- The comparison reads a numpy scalar used as a name as the Python value it holds, so pandas' `np.int64(3)` and firepanda's `3` name the same row.
+- Board, with the pandas layer from firepanda #1104 staged over the #1075 driver: 3463 passing runs of 4725 from 3459 of 4725, L3 140, L2 263, and six failures, the four from before plus `indexing/loc-after-sort` and `divergences/implicit-index/loc-default` on the tall frame. Both refuse an object row, and the refusal now comes from inside a `loc` that works on other frames, which document 03 scores as a failure rather than a gap.
 - `basics/unique`, `categorical/unique` and `reshape/factorize` run in process now and all eight runs pass, against firepanda #1101, which answers `unique` with an array of values in first seen order, a categorical keeping every category, and `factorize` with int64 codes from a group by and an index of uniques.
 - The runner shapes a tuple answer part by part, so the index `factorize` answers beside its codes is compared as an index rather than as an array, since only the engine can say which of its objects is an index.
 - Board, with the pandas layer from firepanda #1101 staged over the #1075 driver: 3459 passing runs of 4725 from 3438 of 4725, L3 139, L2 262, and the four failures are the same four as before.

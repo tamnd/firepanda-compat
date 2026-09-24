@@ -47,6 +47,9 @@ case(
     level="L4",
     frames=("keys_unique",),
     expr=lambda pd, df: df.set_index("key").loc[99999],
+    in_process=True,
+    note="a label that is not in the index is a KeyError naming it. In process because "
+    "firepanda #1103 reads one row across columns in its Python layer",
     raises=("KeyError", "99999"),
 )
 case(
@@ -65,6 +68,9 @@ case(
     level="L4",
     frames=("two",),
     expr=lambda pd, df: df.iloc[9999],
+    in_process=True,
+    note="a position past the end is an IndexError whose message says out-of-bounds. "
+    "In process because firepanda #1104 checks it in its Python layer",
     raises=("IndexError", "out-of-bounds"),
 )
 case(
@@ -478,11 +484,13 @@ case(
     level="L4",
     frames=("tall",),
     expr=lambda pd, df: df.quantile(0.5, numeric_only=True),
+    in_process=True,
     raises=("TypeError", "numpy boolean subtract"),
     note="numeric_only keeps the boolean column, because a bool is a number as far as "
     "the selection is concerned, and then the interpolation cannot subtract two of "
     "them. That is a pandas bug in every reading except the one where it is the "
-    "documented behaviour, and either way it is what a caller sees",
+    "documented behaviour, and either way it is what a caller sees. In process "
+    "because firepanda reads quantile in its Python layer",
 )
 case(
     "errors/melt-value-name-collision",
