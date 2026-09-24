@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `apply`, `agg`, `transform` and `mode`: basics/frame-apply, basics/frame-apply-rows, basics/frame-agg-list, basics/series-agg-list, basics/series-transform and basics/frame-mode, passing with firepanda #1121.
+- Board: 3670 passing runs of 4758, L3 154, L2 294, L1 683 and L0 690, with the same six failures as before.
 - Cases for `map`, `apply` and `combine` on a column and `map` on a frame: basics/map-function, basics/map-dict, basics/map-ignore, basics/apply-function, basics/combine and basics/frame-map, passing with firepanda #1119 and #1120. The first run found that pandas answers NaN in a gap among map's numbers and keeps a mapping's type when no key is found, which #1120 fixed.
 - Board: 3643 passing runs of 4750, L3 154, L2 289, L1 674 and L0 681, with the same six failures as before.
 - Cases for `to_numpy` on a column and a frame: basics/to-numpy, basics/to-numpy-fill and basics/frame-to-numpy, which check the numpy type as well as the values, all passing with firepanda #1118.
