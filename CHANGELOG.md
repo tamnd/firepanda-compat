@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `crosstab`, `from_dummies` and `lreshape`: basics/crosstab, basics/crosstab-normalize, basics/from-dummies and basics/lreshape, passing with firepanda #1131, which adds the three reshaping functions.
+- Board: 3794 passing runs of 4778, L3 154, L2 310, L1 715 and L0 760, with the same six failures as before.
 - Cases for pandas' options: basics/get-option and basics/option-context, passing with firepanda #1130, which adds `get_option`, `set_option`, `reset_option`, `describe_option`, `option_context` and `options`. #1130 also makes the resolution and signature cases for those six names pass.
 - Board: 3784 passing runs of 4774, L3 154, L2 307, L1 712 and L0 757, with the same six failures as before.
 - Cases for `pivot`, `pivot_table` and `to_numeric`: basics/pivot-text-columns, basics/pivot-table-text-columns, basics/to-numeric-text, basics/to-numeric-coerce and basics/to-numeric-downcast, passing with firepanda #1128 and #1129.

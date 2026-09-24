@@ -3180,3 +3180,37 @@ case(
     note="two options set for a block and put back after it. In process because the options "
     "are process wide",
 )
+case(
+    "basics/crosstab",
+    "pandas.crosstab",
+    covers=("margins",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: pd.crosstab(df["left"], df["right"].astype(str), margins=True),
+    in_process=True,
+    note="counts of each pair of keys with totals. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/crosstab-normalize",
+    "pandas.crosstab",
+    covers=("normalize",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: pd.crosstab(df["left"], df["right"].astype(str), normalize="index"),
+    in_process=True,
+    note="each row of counts over its total. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/from-dummies",
+    "pandas.from_dummies",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: pd.from_dummies(pd.get_dummies(df[["left"]]), sep="_"),
+    in_process=True,
+    note="get_dummies read back into the text it came from. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/lreshape",
+    "pandas.lreshape",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.lreshape(df.assign(other=df["value"] * 2), {"both": ["value", "other"]}),
+    in_process=True,
+    note="two columns stacked into one. " + UPDATE_IN_PROCESS,
+)
