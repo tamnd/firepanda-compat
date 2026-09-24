@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `stats/corr-pearson`, `stats/corr-frame`, `stats/corr-with-nulls`, `stats/cov`, `stats/cov-frame` and `stats/autocorr` run in process now and all nine runs pass, against firepanda #1105, which pairs columns over the rows where both hold a value and lines two columns up by label first.
+- Board, with the pandas layer from firepanda #1105 staged over the #1075 driver: 3477 passing runs of 4725 from 3463 of 4725, L3 145, L2 268, and the six failures are the same six as before.
 - `stats/quantile-frame`, `errors/missing-label`, `errors/position-out-of-bounds`, `errors/quantile-on-boolean` and `indexing/loc-after-sort` run in process now, against firepanda #1103 and #1104, which read one row of a frame as a series named by the row's label and keep a number as a series name. Every run passes except `indexing/loc-after-sort` on the tall frame, whose row mixes a flag, a float and an int and which pandas answers with an object column. `indexing/iloc-row` stays out of process, since every one of its frames is such a row.
 - The comparison reads a numpy scalar used as a name as the Python value it holds, so pandas' `np.int64(3)` and firepanda's `3` name the same row.
 - Board, with the pandas layer from firepanda #1104 staged over the #1075 driver: 3463 passing runs of 4725 from 3459 of 4725, L3 140, L2 263, and six failures, the four from before plus `indexing/loc-after-sort` and `divergences/implicit-index/loc-default` on the tall frame. Both refuse an object row, and the refusal now comes from inside a `loc` that works on other frames, which document 03 scores as a failure rather than a gap.
