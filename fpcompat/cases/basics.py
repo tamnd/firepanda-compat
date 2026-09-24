@@ -2334,6 +2334,24 @@ case(
     "it was the expensive part of the decision to leave it out",
 )
 case(
+    "basics/series-from-mapping",
+    "pandas.Series",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series({"b": 2.5, "a": 1.5, "c": 0.5}, name="v"),
+    in_process=True,
+    note="the keys are the labels in the mapping's order and not sorted. In process because "
+    "the driver builds frames and has no entry for a series made from literals",
+)
+case(
+    "basics/series-from-mapping-picked",
+    "pandas.Series",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series({"a": 1, "b": 2}, index=["b", "z"]),
+    in_process=True,
+    note="index= beside a mapping picks keys out in its own order, and the key the mapping "
+    "does not have makes the integers float64. In process for the same reason",
+)
+case(
     "basics/alignment-power-gap",
     "Series.pow",
     frames=("two",),
