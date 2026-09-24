@@ -2954,3 +2954,54 @@ case(
     in_process=True,
     note="a function on each value of each column. " + MAP_IN_PROCESS,
 )
+case(
+    "basics/frame-apply",
+    "DataFrame.apply",
+    frames=("int64_no_nulls", "float64_half_null"),
+    expr=lambda pd, df: df.apply(lambda c: c.max() - c.min()),
+    in_process=True,
+    note="a function on each column answering one value, gathered into a column. " + MAP_IN_PROCESS,
+)
+case(
+    "basics/frame-apply-rows",
+    "DataFrame.apply",
+    covers=("axis",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.head(6).apply(lambda r: r.sum(), axis=1),
+    in_process=True,
+    note="a function on each row, the rows handed over as columns. " + MAP_IN_PROCESS,
+)
+case(
+    "basics/frame-agg-list",
+    "DataFrame.agg",
+    covers=("func",),
+    frames=("int64_no_nulls", "float64_half_null"),
+    expr=lambda pd, df: df.agg(["sum", "min"]),
+    in_process=True,
+    note="a row per function, labelled by name. " + MAP_IN_PROCESS,
+)
+case(
+    "basics/series-agg-list",
+    "Series.agg",
+    covers=("func",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].agg(["sum", "max"]),
+    in_process=True,
+    note="a column of the reductions, labelled by name. " + MAP_IN_PROCESS,
+)
+case(
+    "basics/series-transform",
+    "Series.transform",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].transform(lambda c: c - c.min()),
+    in_process=True,
+    note="a function answering a column of the same labels. " + MAP_IN_PROCESS,
+)
+case(
+    "basics/frame-mode",
+    "DataFrame.mode",
+    frames=("keys_10",),
+    expr=lambda pd, df: df.mode(),
+    in_process=True,
+    note="the most common values of each column, NaN after a column's last. " + MAP_IN_PROCESS,
+)
