@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Five new cases in process, all passing against firepanda #1117: `indexing/index-value-counts`, `indexing/index-argmax` and `indexing/index-where` for the index members that go through the labels as a column, and `temporal/fillna-instant` and `temporal/fillna-instant-text` for filling a column of instants with an instant and with text naming one, on each of the four units. #1117 also makes 66 resolution and signature cases pass for 18 index members on `Index` and `DatetimeIndex`.
+- Board, with the pandas layer from firepanda #1117 staged over the #1075 driver: 3608 passing runs of 4739 from 3534 of 4733, L3 154, L2 283, L1 664, L0 670, and the six failures are the same six as before.
 - Six new cases in process, all passing against firepanda #1116: `basics/frame-idxmax` and `basics/frame-idxmin-across` for a frame's extremes down the columns and across the rows, `basics/repeat` and `basics/repeat-each` for one count and one count per value, and `basics/set-axis-rows` and `basics/set-axis-columns` for new labels on each axis, with the column names swapped so each label has to land on the right column. #1116 also makes 18 resolution and signature cases pass for `repeat`, `set_axis`, `idxmax`, `idxmin` and `iterrows`.
 - Board, with the pandas layer from firepanda #1116 staged over the #1075 driver: 3534 passing runs of 4733 from 3509 of 4725, L3 153, L2 280, and the six failures are the same six as before.
 - `reshape/combine-first`, `reshape/align` and `basics/alignment-align` run in process now and all their runs pass, against firepanda #1114, which adds `combine_first` on a frame and a column, and #1115, which adds `align` with pandas' joins, axes and fill.

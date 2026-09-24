@@ -92,6 +92,27 @@ for unit in UNITS:
     )
 
 case(
+    "temporal/fillna-instant",
+    "Series.fillna",
+    covers=("value",),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: df["us"].where(df["row"] % 3 != 0).fillna(pd.Timestamp("2000-01-01")),
+    in_process=True,
+    note="an instant with no zone fills a column of instants with no zone and keeps its "
+    "unit. In process because firepanda reads the fill value in its Python layer, which "
+    "the driver cannot reach",
+)
+case(
+    "temporal/fillna-instant-text",
+    "Series.fillna",
+    covers=("value",),
+    frames=RESOLUTIONS,
+    expr=lambda pd, df: df["s"].where(df["row"] % 2 == 0).fillna("2000-01-01 12:00"),
+    in_process=True,
+    note="text naming an instant is read as one, as pandas reads it. In process because "
+    "firepanda reads the fill value in its Python layer, which the driver cannot reach",
+)
+case(
     "temporal/day-name",
     "dt.day_name",
     frames=RANGE,
