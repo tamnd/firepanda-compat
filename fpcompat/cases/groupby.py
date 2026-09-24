@@ -236,6 +236,11 @@ case(
 # agg, which is the part with the most spellings
 # ---------------------------------------------------------------------------
 
+AGG = (
+    "In process because the driver has no entry for agg, and firepanda reads the shapes of "
+    "func in its Python layer and runs each named reduction on its own"
+)
+
 case(
     "groupby/agg-string",
     "GroupBy.agg",
@@ -243,6 +248,8 @@ case(
     covers=("func",),
     frames=SMALL,
     expr=lambda pd, df: df.groupby("key").agg("sum"),
+    note=AGG,
+    in_process=True,
 )
 case(
     "groupby/agg-list",
@@ -251,7 +258,8 @@ case(
     covers=("func",),
     frames=SMALL,
     expr=lambda pd, df: df.groupby("key")["value"].agg(["sum", "mean", "count"]),
-    note="a list gives one column per function, named after the function",
+    note=AGG + ". A list gives one column per function, named after the function",
+    in_process=True,
 )
 case(
     "groupby/agg-dict",
@@ -260,14 +268,59 @@ case(
     covers=("func",),
     frames=("keys_two_column",),
     expr=lambda pd, df: df.groupby("left").agg({"right": "max", "value": "sum"}),
+    note=AGG,
+    in_process=True,
 )
 case(
     "groupby/agg-named",
     "GroupBy.agg",
     frames=SMALL,
     expr=lambda pd, df: df.groupby("key").agg(total=("value", "sum"), rows=("value", "count")),
-    note="the named form, which is the only one that lets a column be aggregated twice "
-    "under two different names",
+    note=AGG + ". The named form, which is the only one that lets a column be aggregated "
+    "twice under two different names",
+    in_process=True,
+)
+case(
+    "groupby/agg-as-columns",
+    "GroupBy.agg",
+    level="L3",
+    covers=("func",),
+    frames=SMALL,
+    expr=lambda pd, df: df.groupby("key", as_index=False).agg(
+        total=("value", "sum"), mean=("value", "mean")
+    ),
+    note=AGG + ". The keys come back as a column first when they are not the labels",
+    in_process=True,
+)
+case(
+    "groupby/agg-named-agg",
+    "GroupBy.agg",
+    level="L3",
+    covers=("func",),
+    frames=SMALL,
+    expr=lambda pd, df: df.groupby("key").agg(most=pd.NamedAgg("value", "max")),
+    note=AGG + ". NamedAgg is a class of its own in pandas 3 rather than a named tuple",
+    in_process=True,
+)
+case(
+    "groupby/agg-list-unsorted",
+    "GroupBy.agg",
+    level="L3",
+    covers=("func",),
+    frames=SMALL,
+    expr=lambda pd, df: df.groupby("key", sort=False)["value"].agg(["min", "max", "nunique"]),
+    note=AGG + ". The groups in the order they first appear, every column in that order",
+    in_process=True,
+)
+case(
+    "groupby/agg-column-named",
+    "GroupBy.agg",
+    level="L3",
+    covers=("func",),
+    frames=SMALL,
+    expr=lambda pd, df: df.groupby("key")["value"].agg(low="min", high="max"),
+    note=AGG + ". The named form on one column, a keyword a column",
+    in_process=True,
 )
 case(
     "groupby/agg-lambda",
