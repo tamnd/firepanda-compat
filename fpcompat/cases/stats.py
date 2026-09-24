@@ -398,6 +398,7 @@ case(
     "Series.interpolate",
     frames=("float64_half_null",),
     expr=lambda pd, df: df["value"].interpolate(),
+    in_process=True,
     rules=Rules(tolerance=Tolerance.SINGLE, reason="a linear interpolation is an average"),
     note="the nulls in the corpus are every other row rather than contiguous, which is "
     "the arrangement that makes interpolation and forward fill differ everywhere",

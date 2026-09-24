@@ -155,59 +155,12 @@ case(
 # inplace
 # ---------------------------------------------------------------------------
 
-# Every pandas callable that takes an `inplace` parameter, one case each. The call is
-# written out per name because there is no way to synthesize a valid call to `drop` and
-# a valid call to `set_index` from a signature, but the set of names is not written out
-# by hand: a test checks this table against the inventory, so a name that grows an
-# `inplace` parameter in a future pandas shows up as a failing test rather than as a
-# quiet hole.
-#
-# Two callables are left here and they are the two whose method is not in firepanda
-# at all: `interpolate` on a frame and on a column. The other thirty three moved to
-# `fpcompat/cases/inplace.py` when firepanda started honouring the parameter, which
-# document 51 over there is the argument for, `eval` and `query` last, when the methods
-# arrived. Nothing below is about the parameter. Each of these refuses because the
-# method is missing, and each will leave this file for the same reason the others did.
-#
-# Each expression returns the object after the mutation rather than the return value of
-# the call, because the return value of an inplace call is None for half of these and
-# is the object itself for the other half, and neither is evidence that anything
-# happened. What is being asserted is that the mutation happened.
-
-NUMERIC = ("float64_half_null",)
-PLAIN = ("two",)
-
-
-def _series(expr):
-    """The same call against the second column of the frame."""
-    return lambda pd, df: expr(pd, df.iloc[:, 1].copy())
-
-
-def _mutating(call):
-    """Runs a call for its side effect and hands back the object it mutated."""
-
-    def run(pd, df):
-        target = df.copy()
-        call(pd, target)
-        return target
-
-    return run
-
-
-INPLACE = (
-    (
-        "DataFrame.interpolate",
-        "frame-interpolate",
-        NUMERIC,
-        lambda pd, d: d.interpolate(inplace=True),
-    ),
-    (
-        "Series.interpolate",
-        "series-interpolate",
-        NUMERIC,
-        lambda pd, d: d.interpolate(inplace=True),
-    ),
-)
+# Every pandas callable that takes an `inplace` parameter used to have one case here.
+# Thirty five of them moved to `fpcompat/cases/inplace.py` when firepanda started
+# honouring the parameter, which document 51 over there is the argument for, `eval` and
+# `query` on a frame when the methods arrived and `interpolate` on a frame and on a
+# column last. What is left below is the three callables whose method is still not in
+# firepanda, and none of them is about the parameter.
 
 IN_PROCESS_NOTE = (
     "every case in this block takes a copy, runs the mutating call on it and hands "
@@ -217,25 +170,6 @@ IN_PROCESS_NOTE = (
     "absent, which meant the registry was asserting the inplace divergence nowhere. "
     "See spec 44"
 )
-
-for api, suffix, frames, call in INPLACE:
-    body = _mutating(call) if api.startswith("DataFrame") else _series(_mutating(call))
-    case(
-        f"divergences/inplace/{suffix}",
-        api,
-        level="L3",
-        covers=("inplace",),
-        frames=frames,
-        in_process=True,
-        note=IN_PROCESS_NOTE,
-        # `body` and not a lambda around it. `_mutating` and `_series` already
-        # return a fresh closure per iteration, so there is no late binding here
-        # for a trampoline to fix, and the trampoline was not free: it put one more
-        # frame under every case in this loop, which is enough to push an absent
-        # method past the depth `_unimplemented` allows and have it scored as a
-        # deliberate divergence instead of a gap.
-        expr=body,
-    )
 
 
 def _index_names(pd, index, call):
