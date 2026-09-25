@@ -170,6 +170,7 @@ case(
     covers=("func",),
     frames=("float64_no_nulls",),
     expr=lambda pd, df: df["value"].rolling(4).apply(lambda window: window.max() - window.min()),
+    in_process=True,
     note="the escape hatch again, and the case that says an implementation cannot ship "
     "only the fast paths",
 )
@@ -180,6 +181,8 @@ case(
     covers=("other",),
     frames=("tall",),
     expr=lambda pd, df: df["value"].rolling(20).corr(df["key"].astype("float64")),
+    in_process=True,
+    note="only the rows where both columns hold a value count toward the window",
     rules=SPREAD,
 )
 case(
@@ -189,6 +192,8 @@ case(
     covers=("other",),
     frames=("tall",),
     expr=lambda pd, df: df["value"].rolling(20).cov(df["key"].astype("float64")),
+    in_process=True,
+    note="only the rows where both columns hold a value count toward the window",
     rules=SPREAD,
 )
 case(
@@ -289,6 +294,8 @@ case(
     covers=("func",),
     frames=("float64_no_nulls",),
     expr=lambda pd, df: df["value"].expanding(4).apply(lambda window: window.iloc[0]),
+    in_process=True,
+    note="the window is handed over as a column keeping its labels",
 )
 
 # ---------------------------------------------------------------------------
@@ -373,6 +380,8 @@ case(
     covers=("other",),
     frames=("tall",),
     expr=lambda pd, df: df["value"].ewm(span=10).corr(df["key"].astype("float64")),
+    in_process=True,
+    note="pandas' own recurrence, over the rows where both columns hold a value",
     rules=SPREAD,
 )
 
