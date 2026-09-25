@@ -447,6 +447,97 @@ case(
     note="a range that steps over the spring transition, so the wall clock readings "
     "are not evenly spaced even though the instants are",
 )
+SPANS_IN_PROCESS = (
+    "In process because the driver has no entry for it, and firepanda's span index and "
+    "span range are its Python layer counting along the whole numbers of a unit"
+)
+case(
+    "temporal/timedelta-range",
+    "pandas.timedelta_range",
+    level="L3",
+    covers=("start", "periods", "freq", "name"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.timedelta_range(start="1s", periods=6, freq="12h", name="span"),
+    in_process=True,
+    note="text ends read at microsecond resolution, stepped by half days. " + SPANS_IN_PROCESS,
+)
+case(
+    "temporal/timedelta-range-closed",
+    "pandas.timedelta_range",
+    level="L3",
+    covers=("start", "end", "freq", "closed"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.timedelta_range(start="-1D", end="1D", freq="6h", closed="left"),
+    in_process=True,
+    note="a range across zero that drops the end it does not name. " + SPANS_IN_PROCESS,
+)
+case(
+    "temporal/timedelta-range-even",
+    "pandas.timedelta_range",
+    level="L3",
+    covers=("start", "end", "periods", "unit"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.timedelta_range(start="1s", end="2s", periods=5, unit="ms"),
+    in_process=True,
+    note="no step, so the points are spaced evenly between the ends, in milliseconds. "
+    + SPANS_IN_PROCESS,
+)
+case(
+    "temporal/timedelta-range-compound-step",
+    "pandas.timedelta_range",
+    level="L3",
+    covers=("start", "periods", "freq"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.timedelta_range(start=1, periods=4, freq="2D3h"),
+    in_process=True,
+    note="a whole number start is nanoseconds, and a step of two units is read as a span. "
+    + SPANS_IN_PROCESS,
+)
+case(
+    "temporal/timedelta-index",
+    "pandas.TimedeltaIndex",
+    level="L3",
+    covers=("data", "name"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.TimedeltaIndex(["1s", "-2D3h", None, "1.5ms"], name="span"),
+    in_process=True,
+    note="text read as spans with a gap kept missing. " + SPANS_IN_PROCESS,
+)
+case(
+    "temporal/timedelta-index-seconds",
+    "pandas.TimedeltaIndex",
+    frames=RANGE,
+    expr=lambda pd, df: pd.TimedeltaIndex(["1s", "-2D3h", None, "1.5ms"], name="span").seconds,
+    in_process=True,
+    note="the seconds past the whole days, floored, so a negative span counts up from its "
+    "day, and float64 because of the gap. " + SPANS_IN_PROCESS,
+)
+case(
+    "temporal/timedelta-index-total-seconds",
+    "pandas.TimedeltaIndex",
+    frames=RANGE,
+    expr=lambda pd, df: pd.TimedeltaIndex(["1s", "-2D3h", "1.5ms"]).total_seconds(),
+    in_process=True,
+    note="every label as a float number of seconds. " + SPANS_IN_PROCESS,
+)
+case(
+    "temporal/dt-components",
+    "Series.dt",
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_timedelta(pd.Series(["1s", "-2D3h1ns", "3us"])).dt.components,
+    in_process=True,
+    note="every span cut into days down to nanoseconds, one int64 column each. "
+    + SPANS_IN_PROCESS,
+)
+case(
+    "temporal/dt-microseconds-gap",
+    "Series.dt",
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_timedelta(pd.Series(["1.5ms", None, "-1us"])).dt.microseconds,
+    in_process=True,
+    note="the microseconds past the whole seconds, float64 because of the gap. "
+    + SPANS_IN_PROCESS,
+)
 RESAMPLE = (
     "In process because the driver has no entry for it, and firepanda's resample is its "
     "Python layer's group by on the bin number of every timestamp, reindexed onto every "

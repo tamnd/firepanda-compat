@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `timedelta_range`, `TimedeltaIndex` and the span fields of `dt`: the range from a start with periods, with both ends and `closed`, spaced evenly with a `unit`, and with a compound step; an index of spans with a gap, its `seconds` and `total_seconds()`; and `dt.components` and `dt.microseconds` on a column of spans.
+- Board: `pandas.TimedeltaIndex` and `pandas.timedelta_range` now resolve on firepanda, from tamnd/firepanda#1147.
 - `strings/split-expand` and `strings/wrap` run in process, and six strings cases read the pieces of `str.split` and `str.rsplit` with `expand=True` by position, plus `str.join` on text. All pass since tamnd/firepanda#1146, except `strings/split-expand`, which carries `engine/integer-column-labels` like `strings/partition`. The cases that split into lists stay unimplemented until firepanda has a list column type.
 - Board: 3869 passing, 848 unimplemented, 94 divergent, the same 6 failing.
 - Five basics cases look rows up by instants and spans in the labels: a Timestamp, text naming a month, a slice with text bounds, zoned labels read with naive text, and text for a span. All five pass since tamnd/firepanda#1144.
