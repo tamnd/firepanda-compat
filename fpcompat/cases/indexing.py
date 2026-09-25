@@ -1184,3 +1184,66 @@ case(
     "rather than ignores, so naming the other one is an error on a column where it is "
     "a door on a frame. " + A_LABEL,
 )
+RANGE_IN_PROCESS = (
+    "In process because the driver has no entry for it, and firepanda's RangeIndex is its "
+    "Python layer writing the range out as an int64 index"
+)
+case(
+    "indexing/range-index",
+    "pandas.RangeIndex",
+    level="L3",
+    covers=("start", "stop", "step", "name"),
+    frames=("single",),
+    expr=lambda pd, df: pd.RangeIndex(start=10, stop=-5, step=-3, name="r"),
+    in_process=True,
+    note="a range that steps down past zero and stops before the stop. " + RANGE_IN_PROCESS,
+)
+case(
+    "indexing/range-index-from-range",
+    "pandas.RangeIndex",
+    frames=("single",),
+    expr=lambda pd, df: pd.RangeIndex.from_range(range(2, 20, 4), name="r"),
+    in_process=True,
+    note="a Python range taken whole. " + RANGE_IN_PROCESS,
+)
+case(
+    "indexing/set-axis-range-index",
+    "DataFrame.set_axis",
+    frames=SHAPES,
+    expr=lambda pd, df: df.set_axis(pd.RangeIndex(100, 100 + len(df))),
+    in_process=True,
+    note="a frame relabelled with a range that starts at a hundred. " + RANGE_IN_PROCESS,
+)
+INTERVAL_IN_PROCESS = (
+    "In process because the driver has no entry for it, and firepanda's Interval is a "
+    "Python scalar"
+)
+case(
+    "indexing/interval-mid-length",
+    "pandas.Interval",
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [pd.Interval(0, 3, closed="both").mid, pd.Interval(0.5, 4.0).length], name="v"
+    ),
+    in_process=True,
+    note="the midpoint of whole number ends is a float, and the length is right less left. "
+    + INTERVAL_IN_PROCESS,
+)
+case(
+    "indexing/interval-contains-overlaps",
+    "pandas.Interval",
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            0 in pd.Interval(0, 1),
+            1 in pd.Interval(0, 1),
+            pd.Interval(0, 1, closed="neither") in pd.Interval(0, 1),
+            pd.Interval(0, 1).overlaps(pd.Interval(1, 2)),
+            pd.Interval(0, 1, closed="both").overlaps(pd.Interval(1, 2, closed="both")),
+        ],
+        name="v",
+    ),
+    in_process=True,
+    note="an open end leaves its point out, for a point, another interval and an overlap. "
+    + INTERVAL_IN_PROCESS,
+)

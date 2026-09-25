@@ -447,6 +447,100 @@ case(
     note="a range that steps over the spring transition, so the wall clock readings "
     "are not evenly spaced even though the instants are",
 )
+CALENDAR_IN_PROCESS = (
+    "In process because the driver has no entry for it, and firepanda's calendar steps are "
+    "its Python layer walking the landing dates on the wall clock"
+)
+case(
+    "temporal/date-range-month-end",
+    "pandas.date_range",
+    level="L3",
+    covers=("start", "end", "freq"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range(start="2020-01-15 12:00", end="2020-06-30", freq="ME"),
+    in_process=True,
+    note="the start rolls forward to the month end and keeps its time of day, so the last "
+    "month end at noon is past the end and left out. " + CALENDAR_IN_PROCESS,
+)
+case(
+    "temporal/date-range-business",
+    "pandas.date_range",
+    level="L3",
+    covers=("end", "periods", "freq"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range(end="2020-03-15 06:00", periods=6, freq="B"),
+    in_process=True,
+    note="an end on a Sunday rolls back to the Friday and the points count back from it. "
+    + CALENDAR_IN_PROCESS,
+)
+case(
+    "temporal/date-range-week-anchor",
+    "pandas.date_range",
+    level="L3",
+    covers=("start", "periods", "freq", "name"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range(start="2020-01-04", periods=5, freq="2W-WED", name="w"),
+    in_process=True,
+    note="every other Wednesday from the first one on or after the start. " + CALENDAR_IN_PROCESS,
+)
+case(
+    "temporal/date-range-quarter-anchor",
+    "pandas.date_range",
+    level="L3",
+    covers=("start", "periods", "freq"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range(start="2020-02-04", periods=5, freq="BQE-JAN"),
+    in_process=True,
+    note="the last business day of quarters that end in January, April, July and October. "
+    + CALENDAR_IN_PROCESS,
+)
+case(
+    "temporal/date-range-year-start-tz",
+    "pandas.date_range",
+    level="L3",
+    covers=("start", "periods", "freq", "tz"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range(
+        start="2020-02-04", periods=3, freq="YS", tz="America/New_York"
+    ),
+    in_process=True,
+    note="year starts counted on the wall clock of the zone. " + CALENDAR_IN_PROCESS,
+)
+case(
+    "temporal/date-range-month-backwards",
+    "pandas.date_range",
+    level="L3",
+    covers=("start", "end", "freq", "inclusive"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range(
+        start="2020-06-30", end="2020-01-31", freq="-1ME", inclusive="left"
+    ),
+    in_process=True,
+    note="a backwards step walks down from the start and drops the end. " + CALENDAR_IN_PROCESS,
+)
+case(
+    "temporal/bdate-range",
+    "pandas.bdate_range",
+    level="L3",
+    covers=("start", "end"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.bdate_range(start="2020-03-13 10:00", end="2020-03-31"),
+    in_process=True,
+    note="business days with the start moved to midnight. " + CALENDAR_IN_PROCESS,
+)
+case(
+    "temporal/bdate-range-custom",
+    "pandas.bdate_range",
+    level="L3",
+    covers=("start", "periods", "freq", "weekmask", "holidays"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.bdate_range(
+        start="2020-03-13", periods=6, freq="C", weekmask="Mon Wed Fri", holidays=["2020-03-18"]
+    ),
+    in_process=True,
+    note="a custom business day that works three days a week and skips a holiday. "
+    + CALENDAR_IN_PROCESS,
+)
 SPANS_IN_PROCESS = (
     "In process because the driver has no entry for it, and firepanda's span index and "
     "span range are its Python layer counting along the whole numbers of a unit"
