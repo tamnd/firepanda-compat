@@ -159,8 +159,8 @@ case(
 # Thirty five of them moved to `fpcompat/cases/inplace.py` when firepanda started
 # honouring the parameter, which document 51 over there is the argument for, `eval` and
 # `query` on a frame when the methods arrived and `interpolate` on a frame and on a
-# column last. What is left below is the three callables whose method is still not in
-# firepanda, and none of them is about the parameter.
+# column last. What is left below is the one callable whose method is still not in
+# firepanda, and it is not about the parameter.
 
 IN_PROCESS_NOTE = (
     "every case in this block takes a copy, runs the mutating call on it and hands "
@@ -172,49 +172,13 @@ IN_PROCESS_NOTE = (
 )
 
 
-def _index_names(pd, index, call):
-    """Applies an inplace naming call to an index and returns the names it ended up with."""
-    copied = index.copy()
-    call(copied)
-    return list(copied.names)
-
-
-# There is no flat index block here any more, and there has not been one since the
-# index slice. Renaming a level and setting its names were the first places in the
-# library where firepanda honoured inplace rather than refusing it, and their cases
-# live with the ordinary index cases as indexing/index-rename-inplace,
-# indexing/index-set-names-inplace, temporal/index-rename-inplace and
-# temporal/index-set-names-inplace. What is left below is the MultiIndex, which has
-# no implementation to honour anything with.
-
-case(
-    "divergences/inplace/multi-index-rename",
-    "MultiIndex.rename",
-    level="L3",
-    covers=("inplace",),
-    frames=("keys_two_column",),
-    expr=lambda pd, df: _index_names(
-        pd,
-        pd.MultiIndex.from_frame(df[["left", "right"]]),
-        lambda index: index.rename(["one", "two"], inplace=True),
-    ),
-    in_process=True,
-    note=IN_PROCESS_NOTE,
-)
-case(
-    "divergences/inplace/multi-index-set-names",
-    "MultiIndex.set_names",
-    level="L3",
-    covers=("inplace",),
-    frames=("keys_two_column",),
-    expr=lambda pd, df: _index_names(
-        pd,
-        pd.MultiIndex.from_frame(df[["left", "right"]]),
-        lambda index: index.set_names(["one", "two"], inplace=True),
-    ),
-    in_process=True,
-    note=IN_PROCESS_NOTE,
-)
+# There is no index block here any more. Renaming a level and setting its names were
+# the first places in the library where firepanda honoured inplace rather than
+# refusing it, and their cases live with the ordinary index cases as
+# indexing/index-rename-inplace, indexing/index-set-names-inplace,
+# temporal/index-rename-inplace and temporal/index-set-names-inplace. The MultiIndex
+# pair joined them as indexing/multi-index-rename-inplace and
+# indexing/multi-index-set-names-inplace when the MultiIndex arrived.
 
 
 def _module_eval(pd, df):
