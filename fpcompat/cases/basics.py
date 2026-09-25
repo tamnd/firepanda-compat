@@ -2947,6 +2947,28 @@ case(
     "as the fill. " + MAP_IN_PROCESS,
 )
 case(
+    "basics/frame-combine",
+    "DataFrame.combine",
+    covers=("fill_value",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.head(4).combine(
+        df.tail(3), lambda a, b: a.where(a > b, b), fill_value=0
+    ),
+    in_process=True,
+    note="a function on each pair of columns over both frames' labels, a label one side "
+    "lacks read as the fill, and floats that are all whole cast back. " + MAP_IN_PROCESS,
+)
+case(
+    "basics/convert-dtypes",
+    "DataFrame.convert_dtypes",
+    frames=("float64_no_nulls", "keys_10"),
+    expr=lambda pd, df: df.convert_dtypes(),
+    in_process=True,
+    note="In process because the driver has no entry for it. pandas moves each column "
+    "to its nullable type and every column here already holds a gap, so the one change "
+    "is a float column of whole numbers becoming int64",
+)
+case(
     "basics/frame-map",
     "DataFrame.map",
     frames=("keys_10",),

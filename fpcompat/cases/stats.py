@@ -257,6 +257,28 @@ case(
 # and that belongs in a different harness.
 
 case(
+    "stats/corrwith-series",
+    "DataFrame.corrwith",
+    frames=("tall", "keys_two_column"),
+    expr=lambda pd, df: df.corrwith(df.iloc[:, -1], numeric_only=True),
+    in_process=True,
+    note="each numeric column is paired with the one column over the rows both hold a "
+    "value in, which is Series.corr once a column",
+    rules=SPREAD,
+)
+case(
+    "stats/corrwith-frame",
+    "DataFrame.corrwith",
+    frames=("tall", "keys_two_column"),
+    expr=lambda pd, df: df.select_dtypes("number").corrwith(
+        df.select_dtypes("number").iloc[::-1].reset_index(drop=True)
+    ),
+    in_process=True,
+    note="the columns both frames have are paired over the labels both have, and the "
+    "rest would come after them as NaN",
+    rules=SPREAD,
+)
+case(
     "stats/corr-frame",
     "DataFrame.corr",
     frames=("tall", "keys_two_column"),
