@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- The MultiIndex inplace naming pair, `indexing/multi-index-rename-inplace` and `indexing/multi-index-set-names-inplace`, moved out of the inplace divergence block now that firepanda has a `MultiIndex` (firepanda#1158), and engine/inplace covers only `pandas.eval`. All 196 resolution and signature entries for `MultiIndex` pass.
+- Board after the MultiIndex: 4178 pass, 576 unimplemented, 95 divergent, 6 fail.
 - The window cases for Rolling.apply, Rolling.corr, Rolling.cov, Expanding.apply and ExponentialMovingWindow.corr run in process on firepanda, and windows/rolling-apply joins engine/window-infinity-dense, because the function is handed the window with its infinities still in it.
 - Board after the window members: pass 3980, unimplemented 774, divergent 95, fail 6 (the same six).
 - Cases for DataFrame.combine, DataFrame.corrwith and DataFrame.convert_dtypes, all in process on firepanda.

@@ -1035,6 +1035,48 @@ case(
 )
 
 
+def _multi_named_in_place(pd, df, call):
+    """Renames the levels of a MultiIndex in place and answers what came back and the names.
+
+    Returns:
+        A two item list of the return value, None in both libraries, and the level
+        names the index was left holding afterwards.
+    """
+    index = pd.MultiIndex.from_frame(df[["left", "right"]])
+    answered = call(index)
+    return [answered, list(index.names)]
+
+
+case(
+    "indexing/multi-index-rename-inplace",
+    "MultiIndex.rename",
+    level="L3",
+    covers=("inplace",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: _multi_named_in_place(
+        pd, df, lambda index: index.rename(["one", "two"], inplace=True)
+    ),
+    in_process=True,
+    note="the MultiIndex half of the inplace naming pair, which sat in the inplace "
+    "divergence block until firepanda had a MultiIndex to rename. It is checked the "
+    "way indexing/index-rename-inplace is, by what came back as well as the names left "
+    "behind, and it runs in process because the MultiIndex is a Python layer class",
+)
+case(
+    "indexing/multi-index-set-names-inplace",
+    "MultiIndex.set_names",
+    level="L3",
+    covers=("inplace",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: _multi_named_in_place(
+        pd, df, lambda index: index.set_names(["one", "two"], inplace=True)
+    ),
+    in_process=True,
+    note="the same door as indexing/multi-index-rename-inplace, spelled set_names, "
+    "and it runs in process for the same reason",
+)
+
+
 def _set_names_in_place(index, wanted):
     """Sets a level name in place and answers what came back along with the names left.
 
