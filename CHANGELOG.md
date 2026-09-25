@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `strings/split-expand` and `strings/wrap` run in process, and six strings cases read the pieces of `str.split` and `str.rsplit` with `expand=True` by position, plus `str.join` on text. All pass since tamnd/firepanda#1146, except `strings/split-expand`, which carries `engine/integer-column-labels` like `strings/partition`. The cases that split into lists stay unimplemented until firepanda has a list column type.
+- Board: 3869 passing, 848 unimplemented, 94 divergent, the same 6 failing.
 - Five basics cases look rows up by instants and spans in the labels: a Timestamp, text naming a month, a slice with text bounds, zoned labels read with naive text, and text for a span. All five pass since tamnd/firepanda#1144.
 - Board: 3853 passing, 858 unimplemented, 93 divergent, the same 6 failing.
 - `basics/merge-ordered`, `basics/merge-ordered-how` and `basics/merge-outer-instants` check `pandas.merge_ordered` with `left_by`, `how` and `fill_method`, and an outer `pandas.merge` on a key of instants, and `reshape/merge-ordered` now runs in process.
