@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for the grouping made visible: `groups` and `indices`, `get_group`, iterating a group by, and `pipe`, all in process on firepanda.
+- Board after the group by members: pass 3917, unimplemented 831, divergent 94, fail 6.
 - Cases for calendar steps in `date_range` and for `bdate_range`: month ends that keep the start's time of day, business days counted back from an end, every other Wednesday, business quarter ends anchored on January, year starts in a zone, a backwards month step with `inclusive`, and business days with a week mask and holidays. Also cases for `RangeIndex`: from three numbers, from a `range`, and as the labels of a frame, and for `Interval`: its midpoint and length, and containment and overlap with open and closed ends.
 - Board: `pandas.bdate_range`, `pandas.RangeIndex` and `pandas.Interval` now resolve on firepanda, from tamnd/firepanda#1148, tamnd/firepanda#1149 and tamnd/firepanda#1150.
 - Cases for `timedelta_range`, `TimedeltaIndex` and the span fields of `dt`: the range from a start with periods, with both ends and `closed`, spaced evenly with a `unit`, and with a compound step; an index of spans with a gap, its `seconds` and `total_seconds()`; and `dt.components` and `dt.microseconds` on a column of spans.

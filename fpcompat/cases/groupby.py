@@ -589,6 +589,50 @@ case(
     frames=KEYED,
     expr=lambda pd, df: df.groupby("key").ngroups,
 )
+MEMBERS_IN_PROCESS = (
+    "In process because the driver has no entry for it, and firepanda numbers the rows "
+    "again each time the grouping is asked for and keeps nothing afterwards"
+)
+case(
+    "groupby/groups-indices",
+    "GroupBy.indices",
+    frames=KEYED,
+    expr=lambda pd, df: pd.Series(
+        [len(rows) for rows in df.groupby("key").indices.values()],
+        index=list(df.groupby("key").groups),
+        name="rows",
+    ),
+    in_process=True,
+    note="one entry a group, keyed as the groups come out. " + MEMBERS_IN_PROCESS,
+)
+case(
+    "groupby/get-group",
+    "GroupBy.get_group",
+    frames=("keys_10",),
+    expr=lambda pd, df: df.groupby("key").get_group(df["key"].iloc[0]),
+    in_process=True,
+    note="the rows of one group with their own labels and every column. " + MEMBERS_IN_PROCESS,
+)
+case(
+    "groupby/iterate",
+    "GroupBy.get_group",
+    frames=("keys_10",),
+    expr=lambda pd, df: pd.Series(
+        [float(rows.sum()) for _, rows in df.groupby("key")["value"]],
+        index=[key for key, _ in df.groupby("key")["value"]],
+        name="value",
+    ),
+    in_process=True,
+    note="each group as its key and its rows, in key order. " + MEMBERS_IN_PROCESS,
+)
+case(
+    "groupby/pipe",
+    "GroupBy.pipe",
+    frames=("keys_10",),
+    expr=lambda pd, df: df.groupby("key").pipe(lambda g, n: g["value"].sum() * n, 2),
+    in_process=True,
+    note="the function gets the group by itself. " + MEMBERS_IN_PROCESS,
+)
 case(
     "groupby/describe",
     "GroupBy.describe",
