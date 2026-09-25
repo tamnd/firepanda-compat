@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- The window cases for Rolling.apply, Rolling.corr, Rolling.cov, Expanding.apply and ExponentialMovingWindow.corr run in process on firepanda, and windows/rolling-apply joins engine/window-infinity-dense, because the function is handed the window with its infinities still in it.
+- Board after the window members: pass 3980, unimplemented 774, divergent 95, fail 6 (the same six).
 - Cases for DataFrame.combine, DataFrame.corrwith and DataFrame.convert_dtypes, all in process on firepanda.
 - Board after the frame combine cases: pass 3932, unimplemented 823, divergent 94, fail 6 (the same six).
 - Cases for the grouping made visible: `groups` and `indices`, `get_group`, iterating a group by, and `pipe`, all in process on firepanda.
