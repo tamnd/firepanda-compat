@@ -27,6 +27,12 @@ CASED = ("strings_ascii", "strings_pattern", "strings_null_heavy", "strings_fold
 # Length and case
 # ---------------------------------------------------------------------------
 
+
+SPLIT_IN_PROCESS = (
+    "firepanda writes this name in Python over the rows and the driver has no entry for "
+    "it, so it is run in process"
+)
+
 case(
     "strings/len",
     "str.len",
@@ -132,6 +138,8 @@ case(
     covers=("width",),
     frames=("strings_ascii",),
     expr=lambda pd, df: df["value"].str.wrap(5),
+    in_process=True,
+    note="every row goes through textwrap, as it does in pandas. " + SPLIT_IN_PROCESS,
 )
 case(
     "strings/repeat",
@@ -904,8 +912,66 @@ case(
     covers=("pat", "expand"),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.split("-", expand=True),
+    in_process=True,
     note="the column count is the widest row, and every shorter row is padded with "
-    "nulls, so one long row changes the shape of the whole answer",
+    "nulls, so one long row changes the shape of the whole answer. The whole frame is "
+    "compared, so this case carries `engine/integer-column-labels`, and the cases under "
+    "it read the columns by position. " + SPLIT_IN_PROCESS,
+)
+case(
+    "strings/split-expand-first",
+    "str.split",
+    level="L3",
+    covers=("pat", "expand"),
+    frames=("strings_pattern", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.split("-", expand=True).iloc[:, 0].rename("value"),
+    in_process=True,
+    note="the first piece of every row, which is the whole row where the separator is "
+    "missing. " + SPLIT_IN_PROCESS,
+)
+case(
+    "strings/split-expand-n-last",
+    "str.split",
+    level="L3",
+    covers=("pat", "n", "expand"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.split("o", n=1, expand=True).iloc[:, -1].rename("value"),
+    in_process=True,
+    note="one cut at most, so the last column is everything after the first separator and "
+    "a gap where there was none. " + SPLIT_IN_PROCESS,
+)
+case(
+    "strings/rsplit-expand-first",
+    "str.rsplit",
+    level="L3",
+    covers=("pat", "n", "expand"),
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.rsplit("o", n=1, expand=True).iloc[:, 0].rename("value"),
+    in_process=True,
+    note="one cut counted from the right, so the first column is everything before the "
+    "last separator. " + SPLIT_IN_PROCESS,
+)
+case(
+    "strings/split-whitespace-expand-first",
+    "str.split",
+    level="L3",
+    covers=("expand",),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: df["value"].str.split(expand=True).iloc[:, 0].rename("value"),
+    in_process=True,
+    note="no pattern cuts at runs of whitespace and drops the empties, so a row that "
+    "starts with a space still has a word first. " + SPLIT_IN_PROCESS,
+)
+case(
+    "strings/join-characters",
+    "str.join",
+    level="L3",
+    covers=("sep",),
+    frames=("strings_pattern", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.join("+"),
+    in_process=True,
+    note="on a column of text the separator goes between the characters of every row. "
+    + SPLIT_IN_PROCESS,
 )
 case(
     "strings/split-n",
