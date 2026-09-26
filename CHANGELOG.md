@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- firepanda's `to_datetime` reads `format="ISO8601"` and `format="mixed"` every row with its own format (tamnd/firepanda#1167), answers a `DatetimeIndex` for a list and one instant for one value (tamnd/firepanda#1168), names the first instant out of range when `as_unit("ns")` cannot restate it (tamnd/firepanda#1169), and reads `tz_convert(None)` (tamnd/firepanda#1170). `errors/out-of-bounds-datetime` joins `engine/pandas-exception-classes`, because firepanda now raises its own `OutOfBoundsDatetime` with pandas' sentence and no firepanda class can be a subclass of pandas' one.
+- Board after tamnd/firepanda#1170: 4252 pass, 501 unimplemented, 96 divergent, 6 fail.
 - firepanda's `Series` and `DataFrame` gain `at_time`, `between_time` and `asof`, which pick rows by the time of day of their labels and answer the last row at or before an instant, with pandas' own errors, in tamnd/firepanda#1166.
 - Board after tamnd/firepanda#1166: 4252 pass, 502 unimplemented, 95 divergent and 6 fail. The six fails are the same older ones.
 - firepanda's `DatetimeIndex` gains `shift` and `snap` along fixed and calendar frequencies, `indexer_at_time`, `indexer_between_time`, `isocalendar`, `mean`, `std`, `to_julian_date`, `to_pydatetime`, `time`, `timetz`, `tzinfo` and `resolution`, in tamnd/firepanda#1160. Slicing an index of instants now keeps its type.
