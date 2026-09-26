@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- firepanda's `Series` and `DataFrame` gain `at_time`, `between_time` and `asof`, which pick rows by the time of day of their labels and answer the last row at or before an instant, with pandas' own errors, in tamnd/firepanda#1166.
+- Board after tamnd/firepanda#1166: 4252 pass, 502 unimplemented, 95 divergent and 6 fail. The six fails are the same older ones.
 - firepanda's `DatetimeIndex` gains `shift` and `snap` along fixed and calendar frequencies, `indexer_at_time`, `indexer_between_time`, `isocalendar`, `mean`, `std`, `to_julian_date`, `to_pydatetime`, `time`, `timetz`, `tzinfo` and `resolution`, in tamnd/firepanda#1160. Slicing an index of instants now keeps its type.
 - Board after tamnd/firepanda#1160: 4240 pass, 514 unimplemented (down from 534), 95 divergent, 6 fail. The six fails are the same older ones.
 - The index members that were still missing on a plain `Index` now resolve and answer through firepanda#1159: `join`, `asof`, `asof_locs`, `get_indexer_for`, `get_indexer_non_unique`, `sortlevel`, `groupby`, `view`, `shift`, `array` and the `str` accessor, on `Index`, `DatetimeIndex` and `TimedeltaIndex` alike.
