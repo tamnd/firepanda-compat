@@ -425,6 +425,49 @@ case(
     expr=lambda pd, df: pd.to_datetime(df["second"].dt.strftime("%d/%m/%Y"), format="%d/%m/%Y"),
 )
 case(
+    "temporal/to-datetime-guessed-month-first",
+    "pandas.to_datetime",
+    level="L3",
+    covers=("arg",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_datetime(df["second"].dt.strftime("%m/%d/%Y %H:%M")),
+    in_process=True,
+    note="no format, so the format is guessed from the first value and every row is held to it;"
+    " the guesser is in Python, past the core the driver reaches",
+)
+case(
+    "temporal/to-datetime-guessed-month-name",
+    "pandas.to_datetime",
+    level="L3",
+    covers=("arg",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_datetime(df["second"].dt.strftime("%B %d, %Y %I:%M %p")),
+    in_process=True,
+    note="a month name and a twelve hour clock, guessed with no format given;"
+    " the guesser is in Python, past the core the driver reaches",
+)
+case(
+    "temporal/to-datetime-guessed-short-month",
+    "pandas.to_datetime",
+    level="L3",
+    covers=("arg",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_datetime(df["second"].dt.strftime("%b %d %Y")),
+    in_process=True,
+    note="a short month name; the guesser is in Python, past the core the driver reaches",
+)
+case(
+    "temporal/to-datetime-format-day-of-year",
+    "pandas.to_datetime",
+    level="L3",
+    covers=("arg", "format"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_datetime(df["second"].dt.strftime("%Y-%j"), format="%Y-%j"),
+    in_process=True,
+    note="the day of the year, which the core's format reader does not know and the Python layer"
+    " reads the way pandas does",
+)
+case(
     "temporal/date-range",
     "pandas.date_range",
     level="L3",
