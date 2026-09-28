@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `temporal/parts-with-gap`, `temporal/flags-with-gap`, `temporal/concat-units`, `temporal/astype-unit`, `temporal/to-datetime-mixed` and `temporal/object-values` check calendar parts of a column with a gap, instants in two units meeting, a moment among text, and instants in an object array against pandas.
+- Board after firepanda #1191: 4297 pass, 496 unimplemented, 94 divergent, 6 fail.
 - `basics/nat`, `basics/nat-refuses`, `divergences/missing-spelling/timestamp-values` and `divergences/missing-spelling/timestamp-cell` check `NaT` as a scalar and as the gap read out of a timestamp column, and the comparison now names an engine's own `NaT` as `NaT`.
 - Board after firepanda #1187: 4291 pass, 496 unimplemented, 94 divergent, 6 fail.
 - `divergences/missing-spelling/text-values` and `divergences/missing-spelling/one-cell` check that a gap read out of a text column, a column cell and a frame cell comes back as pandas hands it out.

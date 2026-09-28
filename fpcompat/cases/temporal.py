@@ -1247,3 +1247,75 @@ case(
     note="a date index prints each instant, with its offset when it has a zone, and a day "
     "at midnight as a date",
 )
+case(
+    "temporal/parts-with-gap",
+    "Series.dt",
+    frames=RANGE,
+    expr=lambda pd, df: [
+        [str(part.dtype), part.tolist()]
+        for part in (
+            getattr(df["second"].head(4).mask([False, True, False, False]).dt, name)
+            for name in ("year", "month", "hour", "dayofweek", "quarter")
+        )
+    ],
+    in_process=True,
+    note="a whole number read from a column with a gap is a float with NaN in the gap. It "
+    "is read out with `tolist`, since a float column here keeps its gap as a null where "
+    "pandas keeps a NaN, and that is `divergences/missing-spelling` rather than this",
+)
+case(
+    "temporal/flags-with-gap",
+    "Series.dt",
+    frames=RANGE,
+    expr=lambda pd, df: pd.DataFrame(
+        {
+            name: getattr(df["second"].head(4).mask([False, True, False, False]).dt, name)
+            for name in ("is_month_start", "is_month_end", "is_leap_year")
+        }
+    ),
+    in_process=True,
+    note="a yes or no field reads a gap as no, since pandas answers a numpy bool array",
+)
+case(
+    "temporal/concat-units",
+    "pandas.concat",
+    frames=RANGE,
+    expr=lambda pd, df: pd.concat(
+        [df["second"].head(2).dt.as_unit("s"), df["second"].tail(2).dt.as_unit("us")],
+        ignore_index=True,
+    ),
+    in_process=True,
+    note="instants in two units stack at the finer of them",
+)
+case(
+    "temporal/astype-unit",
+    "Series.astype",
+    frames=RANGE,
+    expr=lambda pd, df: df["second"].head(3).astype("datetime64[ms]"),
+    in_process=True,
+    note="astype to instants in another unit changes the unit, which is as_unit",
+)
+case(
+    "temporal/to-datetime-mixed",
+    "pandas.to_datetime",
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_datetime([df["second"].iat[0], "2020-05-05", None]),
+    in_process=True,
+    note="a moment among text is taken as it is and the text is read around it",
+)
+case(
+    "temporal/object-values",
+    "DataFrame.to_numpy",
+    frames=RANGE,
+    expr=lambda pd, df: [
+        repr(value)
+        for row in pd.DataFrame(
+            {"a": df["second"].head(3).mask([False, True, False]), "s": ["x", "y", "z"]}
+        )
+        .to_numpy()
+        .tolist()
+        for value in row
+    ],
+    in_process=True,
+    note="an instant in an object array is a Timestamp and a gap is NaT",
+)
