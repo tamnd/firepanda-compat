@@ -789,8 +789,7 @@ case(
     frames=RANGE,
     expr=lambda pd, df: pd.to_timedelta(pd.Series(["1s", "-2D3h1ns", "3us"])).dt.components,
     in_process=True,
-    note="every span cut into days down to nanoseconds, one int64 column each. "
-    + SPANS_IN_PROCESS,
+    note="every span cut into days down to nanoseconds, one int64 column each. " + SPANS_IN_PROCESS,
 )
 case(
     "temporal/dt-microseconds-gap",
@@ -798,8 +797,7 @@ case(
     frames=RANGE,
     expr=lambda pd, df: pd.to_timedelta(pd.Series(["1.5ms", None, "-1us"])).dt.microseconds,
     in_process=True,
-    note="the microseconds past the whole seconds, float64 because of the gap. "
-    + SPANS_IN_PROCESS,
+    note="the microseconds past the whole seconds, float64 because of the gap. " + SPANS_IN_PROCESS,
 )
 RESAMPLE = (
     "In process because the driver has no entry for it, and firepanda's resample is its "
@@ -849,6 +847,32 @@ case(
     frames=RANGE,
     expr=lambda pd, df: df.set_index("second").asfreq("2h"),
     rules=STRICT,
+    in_process=True,
+    note="a date_range from the first label to the last and a reindex onto it, which "
+    "firepanda #1234 builds in the Python layer",
+)
+case(
+    "temporal/asfreq-filled",
+    "DataFrame.asfreq",
+    level="L3",
+    covers=("freq", "method"),
+    frames=RANGE,
+    expr=lambda pd, df: df.set_index("second").asfreq("45min", method="ffill"),
+    rules=STRICT,
+    in_process=True,
+    note="each new label reads from the one before it, as reindex fills it",
+)
+case(
+    "temporal/frame-tz-localize",
+    "DataFrame.tz_localize",
+    level="L3",
+    covers=("tz",),
+    frames=RANGE,
+    expr=lambda pd, df: df.set_index("second").tz_localize("UTC").tz_convert("Asia/Tokyo"),
+    rules=STRICT,
+    in_process=True,
+    note="the row labels move onto a clock and then onto another, and the values stay, "
+    "which firepanda #1231 does in the Python layer",
 )
 case(
     "temporal/groupby-day",
@@ -1414,6 +1438,8 @@ case(
     in_process=True,
     note="an instant in an object array is a Timestamp and a gap is NaT",
 )
+
+
 def _typed_values(result):
     """A column or an index as its type and its values written out, so a gap reads as NaT."""
     return [str(result.dtype), [str(value) for value in result.tolist()]]
