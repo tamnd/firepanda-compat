@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Eleven in-process cases for writing through `s[key]`, `loc`, `iloc`, `at` and `iat` on a series and a frame, and two refusals in `errors` for a value that does not fit and for `iloc` past the end.
+- Board after firepanda #1201: 4320 pass, 495 unimplemented, 94 divergent, 5 fail.
 - Five `DataFrame.__setitem__` cases run in process: a single value, a column written over, several names from a frame, rows marked by a column of flags, and cells marked by a frame of flags. `indexing/assign-misaligned-column` runs in process too, and the `stats/kurt` note says why firepanda adds in numpy's order.
 - Board after firepanda #1198: 4307 pass, 495 unimplemented, 94 divergent, 5 fail.
 - `temporal/to-datetime-count`, `temporal/to-timedelta-mixed` and `temporal/index-names-with-gap` check a number among moments in `to_datetime`, text among spans in `to_timedelta`, and names, text and times read from labels with a gap against pandas.
