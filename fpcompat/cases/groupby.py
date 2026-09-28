@@ -322,6 +322,12 @@ case(
     note=AGG + ". The named form on one column, a keyword a column",
     in_process=True,
 )
+CALLABLE = (
+    "In process because the driver has no entry for it, and firepanda calls the "
+    "function once a group from its Python layer"
+)
+
+
 case(
     "groupby/agg-lambda",
     "GroupBy.agg",
@@ -330,7 +336,8 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key")["value"].agg(lambda group: group.max() - group.min()),
     note="an arbitrary Python callable, which is the escape hatch and which any "
-    "implementation with a fast path has to fall back out of",
+    "implementation with a fast path has to fall back out of. " + CALLABLE,
+    in_process=True,
 )
 case(
     "groupby/agg-multiple-columns",
@@ -405,6 +412,8 @@ case(
     covers=("func",),
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key")["value"].transform(lambda group: group - group.mean()),
+    note="a Python function over each group, whose answer is lined up on the rows. " + CALLABLE,
+    in_process=True,
 )
 case(
     "groupby/shift",
@@ -642,6 +651,9 @@ case(
         tolerance=Tolerance.STATISTICAL,
         reason="describe includes a standard deviation and three quantiles",
     ),
+    note="In process because the driver has no entry for describe, and firepanda builds "
+    "it in its Python layer from one reduction a statistic",
+    in_process=True,
 )
 case(
     "groupby/apply-frame",
@@ -651,7 +663,8 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key")[["value"]].apply(lambda group: group.sum()),
     note="apply is the slow path that has to exist, and it is here so that an "
-    "implementation cannot claim groupby coverage without it",
+    "implementation cannot claim groupby coverage without it. " + CALLABLE,
+    in_process=True,
 )
 case(
     "groupby/filter",
@@ -727,6 +740,9 @@ case(
     "pandas.Grouper",
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby(pd.Grouper(key="key")).sum(),
+    note="In process because the driver has no entry for it, and pd.Grouper lives in "
+    "firepanda's Python layer, which reads it as the key it names",
+    in_process=True,
 )
 case(
     "groupby/sample",
