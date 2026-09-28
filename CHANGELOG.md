@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- A `columnar` section with ten cases that write a frame to Parquet, Feather and ORC through a temporary file and read it back, with the row labels, `index=False`, a codec, `columns` and the bytes `to_parquet` returns with no path. They run in process, as the pickle cases do.
+- Board after firepanda #1224: 4488 pass, 367 unimplemented, 92 divergent, 5 fail.
 - The pickle cases run in process, with a note saying why: pickling lives in firepanda's Python layer, and the driver has no entry for any of them, so the first board after #1222 counted their thirteen runs as unimplemented while each agreed with pandas.
 - Board after firepanda #1222, corrected: 4459 pass, 379 unimplemented, 92 divergent, 5 fail.
 - Pickle cases in `fpcompat/cases/pickle.py`: the three round trips that asserted the `engine/pickle` divergence, with new ids, and seven more for `pandas.to_pickle`, compression by the file's ending and by name, a zip archive, the protocol, and the standard library's `pickle.dumps` on a frame and a column. `engine/pickle` is retired after firepanda #1222 made frames, columns and indexes pickle, which leaves twenty three entries.

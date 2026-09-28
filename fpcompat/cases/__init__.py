@@ -64,6 +64,7 @@ CASE_MODULES = (
     "errors",
     "inplace",
     "pickle",
+    "columnar",
     "divergences",
     "resolution",
     "signature",
