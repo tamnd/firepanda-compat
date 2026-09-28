@@ -63,6 +63,7 @@ CASE_MODULES = (
     "nested",
     "errors",
     "inplace",
+    "pickle",
     "divergences",
     "resolution",
     "signature",
