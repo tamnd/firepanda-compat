@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `DataFrame.to_xml` from firepanda #1237, with the standard library's parser: the default document, and one with a stand-in for missing values, columns as attributes and as elements, a namespace prefix, the root and row names and the encoding.
+- Board after firepanda #1237: 4576 pass, 338 unimplemented, 95 divergent, 5 fail.
 - Cases for the frequency an index holds, from firepanda #1236: `freqstr` of a `date_range` and of a sliced `timedelta_range`, `freq="infer"` on `DatetimeIndex`, and `shift` by the held business month end.
 - Board after firepanda #1236: 4570 pass, 340 unimplemented, 95 divergent, 5 fail.
 - Frequency inference cases: `pandas.infer_freq` on weekly, irregular and business month end labels, `DatetimeIndex.inferred_freq` across a daylight saving change, and `Series.dt.freq`, all run in process against firepanda #1235.

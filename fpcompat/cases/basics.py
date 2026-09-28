@@ -69,6 +69,7 @@ VC_NOTE = (
     "stable sort, which the driver cannot reach"
 )
 
+
 case(
     "basics/shape",
     "DataFrame.shape",
@@ -3027,6 +3028,7 @@ case(
     in_process=True,
     note="the most common values of each column, NaN after a column's last. " + MAP_IN_PROCESS,
 )
+XML_IN_PROCESS = "firepanda #1237 writes XML in the Python layer"
 UPDATE_IN_PROCESS = (
     "In process because firepanda lines the other side up and puts the values in from "
     "its Python layer, which the driver cannot reach"
@@ -3486,6 +3488,47 @@ case(
     expr=lambda pd, df: df._repr_html_(),
     in_process=True,
     note="the table a notebook shows, under the display options. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/to-xml",
+    "DataFrame.to_xml",
+    level="L3",
+    covers=("parser",),
+    frames=("float64_half_null", "strings_ascii", "tall"),
+    expr=lambda pd, df: df.to_xml(parser="etree"),
+    in_process=True,
+    note="the frame as pandas' XML document, one element per row, with the standard library's "
+    "parser, since lxml is not installed here. " + XML_IN_PROCESS,
+)
+case(
+    "basics/to-xml-options",
+    "DataFrame.to_xml",
+    level="L3",
+    covers=(
+        "index",
+        "root_name",
+        "row_name",
+        "na_rep",
+        "attr_cols",
+        "elem_cols",
+        "namespaces",
+        "prefix",
+        "encoding",
+        "xml_declaration",
+        "pretty_print",
+        "parser",
+    ),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: [
+        df.to_xml(parser="etree", index=False, pretty_print=False, xml_declaration=False),
+        df.to_xml(parser="etree", na_rep="-", attr_cols=list(df.columns)[:1]),
+        df.to_xml(parser="etree", elem_cols=list(df.columns)[-1:], root_name="r", row_name="w"),
+        df.to_xml(parser="etree", namespaces={"doc": "https://example.com"}, prefix="doc"),
+        df.to_xml(parser="etree", encoding="latin-1", pretty_print=False),
+    ],
+    in_process=True,
+    note="columns as attributes, a stand-in for missing values, namespaces and the encoding. "
+    + XML_IN_PROCESS,
 )
 
 
