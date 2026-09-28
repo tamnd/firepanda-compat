@@ -922,6 +922,47 @@ case(
     note="the days cross the spring transition, which the wall clock reads as whole days. "
     + INFER_IN_PROCESS,
 )
+HELD_IN_PROCESS = "firepanda #1236 holds the frequency on the index in the Python layer"
+case(
+    "temporal/date-range-freqstr",
+    "DatetimeIndex.freqstr",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range("2024-01-01", periods=4, freq="2ME").freqstr,
+    in_process=True,
+    note=HELD_IN_PROCESS,
+)
+case(
+    "temporal/datetime-index-freq-infer",
+    "pandas.DatetimeIndex",
+    level="L3",
+    covers=("freq",),
+    frames=RANGE,
+    expr=lambda pd, df: (
+        pd.DatetimeIndex(["2024-01-01", "2024-01-08", "2024-01-15"], freq="infer").freqstr
+    ),
+    in_process=True,
+    note="infer takes the frequency the labels keep. " + HELD_IN_PROCESS,
+)
+case(
+    "temporal/timedelta-range-freqstr",
+    "pandas.timedelta_range",
+    level="L3",
+    covers=("start", "periods", "freq"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.timedelta_range("1h", periods=4, freq="90min")[::2].freqstr,
+    in_process=True,
+    note="a slice keeps the frequency times its step. " + HELD_IN_PROCESS,
+)
+case(
+    "temporal/datetime-index-shift-held",
+    "DatetimeIndex.shift",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range("2024-01-29", periods=3, freq="BME").shift(2),
+    in_process=True,
+    note="with no freq given the index steps along the one it holds. " + HELD_IN_PROCESS,
+)
 case(
     "temporal/dt-freq",
     "Series.dt.freq",
