@@ -723,6 +723,105 @@ case(
 )
 
 
+def _put(target: Any, accessor: str | None, key: Any, value: Any) -> Any:
+    """A copy after `copy.<accessor>[key] = value`, or `copy[key] = value` with no accessor."""
+    copy = target.copy()
+    place = copy if accessor is None else getattr(copy, accessor)
+    place[key(copy) if callable(key) else key] = value(copy) if callable(value) else value
+    return copy
+
+
+case(
+    "indexing/series-setitem-mask",
+    "Series.__setitem__",
+    frames=("tall",),
+    expr=lambda pd, df: _put(df["value"], None, lambda s: s > 50, 0.0),
+    in_process=True,
+    note="one value written into the rows a mask marks, the type kept",
+)
+case(
+    "indexing/series-setitem-gap-widens",
+    "Series.__setitem__",
+    frames=("tall",),
+    expr=lambda pd, df: _put(df["key"], None, lambda s: s > 50, None).fillna(-1.0),
+    in_process=True,
+    note="a gap written into some rows of whole numbers makes the column float64. The gaps "
+    "are filled before comparing, since firepanda spells a float gap as null and pandas as NaN",
+)
+case(
+    "indexing/series-loc-enlarge",
+    "Series.loc",
+    frames=("tall",),
+    expr=lambda pd, df: _put(df["key"].head(3), "loc", 99, 7),
+    in_process=True,
+    note="a label the series does not have puts a new row on the end",
+)
+case(
+    "indexing/series-iloc-write",
+    "Series.iloc",
+    frames=("tall",),
+    expr=lambda pd, df: _put(df["value"], "iloc", [4, 0, 2], [1.0, 2.0, 3.0]),
+    in_process=True,
+    note="a list of values goes into a list of positions in the order given",
+)
+case(
+    "indexing/series-iat-write",
+    "Series.iat",
+    frames=("tall",),
+    expr=lambda pd, df: _put(df["key"], "iat", 1, 5),
+    in_process=True,
+    note="one value written by position",
+)
+case(
+    "indexing/loc-write-cells",
+    "DataFrame.loc",
+    frames=("tall",),
+    expr=lambda pd, df: _put(df, "loc", lambda c: (c["key"] > 50, "value"), 0.0),
+    in_process=True,
+    note="the rows a mask marks, in one column",
+)
+case(
+    "indexing/loc-write-new-column",
+    "DataFrame.loc",
+    frames=("tall",),
+    expr=lambda pd, df: _put(df, "loc", lambda c: (c["key"] > 50, "big"), 1.0),
+    in_process=True,
+    note="a name the frame does not have makes a new column, a gap in the rows not marked",
+)
+case(
+    "indexing/loc-write-new-row",
+    "DataFrame.loc",
+    frames=("tall",),
+    expr=lambda pd, df: _put(_numbers(df).head(3), "loc", 99, [1, 2.5]),
+    in_process=True,
+    note="a row label the frame does not have puts a row on the end, one value a column",
+)
+case(
+    "indexing/iloc-write-block",
+    "DataFrame.iloc",
+    frames=("tall",),
+    expr=lambda pd, df: _put(_numbers(df), "iloc", ([0, 1], [0, 1]), [[7, 8.0], [9, 10.0]]),
+    in_process=True,
+    note="rows of values go one row of them a row",
+)
+case(
+    "indexing/at-write",
+    "DataFrame.at",
+    frames=("tall",),
+    expr=lambda pd, df: _put(df, "at", (2, "value"), 0.5),
+    in_process=True,
+    note="one cell written by its row label and column name",
+)
+case(
+    "indexing/iat-write",
+    "DataFrame.iat",
+    frames=("tall",),
+    expr=lambda pd, df: _put(df, "iat", (0, 0), 5),
+    in_process=True,
+    note="one cell written by its row and column positions",
+)
+
+
 # ---------------------------------------------------------------------------
 # The members that read as a frame, on the column and on the index
 # ---------------------------------------------------------------------------

@@ -15,6 +15,8 @@ same non bug.
 
 from __future__ import annotations
 
+from typing import Any
+
 from fpcompat.cases import case, section
 
 section("errors")
@@ -525,4 +527,32 @@ case(
     note="a column offered to a frame is a value per row or a value per column and "
     "pandas will not guess between them, which is one of the few places it refuses "
     "rather than picking the reading that is usually meant",
+)
+
+
+def _setitem(target: Any, accessor: str | None, key: Any, value: Any) -> None:
+    """Writes into a copy, for the cases that expect the write to raise."""
+    copy = target.copy()
+    (copy if accessor is None else getattr(copy, accessor))[key] = value
+
+
+case(
+    "errors/setitem-value-does-not-fit",
+    "Series.__setitem__",
+    level="L4",
+    frames=("tall",),
+    expr=lambda pd, df: _setitem(df["key"], None, 0, 1.5),
+    in_process=True,
+    raises=("TypeError", "Invalid value"),
+    note="pandas 3 refuses a value the column cannot hold as it is, rather than widening",
+)
+case(
+    "errors/iloc-cannot-enlarge",
+    "DataFrame.iloc",
+    level="L4",
+    frames=("tall",),
+    expr=lambda pd, df: _setitem(df, "iloc", (len(df), 0), 0),
+    in_process=True,
+    raises=("IndexError", "cannot enlarge"),
+    note="a position past the end refuses under iloc, where loc with a new label adds a row",
 )
