@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Five `DataFrame.__setitem__` cases run in process: a single value, a column written over, several names from a frame, rows marked by a column of flags, and cells marked by a frame of flags. `indexing/assign-misaligned-column` runs in process too, and the `stats/kurt` note says why firepanda adds in numpy's order.
+- Board after firepanda #1198: 4307 pass, 495 unimplemented, 94 divergent, 5 fail.
 - `temporal/to-datetime-count`, `temporal/to-timedelta-mixed` and `temporal/index-names-with-gap` check a number among moments in `to_datetime`, text among spans in `to_timedelta`, and names, text and times read from labels with a gap against pandas.
 - Board after firepanda #1193: 4300 pass, 496 unimplemented, 94 divergent, 6 fail.
 - `temporal/parts-with-gap`, `temporal/flags-with-gap`, `temporal/concat-units`, `temporal/astype-unit`, `temporal/to-datetime-mixed` and `temporal/object-values` check calendar parts of a column with a gap, instants in two units meeting, a moment among text, and instants in an object array against pandas.
