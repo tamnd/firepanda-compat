@@ -855,6 +855,9 @@ case(
     "GroupBy.sum",
     frames=RANGE,
     expr=lambda pd, df: df.groupby(df["second"].dt.date)["row"].sum(),
+    note="In process because the driver has no entry for it, and firepanda reads a key that "
+    "is not a column name in its Python layer",
+    in_process=True,
 )
 case(
     "temporal/sort-timestamps",
