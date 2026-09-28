@@ -623,6 +623,9 @@ case(
         relaxations=frozenset({"row_order"}),
         reason="sorted by count within each group, and the counts are almost all one",
     ),
+    note="the answer is labelled by a MultiIndex, which is firepanda's Python layer, "
+    "so the case runs in process",
+    in_process=True,
 )
 case(
     "groupby/ngroups",

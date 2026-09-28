@@ -304,7 +304,9 @@ case(
     expr=lambda pd, df: pd.concat([df, df], keys=["first", "second"]),
     rules=Rules(strict_index=True),
     note="a two level index built out of the keys, which is how anyone remembers which "
-    "half a row came from",
+    "half a row came from. The answer is labelled by a MultiIndex, which is "
+    "firepanda's Python layer, so the case runs in process",
+    in_process=True,
 )
 case(
     "reshape/concat-empty",
