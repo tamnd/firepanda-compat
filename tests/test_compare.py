@@ -792,6 +792,31 @@ def test_a_frame_from_another_engine_is_a_frame_and_not_a_scalar():
     assert answer.columns == ("a",)
 
 
+class NumberedColumns:
+    """The column labels of a foreign frame whose columns are whole numbers."""
+
+    def __init__(self, labels: list) -> None:
+        self._labels = labels
+
+    def tolist(self) -> list:
+        return list(self._labels)
+
+
+def test_a_foreign_frame_names_its_columns_by_its_columns_rather_than_its_fields():
+    """Arrow names a field with text, so the integer label 0 crosses as "0"."""
+    frame = other_frame({"0": [1, 2], "1": [3, 4]})
+    frame.columns = NumberedColumns([0, 1])
+
+    assert normalize(frame).columns == normalize(pd.DataFrame({0: [1, 2], 1: [3, 4]})).columns
+    assert compare(pd.DataFrame({0: [1, 2], 1: [3, 4]}), frame)
+
+
+def test_a_foreign_frame_without_columns_is_named_by_its_fields():
+    frame = other_frame({"0": [1, 2]})
+
+    assert not compare(pd.DataFrame({0: [1, 2]}), frame)
+
+
 def test_a_frame_from_another_engine_compares_equal_to_the_pandas_answer():
     frame = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
 
