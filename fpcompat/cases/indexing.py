@@ -13,6 +13,8 @@ source of an off by one in code written by somebody who came from numpy.
 
 from __future__ import annotations
 
+from typing import Any
+
 from fpcompat.cases import case, section
 from fpcompat.compare import Rules
 
@@ -660,10 +662,64 @@ case(
     expr=lambda pd, df: (
         lambda copy: (copy.__setitem__("shifted", copy["value"].tail(len(copy) - 2)), copy)[1]
     )(df.copy()),
+    in_process=True,
     note="assigning a shorter column back into the frame lines it up on the labels "
     "rather than on position, so the two rows it does not cover come back null instead "
     "of the column landing at the top. This is the one that surprises people who have "
     "used pandas for years. It was a divergence case until firepanda started aligning",
+)
+
+
+def _written(df: Any, key: Any, value: Any) -> Any:
+    """A copy of the frame after `copy[key] = value`, where either may read the copy."""
+    copy = df.copy()
+    copy[key(copy) if callable(key) else key] = value(copy) if callable(value) else value
+    return copy
+
+
+def _numbers(df: Any) -> Any:
+    return df[["key", "value"]]
+
+
+case(
+    "indexing/setitem-scalar",
+    "DataFrame.__setitem__",
+    frames=("tall",),
+    expr=lambda pd, df: _written(df, "one", 1),
+    in_process=True,
+    note="one value for a new column is spread down every row",
+)
+case(
+    "indexing/setitem-replace",
+    "DataFrame.__setitem__",
+    frames=("tall",),
+    expr=lambda pd, df: _written(df, "value", lambda c: c["value"] * 2),
+    in_process=True,
+    note="writing over a column keeps its place among the others",
+)
+case(
+    "indexing/setitem-several",
+    "DataFrame.__setitem__",
+    frames=("tall",),
+    expr=lambda pd, df: _written(df, ["a", "b"], lambda c: c[["value", "key"]]),
+    in_process=True,
+    note="a frame written under a list of names is taken by position, not by its own names",
+)
+case(
+    "indexing/setitem-marked-rows",
+    "DataFrame.__setitem__",
+    frames=("tall",),
+    expr=lambda pd, df: _written(_numbers(df), lambda c: c["key"] > 50, 0),
+    in_process=True,
+    note="a column of flags as the key writes the value into every column of the rows it marks",
+)
+case(
+    "indexing/setitem-marked-cells",
+    "DataFrame.__setitem__",
+    frames=("tall",),
+    expr=lambda pd, df: _written(_numbers(df), lambda c: c > 50, -1),
+    in_process=True,
+    note="a frame of flags as the key writes the value into the cells it marks, as mask does",
 )
 
 

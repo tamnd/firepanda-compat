@@ -118,7 +118,7 @@ for name in ("std", "var", "sem", "skew", "kurt"):
             "moments in its Python layer the way pandas' nankurt does. The int64_half_null "
             "run is a fourth moment of values near 4.6e18 with a spread of 4e9, where the "
             "order of adding moves the answer by 2e-7 and pandas is itself 1.2e-7 off the "
-            "exact answer over the same floats"
+            "exact answer over the same floats, so firepanda adds in numpy's order too"
             if name == "kurt"
             else ""
         ),
