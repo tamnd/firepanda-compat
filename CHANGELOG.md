@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Groupby cases for keys from outside the frame: a column worked out from the frame, a list as long as it, a function of the row labels, `level=0`, and a column grouped by another. `groupby/agg-lambda`, `transform-lambda`, `apply-frame`, `describe`, `grouper` and `temporal/groupby-day` now run in process, since firepanda answers each in its Python layer.
+- Board after firepanda #1211: 4394 pass, 433 unimplemented, 94 divergent, 5 fail.
 - Seven in-process cases for date offsets: a month end, business days back over a weekend, a custom business day with a holiday, a `DateOffset` that clips to a short month, a day over the spring transition, business hours over a weekend, and `date_range` with an offset as its frequency. The 47 resolution cases for `pd.offsets`, `pd.DateOffset` and the signature of `offsets.YearEnd` pass after firepanda #1203 and #1205.
 - Board after firepanda #1206: 4377 pass, 445 unimplemented, 94 divergent, 5 fail.
 - Eleven in-process cases for writing through `s[key]`, `loc`, `iloc`, `at` and `iat` on a series and a frame, and two refusals in `errors` for a value that does not fit and for `iloc` past the end.

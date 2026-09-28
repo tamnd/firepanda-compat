@@ -322,6 +322,12 @@ case(
     note=AGG + ". The named form on one column, a keyword a column",
     in_process=True,
 )
+CALLABLE = (
+    "In process because the driver has no entry for it, and firepanda calls the "
+    "function once a group from its Python layer"
+)
+
+
 case(
     "groupby/agg-lambda",
     "GroupBy.agg",
@@ -330,7 +336,8 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key")["value"].agg(lambda group: group.max() - group.min()),
     note="an arbitrary Python callable, which is the escape hatch and which any "
-    "implementation with a fast path has to fall back out of",
+    "implementation with a fast path has to fall back out of. " + CALLABLE,
+    in_process=True,
 )
 case(
     "groupby/agg-multiple-columns",
@@ -405,6 +412,8 @@ case(
     covers=("func",),
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key")["value"].transform(lambda group: group - group.mean()),
+    note="a Python function over each group, whose answer is lined up on the rows. " + CALLABLE,
+    in_process=True,
 )
 case(
     "groupby/shift",
@@ -642,6 +651,9 @@ case(
         tolerance=Tolerance.STATISTICAL,
         reason="describe includes a standard deviation and three quantiles",
     ),
+    note="In process because the driver has no entry for describe, and firepanda builds "
+    "it in its Python layer from one reduction a statistic",
+    in_process=True,
 )
 case(
     "groupby/apply-frame",
@@ -651,7 +663,8 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key")[["value"]].apply(lambda group: group.sum()),
     note="apply is the slow path that has to exist, and it is here so that an "
-    "implementation cannot claim groupby coverage without it",
+    "implementation cannot claim groupby coverage without it. " + CALLABLE,
+    in_process=True,
 )
 case(
     "groupby/filter",
@@ -727,6 +740,67 @@ case(
     "pandas.Grouper",
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby(pd.Grouper(key="key")).sum(),
+    note="In process because the driver has no entry for it, and pd.Grouper lives in "
+    "firepanda's Python layer, which reads it as the key it names",
+    in_process=True,
+)
+OUTSIDE = (
+    "In process because the driver has no entry for it, and firepanda reads a key that is "
+    "not a column name in its Python layer, as a column of its own under a hidden name"
+)
+
+
+case(
+    "groupby/by-series",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("by",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.groupby(df["key"] % 3)["value"].sum(),
+    note="a column worked out from the frame, lined up on the row labels and named after "
+    "itself. " + OUTSIDE,
+    in_process=True,
+)
+case(
+    "groupby/by-list",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("by",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.groupby([row % 4 for row in range(len(df))], as_index=False).sum(),
+    note="a list as long as the frame, which is one key with no name, so it comes back as a "
+    "column called index. " + OUTSIDE,
+    in_process=True,
+)
+case(
+    "groupby/by-function",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("by",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.groupby(lambda label: label % 5)["value"].max(),
+    note="a function called on each row label. " + OUTSIDE,
+    in_process=True,
+)
+case(
+    "groupby/level",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("level",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.set_index("key").groupby(level=0)["value"].mean(),
+    note="the row labels as the key. " + OUTSIDE,
+    in_process=True,
+)
+case(
+    "groupby/series-by-series",
+    "Series.groupby",
+    level="L3",
+    covers=("by",),
+    frames=("keys_10",),
+    expr=lambda pd, df: df["value"].groupby(df["key"]).agg(["min", "max"]),
+    note="a column grouped by another, which answers with the column's own name. " + OUTSIDE,
+    in_process=True,
 )
 case(
     "groupby/sample",
