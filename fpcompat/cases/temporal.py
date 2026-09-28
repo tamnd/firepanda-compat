@@ -468,6 +468,28 @@ case(
     " reads the way pandas does",
 )
 case(
+    "temporal/to-datetime-dayfirst",
+    "pandas.to_datetime",
+    level="L3",
+    covers=("arg", "dayfirst"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_datetime(df["second"].dt.strftime("%d/%m/%Y %H:%M"), dayfirst=True),
+    in_process=True,
+    note="the format is guessed day first; the guesser is in Python, past the core",
+)
+case(
+    "temporal/to-datetime-mixed-yearfirst",
+    "pandas.to_datetime",
+    level="L3",
+    covers=("arg", "format", "yearfirst"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_datetime(
+        df["second"].dt.strftime("%y/%m/%d"), format="mixed", yearfirst=True
+    ),
+    in_process=True,
+    note="each row read on its own, two digit year first; the reader is in Python, past the core",
+)
+case(
     "temporal/date-range",
     "pandas.date_range",
     level="L3",
