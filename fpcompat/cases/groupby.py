@@ -728,3 +728,21 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby(pd.Grouper(key="key")).sum(),
 )
+case(
+    "groupby/sample",
+    "GroupBy.sample",
+    covers=("n", "random_state"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.groupby("key").sample(n=2, random_state=7),
+    in_process=True,
+    note="each group's rows are drawn from one random state in group order, as pandas draws them",
+)
+case(
+    "groupby/sample-frac",
+    "GroupBy.sample",
+    covers=("frac", "replace", "random_state"),
+    frames=("keys_10",),
+    expr=lambda pd, df: df.groupby("key")["value"].sample(frac=0.25, replace=True, random_state=3),
+    in_process=True,
+    note="a share of each group, drawn with replacement, comes back group after group",
+)

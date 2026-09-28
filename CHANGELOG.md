@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `groupby/sample` and `groupby/sample-frac` check that each group's rows are drawn as pandas draws them for the same seed.
+- Board after firepanda #1184: 4284 pass, 497 unimplemented, 94 divergent, 6 fail.
 - Five `basics/json-normalize` cases check nested records, `sep` and `max_level`, a missing record, `record_path` with `meta`, and both prefixes against pandas.
 - Board after firepanda #1183: 4280 pass, 499 unimplemented, 94 divergent, 6 fail.
 - `indexing/index-repr` and `temporal/zoned-index-repr` check that an index, a date index, a span index and a frame's range print what pandas prints, and `Index.__repr__` joins the operator names a case may use.
