@@ -490,6 +490,18 @@ case(
     note="each row read on its own, two digit year first; the reader is in Python, past the core",
 )
 case(
+    "temporal/to-datetime-iso8601-slashes",
+    "pandas.to_datetime",
+    level="L3",
+    covers=("arg", "format"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_datetime(
+        df["second"].dt.strftime("%Y/%m/%d %H:%M:%S"), format="ISO8601"
+    ),
+    in_process=True,
+    note="pandas' ISO 8601 reader takes slashes; the reader is in Python, past the core",
+)
+case(
     "temporal/date-range",
     "pandas.date_range",
     level="L3",
