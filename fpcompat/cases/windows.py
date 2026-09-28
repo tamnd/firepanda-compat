@@ -401,7 +401,10 @@ case(
     expr=lambda pd, df: df.groupby("key")["value"].rolling(3).sum(),
     rules=RUNNING,
     note="the window resets at every group boundary, which is the whole point and is "
-    "also the thing that is easiest to implement by accident as one long window",
+    "also the thing that is easiest to implement by accident as one long window. "
+    "The answer is labelled by a MultiIndex, which is firepanda's Python layer, so "
+    "the case runs in process",
+    in_process=True,
 )
 case(
     "windows/groupby-expanding",
@@ -409,6 +412,9 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key")["value"].expanding().sum(),
     rules=RUNNING,
+    note="the answer is labelled by a MultiIndex, which is firepanda's Python layer, "
+    "so the case runs in process",
+    in_process=True,
 )
 case(
     "windows/groupby-ewm",
@@ -418,4 +424,7 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.groupby("key")["value"].ewm(span=3).mean(),
     rules=RUNNING,
+    note="the answer is labelled by a MultiIndex, which is firepanda's Python layer, "
+    "so the case runs in process",
+    in_process=True,
 )
