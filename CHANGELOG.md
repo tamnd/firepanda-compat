@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- A `to_datetime` case that runs in process: text with slashes read under `format="ISO8601"`. It covers firepanda #1178.
+- Board after firepanda #1178: 4259 pass, 501 unimplemented, 96 divergent, 6 fail.
 - Two `to_datetime` cases that run in process: text guessed day first with `dayfirst=True`, and two digit years read year first with `format="mixed"` and `yearfirst=True`. They cover firepanda #1177.
 - Board after firepanda #1177: 4258 pass, 501 unimplemented, 96 divergent, 6 fail.
 - Four `to_datetime` cases that run in process: month first text, a month name with a twelve hour clock, and a short month name, all with no format, plus a `%Y-%j` format. They cover the guesser firepanda gained in #1171.
