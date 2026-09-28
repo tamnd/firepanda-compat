@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for the frequency an index holds, from firepanda #1236: `freqstr` of a `date_range` and of a sliced `timedelta_range`, `freq="infer"` on `DatetimeIndex`, and `shift` by the held business month end.
+- Board after firepanda #1236: 4570 pass, 340 unimplemented, 95 divergent, 5 fail.
 - Frequency inference cases: `pandas.infer_freq` on weekly, irregular and business month end labels, `DatetimeIndex.inferred_freq` across a daylight saving change, and `Series.dt.freq`, all run in process against firepanda #1235.
 - Board after firepanda #1235: 4564 pass, 342 unimplemented, 95 divergent, 5 fail.
 - `indexing/reindex-ffill`, `indexing/reindex-nearest`, `temporal/asfreq-filled` and `temporal/frame-tz-localize` cases, and `temporal/asfreq` run in process, for the reindex filling, asfreq and frame time zone methods that firepanda #1231, #1233 and #1234 added.
