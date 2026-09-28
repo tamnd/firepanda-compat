@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases whose answer is labelled by a MultiIndex run in process, since the Mojo driver has no entry for firepanda's Python layer: the two key group bys, `set_index` and `reset_index` with levels, `sort_index` by level, `droplevel`, `swaplevel`, `reorder_levels`, `xs`, `loc` by a prefix, `stack`, `DataFrame.value_counts`, `GroupBy.value_counts`, `GroupBy.corr` and `GroupBy.cov`, and the comparison reads a firepanda answer whose index has several levels.
+- Board after firepanda #1248: 4666 pass, 302 unimplemented, 95 divergent, 3 fail.
 - Cases for firepanda #1240, #1241 and #1242: spans scaled by a number and divided by a span, numbers cast to spans and instants, spans rounded, floored, interpolated and taken a quantile of, a list beside a series or a frame, and text joined and repeated by operators.
 - Board after firepanda #1242: 4617 pass, 338 unimplemented, 95 divergent, 5 fail.
 - Cases for firepanda #1238 and #1239: DatetimeIndex insert, drop, putmask, isin and delete, to_timedelta of a list, and the frequency after sort, take, union, normalize, append and tz_localize, plus Index.sort_values with a key.
