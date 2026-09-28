@@ -1223,3 +1223,14 @@ case(
     in_process=True,
     note="a zone every value shares is kept on the column",
 )
+case(
+    "temporal/zoned-repr",
+    "Series.__repr__",
+    frames=ZONED,
+    expr=lambda pd, df: [
+        repr(df["zoned"].head(3)),
+        repr(pd.DataFrame({"when": df["zoned"].head(3)})),
+    ],
+    in_process=True,
+    note="a zoned column prints each instant with its offset, not the count behind it",
+)

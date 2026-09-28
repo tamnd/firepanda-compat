@@ -3444,6 +3444,44 @@ case(
 )
 
 
+case(
+    "basics/frame-repr",
+    "DataFrame.to_string",
+    frames=("float64_half_null", "strings_ascii"),
+    expr=lambda pd, df: repr(df),
+    in_process=True,
+    note="repr, which is to_string under the display options, prints rows and not a summary. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/frame-repr-cut",
+    "DataFrame.to_string",
+    covers=("max_rows", "min_rows", "max_cols", "line_width"),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: [
+        repr(pd.DataFrame({f"c{i}": df["value"].head(70) for i in range(20)})),
+        repr(pd.DataFrame({f"c{i}": df["value"].head(2) for i in range(30)})),
+    ],
+    in_process=True,
+    note="a long frame loses its middle rows to dots and a wide one its middle columns. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/to-string-limits",
+    "DataFrame.to_string",
+    covers=("max_rows", "min_rows", "max_cols", "line_width"),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: [
+        df.to_string(max_rows=6),
+        df.to_string(max_rows=20, min_rows=4, show_dimensions=True),
+        pd.DataFrame({f"c{i}": df["value"].head(3) for i in range(8)}).to_string(max_cols=4),
+        pd.DataFrame({f"c{i}": df["value"].head(3) for i in range(8)}).to_string(line_width=40),
+    ],
+    in_process=True,
+    note="the row and column limits cut the middle out, and a line width wraps into blocks. "
+    + UPDATE_IN_PROCESS,
+)
+
 def _trades(pd):
     """Trades and quotes on whole number times for two tickers, both sorted by time."""
     trades = pd.DataFrame(

@@ -575,9 +575,13 @@ def test_the_committed_registry_loads():
 
     `engine/implicit-index` is retired, which leaves twenty seven. It said firepanda had
     no index nobody asked for, and firepanda has pandas' default one now, so `reindex`
-    and `reset_index` against it answer what pandas answers."""
+    and `reset_index` against it answer what pandas answers.
+
+    `engine/missing-spelling` is retired too, which leaves twenty six. A frame and a
+    column print through pandas' own text formatter now, which writes a text gap as
+    NaN and a temporal one as NaT, so the renderings it registered agree."""
     entries = divergences.registry()
-    assert len(entries) == 27
+    assert len(entries) == 26
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

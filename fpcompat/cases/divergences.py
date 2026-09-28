@@ -602,14 +602,9 @@ case(
 # values and prints `<NA>`, which is what every firepanda column is, so the word here is
 # pandas' own word for a column that works this way rather than one this library made up.
 #
-# The float case is the one worth reading twice. The frame holds a genuine NaN in row
-# zero and missing values in rows one and three, and only the missing ones differ, which
-# is the entry in a single rendering.
-
-MISSING_SPELLING = (
-    "firepanda writes `<NA>` and pandas writes whatever its storage forced on it, which "
-    "is one character of difference and moves every value in the column"
-)
+# This was the entry `engine/missing-spelling`, when every firepanda gap printed `<NA>`.
+# A frame and a column print through pandas' text formatter now and spell the gap the
+# way pandas does, so the cases stay as ordinary ones to keep the two agreeing.
 
 case(
     "divergences/missing-spelling/float-column",
@@ -640,7 +635,7 @@ case(
     note="a text column, where pandas 3 carries the gap as a NaN even though the column "
     "holds strings. One line is read rather than the rendering, because the footer "
     "spells the type `string` here and `str` there and that is `engine/dtype-spelling` "
-    "rather than this. " + MISSING_SPELLING,
+    "rather than this. Both write NaN now.",
 )
 case(
     "divergences/missing-spelling/timestamp-column",
@@ -651,7 +646,7 @@ case(
     note="a timestamp, where pandas has a third spelling again and writes `NaT`. The "
     "hole is put there by `mask` because no temporal corpus frame has one, and it is "
     "the middle row of three so the column is as wide as a real timestamp either "
-    "way. " + MISSING_SPELLING,
+    "way. Both write NaT now.",
 )
 case(
     "divergences/missing-spelling/isna-agrees",
