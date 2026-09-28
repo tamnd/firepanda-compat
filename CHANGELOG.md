@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Seven in-process cases for date offsets: a month end, business days back over a weekend, a custom business day with a holiday, a `DateOffset` that clips to a short month, a day over the spring transition, business hours over a weekend, and `date_range` with an offset as its frequency. The 47 resolution cases for `pd.offsets`, `pd.DateOffset` and the signature of `offsets.YearEnd` pass after firepanda #1203 and #1205.
+- Board after firepanda #1206: 4377 pass, 445 unimplemented, 94 divergent, 5 fail.
 - Eleven in-process cases for writing through `s[key]`, `loc`, `iloc`, `at` and `iat` on a series and a frame, and two refusals in `errors` for a value that does not fit and for `iloc` past the end.
 - Board after firepanda #1201: 4320 pass, 495 unimplemented, 94 divergent, 5 fail.
 - Five `DataFrame.__setitem__` cases run in process: a single value, a column written over, several names from a frame, rows marked by a column of flags, and cells marked by a frame of flags. `indexing/assign-misaligned-column` runs in process too, and the `stats/kurt` note says why firepanda adds in numpy's order.
