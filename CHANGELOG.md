@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `indexing/reindex-ffill`, `indexing/reindex-nearest`, `temporal/asfreq-filled` and `temporal/frame-tz-localize` cases, and `temporal/asfreq` run in process, for the reindex filling, asfreq and frame time zone methods that firepanda #1231, #1233 and #1234 added.
+- Board after firepanda #1234: 4555 pass, 346 unimplemented, 95 divergent, 5 fail.
 - `groupby/kurt`, `groupby/flat-kurt` and `groupby/ohlc` cases, run in process, for the grouped excess kurtosis and the open, high, low and close of each group that firepanda #1230 added.
 - Board after firepanda #1230: 4538 pass, 359 unimplemented, 95 divergent, 5 fail.
 - Three `basics` cases for `DataFrame.to_html` and the notebook repr from firepanda #1229: the default table over three frames, four sets of arguments, and `_repr_html_`.

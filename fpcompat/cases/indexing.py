@@ -280,6 +280,38 @@ case(
     expr=lambda pd, df: df.reindex(columns=["c", "a", "missing"]),
 )
 case(
+    "indexing/reindex-ffill",
+    "DataFrame.reindex",
+    level="L3",
+    covers=("index", "method", "limit"),
+    frames=("keys_unique",),
+    expr=lambda pd, df: (
+        df.set_index("key")
+        .sort_index()
+        .reindex([-1, 0, 1, 2, 999, 1000, 1001], method="ffill", limit=1)
+    ),
+    rules=STRICT,
+    in_process=True,
+    note="a label that is not there reads from the one before it, at most once per label, "
+    "which firepanda #1233 works out in the Python layer before the core reindexes",
+)
+case(
+    "indexing/reindex-nearest",
+    "DataFrame.reindex",
+    level="L3",
+    covers=("index", "method", "tolerance"),
+    frames=("keys_unique",),
+    expr=lambda pd, df: (
+        df.set_index("key")
+        .sort_index()
+        .reindex([-5, 0, 3, 500, 5000], method="nearest", tolerance=2)
+    ),
+    rules=STRICT,
+    in_process=True,
+    note="the closer neighbour, the later one on a tie, and nothing further away than "
+    "the tolerance, all worked out in firepanda's Python layer since #1233",
+)
+case(
     "indexing/xs",
     "DataFrame.xs",
     level="L3",
