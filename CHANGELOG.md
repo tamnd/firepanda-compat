@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `pandas.eval` with `inplace=True` moved from the divergence block to `fpcompat/cases/inplace.py` as `inplace/module-eval` and passes, since firepanda #1220 has the module level function, which retires `engine/inplace` and leaves twenty four entries. `pandas.NA`, `pandas.IndexSlice`, `pandas.eval` and `pandas.col` resolve and their signatures match.
+- Board after firepanda #1220: 4434 pass, 395 unimplemented, 92 divergent, 5 fail.
 - The resolution and signature cases for `attrs`, `flags`, `set_flags` and `pandas.Flags` pass through the driver now that firepanda carries them as pandas does.
 - Board after firepanda #1219: 4427 pass, 402 unimplemented, 92 divergent, 5 fail.
 - `windows/rolling-time` runs in process with a note, now that firepanda measures a rolling window as a span of time along the row labels or an `on` column.

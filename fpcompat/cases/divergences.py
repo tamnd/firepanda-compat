@@ -10,12 +10,6 @@ the pandas answer.
 That is what turns a divergence from an excuse into an assertion. A case here that
 starts agreeing with pandas fails the build and says the registry is out of date,
 which is the opposite of how a known failure list normally behaves.
-
-The `inplace` block is the largest and it is driven by a table rather than written out
-one call at a time, because 42 pandas callables take that parameter and a hand written
-list of 42 would be missing three of them within a month. The table is checked against
-the committed inventory by a test, so adding a callable with an `inplace` parameter to
-pandas shows up as a failing test with the name in it.
 """
 
 from __future__ import annotations
@@ -149,55 +143,6 @@ case(
     expr=lambda pd, df: pd.Series([1, "two", 3.0]).dtype.name,
     note="one column holding an integer, a string and a float, which pandas accepts "
     "and which has no Arrow type at all",
-)
-
-# ---------------------------------------------------------------------------
-# inplace
-# ---------------------------------------------------------------------------
-
-# Every pandas callable that takes an `inplace` parameter used to have one case here.
-# Thirty five of them moved to `fpcompat/cases/inplace.py` when firepanda started
-# honouring the parameter, which document 51 over there is the argument for, `eval` and
-# `query` on a frame when the methods arrived and `interpolate` on a frame and on a
-# column last. What is left below is the one callable whose method is still not in
-# firepanda, and it is not about the parameter.
-
-IN_PROCESS_NOTE = (
-    "every case in this block takes a copy, runs the mutating call on it and hands "
-    "back the object that was mutated, and copy is a Python layer member here rather "
-    "than a core one, so a driver entry could only emit the frame it was handed and "
-    "would be scoring itself. Until copy existed at all these cases were reported "
-    "absent, which meant the registry was asserting the inplace divergence nowhere. "
-    "See spec 44"
-)
-
-
-# There is no index block here any more. Renaming a level and setting its names were
-# the first places in the library where firepanda honoured inplace rather than
-# refusing it, and their cases live with the ordinary index cases as
-# indexing/index-rename-inplace, indexing/index-set-names-inplace,
-# temporal/index-rename-inplace and temporal/index-set-names-inplace. The MultiIndex
-# pair joined them as indexing/multi-index-rename-inplace and
-# indexing/multi-index-set-names-inplace when the MultiIndex arrived.
-
-
-def _module_eval(pd, df):
-    """`pandas.eval` writing into its target, which is the module level inplace."""
-    target = df.copy()
-    pd.eval("d = a + 1", target=target, resolvers=[target], inplace=True)
-    return target
-
-
-case(
-    "divergences/inplace/module-eval",
-    "pandas.eval",
-    level="L3",
-    covers=("inplace",),
-    frames=("two",),
-    expr=_module_eval,
-    in_process=True,
-    note="the only inplace parameter that is not on a method, and the only one where "
-    "the object being mutated is passed in rather than being self. " + IN_PROCESS_NOTE,
 )
 
 # ---------------------------------------------------------------------------

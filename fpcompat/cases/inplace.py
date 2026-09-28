@@ -14,10 +14,9 @@ checked against the committed pandas inventory by a test in `tests/test_divergen
 that looks for every case declaring it covers the parameter, wherever that case lives,
 so a callable pandas adds shows up as a failing test with the name in it.
 
-`interpolate` on a frame and on a column were the last two to move, when firepanda
-grew the method, after `eval` and `query` on a frame. `MultiIndex.rename`,
-`MultiIndex.set_names` and `pandas.eval` are still in the divergence registry because
-their method is not in firepanda at all, which is not about the parameter.
+`pandas.eval` was the last to move, when firepanda grew the module level function,
+after `interpolate` on a frame and on a column and `eval` and `query` on a frame.
+Nothing is left in the divergence registry about the parameter.
 
 The split in what pandas answers is undocumented and is asserted at the bottom of this
 file. `drop`, `dropna`, `drop_duplicates`, `sort_values`, `sort_index`, `reset_index`,
@@ -317,4 +316,24 @@ case(
     note="the labels become a second column of values and a column has nowhere to put "
     "a frame, so this is the one refusal that is about the operation rather than about "
     "the library. " + IN_PROCESS_NOTE,
+)
+
+
+def _module_eval(pd, df):
+    """`pandas.eval` writing into its target, which is the module level inplace."""
+    target = df.copy()
+    pd.eval("d = a + 1", target=target, resolvers=[target], inplace=True)
+    return target
+
+
+case(
+    "inplace/module-eval",
+    "pandas.eval",
+    level="L3",
+    covers=("inplace",),
+    frames=PLAIN,
+    expr=_module_eval,
+    in_process=True,
+    note="the only inplace parameter that is not on a method, and the only one where "
+    "the object being mutated is passed in rather than being self. " + IN_PROCESS_NOTE,
 )

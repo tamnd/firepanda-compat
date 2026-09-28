@@ -578,9 +578,13 @@ def test_the_committed_registry_loads():
 
     `engine/missing-spelling` is retired too, which leaves twenty six. A frame and a
     column print through pandas' own text formatter now, which writes a text gap as
-    NaN and a temporal one as NaT, so the renderings it registered agree."""
+    NaN and a temporal one as NaT, so the renderings it registered agree.
+
+    `engine/inplace` is retired, which leaves twenty four. Its last callable was the
+    module level `pandas.eval`, which firepanda has now, so the case moved to
+    `fpcompat/cases/inplace.py` and scores the ordinary way."""
     entries = divergences.registry()
-    assert len(entries) == 25
+    assert len(entries) == 24
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
