@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/frame-repr`, `basics/frame-repr-cut`, `basics/to-string-limits` and `temporal/zoned-repr`, which check that a frame prints its rows rather than a summary, that a long or wide frame loses its middle to dots as pandas cuts it, that `to_string` takes the row and column limits and wraps at a line width, and that a zoned column prints its instants with their offsets. `engine/missing-spelling` is retired, because a text gap now prints NaN and a temporal one NaT on both sides, and its cases stay as ordinary cases. The registry goes from 27 entries to 26.
+- Board after firepanda #1179: 4268 pass, 501 unimplemented, 94 divergent, 6 fail.
 - A `to_datetime` case that runs in process: text with slashes read under `format="ISO8601"`. It covers firepanda #1178.
 - Board after firepanda #1178: 4259 pass, 501 unimplemented, 96 divergent, 6 fail.
 - Two `to_datetime` cases that run in process: text guessed day first with `dayfirst=True`, and two digit years read year first with `format="mixed"` and `yearfirst=True`. They cover firepanda #1177.
