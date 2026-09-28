@@ -537,8 +537,7 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.set_index("value").index.where((df["key"] > 4).tolist(), -1),
     in_process=True,
-    note="the labels where the condition holds and minus one elsewhere. "
-    + INDEX_THROUGH_A_COLUMN,
+    note="the labels where the condition holds and minus one elsewhere. " + INDEX_THROUGH_A_COLUMN,
 )
 case(
     "indexing/index-isin",
@@ -1257,8 +1256,7 @@ case(
     note="a frame relabelled with a range that starts at a hundred. " + RANGE_IN_PROCESS,
 )
 INTERVAL_IN_PROCESS = (
-    "In process because the driver has no entry for it, and firepanda's Interval is a "
-    "Python scalar"
+    "In process because the driver has no entry for it, and firepanda's Interval is a Python scalar"
 )
 case(
     "indexing/interval-mid-length",
@@ -1288,4 +1286,21 @@ case(
     in_process=True,
     note="an open end leaves its point out, for a point, another interval and an overlap. "
     + INTERVAL_IN_PROCESS,
+)
+case(
+    "indexing/index-repr",
+    "Index.__repr__",
+    frames=("keys_10", "tall"),
+    expr=lambda pd, df: [
+        repr(df.index),
+        repr(df.head(3).index),
+        repr(pd.Index([1.5, None, 3.25])),
+        repr(pd.Index(["a", None, "tab\there"], name="k")),
+        repr(pd.Index(list(range(150)))),
+        repr(pd.Index([f"label_number_{i}" for i in range(40)])),
+        repr(pd.TimedeltaIndex(["-1 days", "2 days", None])),
+    ],
+    in_process=True,
+    note="an index prints its labels in brackets, wrapped and cut as pandas does, then its "
+    "type, name and length, and a frame's untouched labels print as a RangeIndex",
 )
