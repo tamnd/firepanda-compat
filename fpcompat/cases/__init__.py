@@ -110,6 +110,7 @@ OPERATORS = frozenset(
         "Index.__getitem__",
         "Index.__len__",
         "Index.__contains__",
+        "Index.__repr__",
     }
 )
 

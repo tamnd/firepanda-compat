@@ -1234,3 +1234,16 @@ case(
     in_process=True,
     note="a zoned column prints each instant with its offset, not the count behind it",
 )
+case(
+    "temporal/zoned-index-repr",
+    "Index.__repr__",
+    frames=ZONED,
+    expr=lambda pd, df: [
+        repr(df.set_index("zoned").index[:3]),
+        repr(pd.DatetimeIndex(["2024-01-02", None, "2024-01-04"])),
+        repr(pd.DatetimeIndex(["2024-01-02 10:00:00.123", "2024-01-03"], name="when")),
+    ],
+    in_process=True,
+    note="a date index prints each instant, with its offset when it has a zone, and a day "
+    "at midnight as a date",
+)
