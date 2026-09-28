@@ -976,6 +976,149 @@ case(
     in_process=True,
     note=INFER_IN_PROCESS,
 )
+LABELS_IN_PROCESS = "firepanda #1238 edits the labels of an index of instants in the Python layer"
+case(
+    "temporal/datetime-index-insert",
+    "DatetimeIndex.insert",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.DatetimeIndex(["2024-01-01", "2024-01-04"], name="n").insert(
+        1, "2024-01-02"
+    ),
+    in_process=True,
+    note="text is read as an instant. " + LABELS_IN_PROCESS,
+)
+case(
+    "temporal/datetime-index-drop",
+    "DatetimeIndex.drop",
+    level="L3",
+    covers=("labels", "errors"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.DatetimeIndex(["2024-01-01", "2024-01-02", "2024-01-04"]).drop(
+        ["2024-01-02", "2025-01-01"], errors="ignore"
+    ),
+    in_process=True,
+    note=LABELS_IN_PROCESS,
+)
+case(
+    "temporal/datetime-index-putmask",
+    "DatetimeIndex.putmask",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.DatetimeIndex(["2024-01-01", "2024-01-02"]).putmask(
+        [True, False], pd.Timestamp("2024-03-01")
+    ),
+    in_process=True,
+    note=LABELS_IN_PROCESS,
+)
+case(
+    "temporal/datetime-index-isin",
+    "DatetimeIndex.isin",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: list(
+        pd.DatetimeIndex(["2024-01-01", None, "2024-01-04"]).isin(
+            [pd.NaT, "2024-01-04", pd.Timestamp("2024-01-01")]
+        )
+    ),
+    in_process=True,
+    note="NaT finds NaT and text finds nothing. " + LABELS_IN_PROCESS,
+)
+case(
+    "temporal/datetime-index-delete-class",
+    "DatetimeIndex.delete",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.DatetimeIndex(["2024-01-01", "2024-01-02"]).delete(0),
+    in_process=True,
+    note="the answer is still a DatetimeIndex. " + LABELS_IN_PROCESS,
+)
+case(
+    "temporal/to-timedelta-list-index",
+    "pandas.to_timedelta",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_timedelta(["1h", None, "90min"]).insert(0, "5min"),
+    in_process=True,
+    note="a list gives a TimedeltaIndex. " + LABELS_IN_PROCESS,
+)
+PASSED_IN_PROCESS = "firepanda #1239 passes the frequency on in the Python layer"
+case(
+    "temporal/sort-values-freq",
+    "DatetimeIndex.sort_values",
+    level="L3",
+    covers=("ascending",),
+    frames=RANGE,
+    expr=lambda pd, df: (
+        pd.date_range("2024-01-01", periods=4, freq="D").sort_values(ascending=False).freqstr
+    ),
+    in_process=True,
+    note="sorting backwards flips the step. " + PASSED_IN_PROCESS,
+)
+case(
+    "temporal/take-freq",
+    "DatetimeIndex.take",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range("2024-01-01", periods=5, freq="D").take([0, 2, 4]).freqstr,
+    in_process=True,
+    note="positions that make a slice keep the step times the slice's. " + PASSED_IN_PROCESS,
+)
+case(
+    "temporal/union-freq",
+    "DatetimeIndex.union",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: (
+        pd.DatetimeIndex(["2024-01-01", "2024-01-02"])
+        .union(pd.date_range("2024-01-03", periods=3, freq="D"))
+        .freqstr
+    ),
+    in_process=True,
+    note="the answer takes the step its labels keep. " + PASSED_IN_PROCESS,
+)
+case(
+    "temporal/normalize-freq",
+    "DatetimeIndex.normalize",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range("2024-01-31 12:00", periods=4, freq="ME").normalize(),
+    in_process=True,
+    note=PASSED_IN_PROCESS,
+)
+case(
+    "temporal/append-freq",
+    "DatetimeIndex.append",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: (
+        pd.date_range("2024-01-01", periods=2, freq="h")
+        .append(pd.date_range("2024-01-01 02:00", periods=2, freq="h"))
+        .freqstr
+    ),
+    in_process=True,
+    note="pieces that follow on keep the step. " + PASSED_IN_PROCESS,
+)
+case(
+    "temporal/tz-localize-freq",
+    "DatetimeIndex.tz_localize",
+    level="L3",
+    covers=("tz",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range("2024-01-01", periods=3, freq="h").tz_localize("UTC"),
+    in_process=True,
+    note="UTC has no change of clocks, so the step survives. " + PASSED_IN_PROCESS,
+)
+case(
+    "temporal/index-sort-values-key",
+    "Index.sort_values",
+    level="L3",
+    covers=("key",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.Index([3, 1, 2, 4]).sort_values(key=lambda x: x % 2),
+    in_process=True,
+    note=PASSED_IN_PROCESS,
+)
 case(
     "temporal/groupby-day",
     "GroupBy.sum",

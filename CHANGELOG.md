@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for firepanda #1238 and #1239: DatetimeIndex insert, drop, putmask, isin and delete, to_timedelta of a list, and the frequency after sort, take, union, normalize, append and tz_localize, plus Index.sort_values with a key.
+- Board after firepanda #1239: 4589 pass, 338 unimplemented, 95 divergent, 5 fail.
 - Cases for `DataFrame.to_xml` from firepanda #1237, with the standard library's parser: the default document, and one with a stand-in for missing values, columns as attributes and as elements, a namespace prefix, the root and row names and the encoding.
 - Board after firepanda #1237: 4576 pass, 338 unimplemented, 95 divergent, 5 fail.
 - Cases for the frequency an index holds, from firepanda #1236: `freqstr` of a `date_range` and of a sliced `timedelta_range`, `freq="infer"` on `DatetimeIndex`, and `shift` by the held business month end.
