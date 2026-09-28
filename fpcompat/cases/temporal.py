@@ -618,6 +618,98 @@ case(
     note="a custom business day that works three days a week and skips a holiday. "
     + CALENDAR_IN_PROCESS,
 )
+OFFSETS_IN_PROCESS = (
+    "In process because the driver has no entry for it, and firepanda's offsets are its Python "
+    "layer moving each moment on the wall clock"
+)
+
+
+def _moments(pd, texts, tz=None):
+    return pd.Series(pd.to_datetime(texts), name="t").dt.tz_localize(tz)
+
+
+case(
+    "temporal/offset-month-end",
+    "pandas.offsets.MonthEnd",
+    frames=RANGE,
+    expr=lambda pd, df: (
+        _moments(pd, ["2024-01-31 10:00", "2024-02-15 00:00", "2024-12-31 23:59"])
+        + pd.offsets.MonthEnd(2)
+    ),
+    in_process=True,
+    note="a moment on a month end moves two month ends on, one inside a month counts the end "
+    "of its own month as the first, and the time of day is kept. " + OFFSETS_IN_PROCESS,
+)
+case(
+    "temporal/offset-business-day",
+    "pandas.offsets.BusinessDay",
+    frames=RANGE,
+    expr=lambda pd, df: (
+        _moments(pd, ["2024-03-08 09:30", "2024-03-09 00:00", "2024-03-10 18:00"])
+        - pd.offsets.BDay(3)
+    ),
+    in_process=True,
+    note="three business days back, from a Friday, a Saturday and a Sunday. " + OFFSETS_IN_PROCESS,
+)
+case(
+    "temporal/offset-custom-business-day",
+    "pandas.offsets.CustomBusinessDay",
+    frames=RANGE,
+    expr=lambda pd, df: (
+        _moments(pd, ["2024-12-23 00:00", "2024-12-24 12:00", "2024-12-31 00:00"])
+        + pd.offsets.CustomBusinessDay(weekmask="Mon Tue Wed Thu", holidays=["2024-12-25"])
+    ),
+    in_process=True,
+    note="a four day week that skips a holiday. " + OFFSETS_IN_PROCESS,
+)
+case(
+    "temporal/offset-date-offset",
+    "pandas.DateOffset",
+    frames=RANGE,
+    expr=lambda pd, df: (
+        _moments(pd, ["2024-01-31 00:00", "2024-02-29 06:00", "2023-03-31 00:00"])
+        + pd.DateOffset(years=1, months=1, days=2)
+    ),
+    in_process=True,
+    note="years and months first, clipped to the end of a short month, then the days. "
+    + OFFSETS_IN_PROCESS,
+)
+case(
+    "temporal/offset-day-over-dst",
+    "pandas.offsets.Day",
+    frames=RANGE,
+    expr=lambda pd, df: (
+        _moments(pd, ["2024-03-09 12:00", "2024-11-02 12:00"], "America/New_York")
+        + pd.offsets.Day(1)
+    ),
+    in_process=True,
+    note="a day keeps the wall clock over a transition in pandas 3, where an hour count would "
+    "not. " + OFFSETS_IN_PROCESS,
+)
+case(
+    "temporal/offset-business-hour",
+    "pandas.offsets.BusinessHour",
+    frames=RANGE,
+    expr=lambda pd, df: (
+        _moments(pd, ["2024-03-08 16:30", "2024-03-09 10:00", "2024-03-11 08:00"])
+        + pd.offsets.BusinessHour(3)
+    ),
+    in_process=True,
+    note="three working hours from 9 to 5, carried over the weekend. " + OFFSETS_IN_PROCESS,
+)
+case(
+    "temporal/date-range-offset",
+    "pandas.date_range",
+    level="L3",
+    covers=("start", "periods", "freq"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.date_range(
+        start="2024-01-10 00:00", periods=5, freq=pd.offsets.BQuarterEnd(startingMonth=2)
+    ),
+    in_process=True,
+    note="an offset as the frequency, business quarter ends anchored on February. "
+    + OFFSETS_IN_PROCESS,
+)
 SPANS_IN_PROCESS = (
     "In process because the driver has no entry for it, and firepanda's span index and "
     "span range are its Python layer counting along the whole numbers of a unit"
