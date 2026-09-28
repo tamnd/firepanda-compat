@@ -3385,8 +3385,7 @@ case(
     frames=("strings_ascii",),
     expr=lambda pd, df: pd.to_timedelta(pd.Series(["1 day", "2h", None, "00:00:03"], name="t")),
     in_process=True,
-    note="text becomes spans at microsecond resolution, a gap stays missing. "
-    + UPDATE_IN_PROCESS,
+    note="text becomes spans at microsecond resolution, a gap stays missing. " + UPDATE_IN_PROCESS,
 )
 case(
     "basics/to-timedelta-unit",
@@ -3442,6 +3441,52 @@ case(
     note="one column as text, with and without its name, type and length line. "
     + UPDATE_IN_PROCESS,
 )
+case(
+    "basics/to-html",
+    "DataFrame.to_html",
+    frames=("float64_half_null", "strings_ascii", "tall"),
+    expr=lambda pd, df: df.to_html(),
+    in_process=True,
+    note="the frame as pandas' HTML table, with the cells to_string writes. " + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/to-html-options",
+    "DataFrame.to_html",
+    covers=(
+        "index",
+        "header",
+        "na_rep",
+        "float_format",
+        "max_rows",
+        "max_cols",
+        "show_dimensions",
+        "bold_rows",
+        "classes",
+        "escape",
+        "notebook",
+        "border",
+        "table_id",
+        "col_space",
+    ),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: [
+        df.assign(third=1 / 3).to_html(index=False, float_format="%.2f", border=0),
+        df.to_html(header=False, na_rep="-", bold_rows=False, classes="wide"),
+        df.to_html(max_rows=2, max_cols=1, show_dimensions=True, table_id="t", col_space=40),
+        df.to_html(notebook=True, escape=False),
+    ],
+    in_process=True,
+    note="cut rows and columns, the size line, the table's attributes and the notebook form. "
+    + UPDATE_IN_PROCESS,
+)
+case(
+    "basics/repr-html",
+    "DataFrame.to_html",
+    frames=("float64_half_null", "tall"),
+    expr=lambda pd, df: df._repr_html_(),
+    in_process=True,
+    note="the table a notebook shows, under the display options. " + UPDATE_IN_PROCESS,
+)
 
 
 case(
@@ -3481,6 +3526,7 @@ case(
     note="the row and column limits cut the middle out, and a line width wraps into blocks. "
     + UPDATE_IN_PROCESS,
 )
+
 
 def _trades(pd):
     """Trades and quotes on whole number times for two tickers, both sorted by time."""
@@ -3644,11 +3690,11 @@ case(
     "basics/loc-timedelta",
     "DataFrame.loc",
     frames=("two",),
-    expr=lambda pd, df: pd.DataFrame(
-        {"d": pd.to_timedelta(pd.Series(["1D", "2D", "3D"])), "v": [1, 2, 3]}
-    )
-    .set_index("d")
-    .loc["2 days":],
+    expr=lambda pd, df: (
+        pd.DataFrame({"d": pd.to_timedelta(pd.Series(["1D", "2D", "3D"])), "v": [1, 2, 3]})
+        .set_index("d")
+        .loc["2 days":]
+    ),
     in_process=True,
     note="an index of spans answers the text of a span. " + BUILT,
 )
