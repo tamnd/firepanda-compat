@@ -874,6 +874,67 @@ case(
     note="the row labels move onto a clock and then onto another, and the values stay, "
     "which firepanda #1231 does in the Python layer",
 )
+INFER_IN_PROCESS = "firepanda #1235 infers the frequency in the Python layer"
+case(
+    "temporal/infer-freq-weekly",
+    "pandas.infer_freq",
+    level="L3",
+    covers=("index",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.infer_freq(pd.to_datetime(["2024-01-01", "2024-01-08", "2024-01-15"])),
+    in_process=True,
+    note=INFER_IN_PROCESS,
+)
+case(
+    "temporal/infer-freq-irregular",
+    "pandas.infer_freq",
+    level="L3",
+    covers=("index",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.infer_freq(df["second"]),
+    in_process=True,
+    note="the extremes are not evenly spaced, so there is no frequency. " + INFER_IN_PROCESS,
+)
+case(
+    "temporal/infer-freq-business-month",
+    "pandas.infer_freq",
+    level="L3",
+    covers=("index",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.infer_freq(
+        pd.to_datetime(["2024-03-29", "2024-04-30", "2024-05-31", "2024-06-28"])
+    ),
+    in_process=True,
+    note="two of the month ends fall on a weekend, so the labels keep the business month "
+    "end. " + INFER_IN_PROCESS,
+)
+case(
+    "temporal/inferred-freq-zoned",
+    "DatetimeIndex.inferred_freq",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: (
+        pd.to_datetime(["2024-03-09 00:00", "2024-03-10 00:00", "2024-03-11 00:00"])
+        .tz_localize("America/New_York")
+        .inferred_freq
+    ),
+    in_process=True,
+    note="the days cross the spring transition, which the wall clock reads as whole days. "
+    + INFER_IN_PROCESS,
+)
+case(
+    "temporal/dt-freq",
+    "Series.dt.freq",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: (
+        pd.Series(
+            pd.to_datetime(["2024-01-01 00:00", "2024-01-01 00:15", "2024-01-01 00:30"])
+        ).dt.freq
+    ),
+    in_process=True,
+    note=INFER_IN_PROCESS,
+)
 case(
     "temporal/groupby-day",
     "GroupBy.sum",
