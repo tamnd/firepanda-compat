@@ -602,7 +602,14 @@ def _from_producer(answer: Any, shape: str | None) -> Answer:
     index_arrays: list[pa.Array] = []
     index_names: tuple[str, ...] = ()
     default_index = True
-    if is_arrow_producer(index):
+    if getattr(index, "nlevels", 1) > 1 and hasattr(index, "get_level_values"):
+        # A MultiIndex crosses one level at a time, as `_index_arrays` splits pandas' one.
+        index_arrays = [
+            _producer_array(index.get_level_values(level)) for level in range(index.nlevels)
+        ]
+        index_names = tuple(_label(name) for name in index.names)
+        default_index = False
+    elif is_arrow_producer(index):
         labels = _producer_array(index)
         index_arrays = [labels]
         index_names = (_label(getattr(index, "name", None)),)

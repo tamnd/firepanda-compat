@@ -405,6 +405,27 @@ case(
     "DataFrame.stack",
     frames=("keys_10", "wide"),
     expr=lambda pd, df: df.head(5).stack(),
+    note="the answer is labelled by a MultiIndex, which is firepanda's Python layer, "
+    "so the case runs in process",
+    in_process=True,
+)
+case(
+    "reshape/value-counts-frame",
+    "DataFrame.value_counts",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df[["left", "right"]].value_counts(),
+    note="the answer is labelled by a MultiIndex, which is firepanda's Python layer, "
+    "so the case runs in process",
+    in_process=True,
+)
+case(
+    "reshape/value-counts-groupby",
+    "GroupBy.value_counts",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.groupby("left")["right"].value_counts(normalize=True),
+    note="the answer is labelled by a MultiIndex, which is firepanda's Python layer, "
+    "so the case runs in process",
+    in_process=True,
 )
 case(
     "reshape/unstack",

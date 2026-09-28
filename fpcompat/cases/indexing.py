@@ -235,7 +235,42 @@ case(
     frames=("keys_two_column",),
     expr=lambda pd, df: df.set_index(["left", "right"]),
     rules=STRICT,
-    note="a two level index, which the comparison flattens into two index columns",
+    note="a two level index, which the comparison flattens into two index columns. A "
+    "MultiIndex is firepanda's Python layer and the driver has no entry for it, so the case "
+    "runs in process",
+    in_process=True,
+)
+case(
+    "indexing/set-index-append",
+    "DataFrame.set_index",
+    level="L3",
+    covers=("keys", "append"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.set_index("left").set_index("right", append=True),
+    rules=STRICT,
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
+)
+case(
+    "indexing/reset-index-levels",
+    "DataFrame.reset_index",
+    level="L3",
+    covers=("level",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.set_index(["left", "right"]).reset_index(level="right"),
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
+)
+case(
+    "indexing/reset-index-two",
+    "DataFrame.reset_index",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.set_index(["left", "right"]).reset_index(),
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
 )
 case(
     "indexing/reset-index",
@@ -319,6 +354,9 @@ case(
     frames=("keys_10",),
     expr=lambda pd, df: df.set_index("key").xs(3),
     rules=STRICT,
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
 )
 case(
     "indexing/droplevel",
@@ -328,6 +366,9 @@ case(
     frames=("keys_two_column",),
     expr=lambda pd, df: df.set_index(["left", "right"]).droplevel(0),
     rules=STRICT,
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
 )
 case(
     "indexing/swaplevel",
@@ -335,6 +376,9 @@ case(
     frames=("keys_two_column",),
     expr=lambda pd, df: df.set_index(["left", "right"]).swaplevel(),
     rules=STRICT,
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
 )
 case(
     "indexing/sort-index-multi",
@@ -342,6 +386,49 @@ case(
     frames=("keys_two_column",),
     expr=lambda pd, df: df.set_index(["left", "right"]).sort_index(),
     rules=STRICT,
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
+)
+case(
+    "indexing/sort-index-level",
+    "DataFrame.sort_index",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.set_index(["left", "right"]).sort_index(level="right"),
+    rules=STRICT,
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
+)
+case(
+    "indexing/reorder-levels",
+    "DataFrame.reorder_levels",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.set_index(["left", "right"]).reorder_levels(["right", "left"]),
+    rules=STRICT,
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
+)
+case(
+    "indexing/loc-prefix",
+    "DataFrame.loc",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.set_index(["left", "right"]).sort_index().loc["y"],
+    rules=STRICT,
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
+)
+case(
+    "indexing/series-xs-level",
+    "Series.xs",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.set_index(["left", "right"])["value"].xs(1, level="right"),
+    rules=STRICT,
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
 )
 
 # ---------------------------------------------------------------------------

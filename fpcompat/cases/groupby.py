@@ -179,12 +179,36 @@ case(
     covers=("by",),
     frames=("keys_two_column",),
     expr=lambda pd, df: df.groupby(["left", "right"]).sum(),
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
 )
 case(
     "groupby/two-keys-size",
     "GroupBy.size",
     frames=("keys_two_column",),
     expr=lambda pd, df: df.groupby(["left", "right"]).size(),
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
+)
+case(
+    "groupby/two-keys-column",
+    "GroupBy.sum",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.groupby(["left", "right"])[df.columns[-1]].sum(),
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
+)
+case(
+    "groupby/two-keys-agg",
+    "GroupBy.agg",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.groupby(["left", "right"]).agg({"value": "sum"}),
+    note="a MultiIndex is firepanda's Python layer and the driver has no entry for it, "
+    "so the case runs in process",
+    in_process=True,
 )
 case(
     "groupby/series",
@@ -735,6 +759,9 @@ case(
     frames=("keys_two_column",),
     expr=lambda pd, df: df.groupby("left").cov(),
     rules=SPREAD,
+    note="the answer is labelled by a MultiIndex, which is firepanda's Python layer, "
+    "so the case runs in process",
+    in_process=True,
 )
 case(
     "groupby/corr",
@@ -742,6 +769,9 @@ case(
     frames=("keys_two_column",),
     expr=lambda pd, df: df.groupby("left").corr(),
     rules=SPREAD,
+    note="the answer is labelled by a MultiIndex, which is firepanda's Python layer, "
+    "so the case runs in process",
+    in_process=True,
 )
 case(
     "groupby/grouper",
