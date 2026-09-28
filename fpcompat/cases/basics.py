@@ -3652,3 +3652,68 @@ case(
     in_process=True,
     note="an index of spans answers the text of a span. " + BUILT,
 )
+NESTED_RECORDS = [
+    {"id": 1, "name": {"first": "Coleen", "last": "Volk"}},
+    {"name": {"given": "Mark", "family": "Regner"}},
+    {"id": 2, "name": "Faye Raker"},
+]
+STATES = [
+    {
+        "state": "Florida",
+        "info": {"governor": "Rick Scott"},
+        "counties": [
+            {"name": "Dade", "population": 12345},
+            {"name": "Broward", "population": 40000},
+        ],
+    },
+    {
+        "state": "Ohio",
+        "info": {"governor": "John Kasich"},
+        "counties": [{"name": "Summit", "population": 1234}],
+    },
+]
+case(
+    "basics/json-normalize",
+    "pandas.json_normalize",
+    frames=("single",),
+    expr=lambda pd, df: pd.json_normalize(NESTED_RECORDS),
+    in_process=True,
+    note="nested dicts flatten into dotted columns, with ragged keys filled with gaps",
+)
+case(
+    "basics/json-normalize-sep",
+    "pandas.json_normalize",
+    covers=("sep", "max_level"),
+    frames=("single",),
+    expr=lambda pd, df: pd.json_normalize(NESTED_RECORDS, sep="_", max_level=1),
+    in_process=True,
+    note="sep joins the nested keys and max_level at the depth flattens all of them",
+)
+case(
+    "basics/json-normalize-gap",
+    "pandas.json_normalize",
+    frames=("single",),
+    expr=lambda pd, df: pd.json_normalize([{"a": 1}, None, {"a": 3}]),
+    in_process=True,
+    note="a missing record is an empty row",
+)
+case(
+    "basics/json-normalize-records",
+    "pandas.json_normalize",
+    covers=("record_path", "meta"),
+    frames=("single",),
+    expr=lambda pd, df: pd.json_normalize(STATES, "counties", ["state", ["info", "governor"]]),
+    in_process=True,
+    note="the rows nested under record_path come out with the outer fields repeated on each",
+)
+case(
+    "basics/json-normalize-prefixes",
+    "pandas.json_normalize",
+    covers=("record_path", "meta", "meta_prefix", "record_prefix"),
+    frames=("single",),
+    expr=lambda pd, df: pd.json_normalize(
+        STATES, "counties", ["state"], record_prefix="c.", meta_prefix="m."
+    ),
+    in_process=True,
+    note="the prefixes go in front of the record and metadata columns",
+)

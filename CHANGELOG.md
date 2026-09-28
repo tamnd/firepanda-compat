@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Five `basics/json-normalize` cases check nested records, `sep` and `max_level`, a missing record, `record_path` with `meta`, and both prefixes against pandas.
+- Board after firepanda #1183: 4280 pass, 499 unimplemented, 94 divergent, 6 fail.
 - `indexing/index-repr` and `temporal/zoned-index-repr` check that an index, a date index, a span index and a frame's range print what pandas prints, and `Index.__repr__` joins the operator names a case may use.
 - Board after firepanda #1182: 4273 pass, 501 unimplemented, 94 divergent, 6 fail.
 - `basics/frame-repr`, `basics/frame-repr-cut`, `basics/to-string-limits` and `temporal/zoned-repr`, which check that a frame prints its rows rather than a summary, that a long or wide frame loses its middle to dots as pandas cuts it, that `to_string` takes the row and column limits and wraps at a line width, and that a zoned column prints its instants with their offsets. `engine/missing-spelling` is retired, because a text gap now prints NaN and a temporal one NaT on both sides, and its cases stay as ordinary cases. The registry goes from 27 entries to 26.
