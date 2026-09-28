@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- The resolution and signature cases for `attrs`, `flags`, `set_flags` and `pandas.Flags` pass through the driver now that firepanda carries them as pandas does.
+- Board after firepanda #1219: 4427 pass, 402 unimplemented, 92 divergent, 5 fail.
 - `windows/rolling-time` runs in process with a note, now that firepanda measures a rolling window as a span of time along the row labels or an `on` column.
 - Board after firepanda #1218: 4417 pass, 412 unimplemented, 92 divergent, 5 fail.
 - Categorical cases in process: grouping by a category column with and without `observed`, `concat` of the same categories, `Categorical.from_codes`, `CategoricalDtype` and `cat.codes` now run through firepanda's Python layer, after firepanda #1212, #1213, #1214 and #1216. The codes are answered in pandas' narrow width, so `engine/category-code-width` is retired.
