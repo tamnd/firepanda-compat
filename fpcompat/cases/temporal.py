@@ -1319,3 +1319,46 @@ case(
     in_process=True,
     note="an instant in an object array is a Timestamp and a gap is NaT",
 )
+def _typed_values(result):
+    """A column or an index as its type and its values written out, so a gap reads as NaT."""
+    return [str(result.dtype), [str(value) for value in result.tolist()]]
+
+
+def _index_names(labels):
+    """The text and the times read from labels, as plain lists."""
+    return [
+        labels.day_name().tolist(),
+        labels.month_name().tolist(),
+        labels.strftime("%Y-%m").tolist(),
+        [str(value) for value in labels.time],
+    ]
+
+
+case(
+    "temporal/to-datetime-count",
+    "pandas.to_datetime",
+    frames=RANGE,
+    expr=lambda pd, df: pd.to_datetime([df["second"].iat[0], 5, float("nan"), "2020-05-05"]),
+    in_process=True,
+    note="a number among moments is nanoseconds since 1970, and the column is held in nanoseconds",
+)
+case(
+    "temporal/to-timedelta-mixed",
+    "pandas.to_timedelta",
+    frames=RANGE,
+    expr=lambda pd, df: _typed_values(
+        pd.to_timedelta([pd.Timedelta("1s").as_unit("s"), "2h", None])
+    ),
+    in_process=True,
+    note="text beside spans is read at microseconds, the finer of that and the spans' unit",
+)
+case(
+    "temporal/index-names-with-gap",
+    "DatetimeIndex.day_name",
+    frames=RANGE,
+    expr=lambda pd, df: _index_names(
+        pd.DatetimeIndex(df["second"].head(3).mask([False, True, False]))
+    ),
+    in_process=True,
+    note="text read from labels with a gap keeps the gap as NaN, and the time of a gap is NaT",
+)
