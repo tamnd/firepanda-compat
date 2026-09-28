@@ -3835,3 +3835,14 @@ case(
     in_process=True,
     note="NaT refuses to format itself with the same error pandas raises",
 )
+case(
+    "basics/frame-plus-list",
+    "DataFrame.add",
+    level="L3",
+    covers=("other", "axis"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2], "b": [3.5, 4.0]}).add([1, 10], axis=0),
+    in_process=True,
+    note="a list beside a frame lines up with the rows for the named form on the rows. "
+    "firepanda #1242 reads the list as a series in the Python layer",
+)

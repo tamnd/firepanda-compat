@@ -1543,3 +1543,29 @@ case(
     "stable sort, which the driver cannot reach",
     in_process=True,
 )
+
+TEXT_OPERATORS = "firepanda #1242 joins and repeats text for its operators in the Python layer"
+case(
+    "strings/plus-text",
+    "Series.add",
+    frames=ALL,
+    expr=lambda pd, df: df["value"] + "!",
+    in_process=True,
+    note="text plus text joins each row and a missing row stays missing. " + TEXT_OPERATORS,
+)
+case(
+    "strings/plus-column",
+    "Series.radd",
+    frames=ALL,
+    expr=lambda pd, df: df["value"].radd(df["value"]),
+    in_process=True,
+    note="two columns of text join row by row. " + TEXT_OPERATORS,
+)
+case(
+    "strings/times-count",
+    "Series.mul",
+    frames=ALL,
+    expr=lambda pd, df: df["value"] * 2,
+    in_process=True,
+    note="text times a whole number repeats every row. " + TEXT_OPERATORS,
+)

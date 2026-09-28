@@ -1119,6 +1119,170 @@ case(
     in_process=True,
     note=PASSED_IN_PROCESS,
 )
+SCALED_IN_PROCESS = "firepanda #1240 works spans out on their counts in the Python layer"
+case(
+    "temporal/spans-times-number",
+    "Series.mul",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(pd.to_timedelta(["1h", "90min", None, "-3h"]), name="s").mul(3),
+    in_process=True,
+    note="a span times a number is a span. " + SCALED_IN_PROCESS,
+)
+case(
+    "temporal/spans-over-number",
+    "Series.truediv",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(pd.to_timedelta(["1h", "90min", None, "-3h"]), name="s").truediv(
+        7
+    ),
+    in_process=True,
+    note="a span over a number truncates toward zero. " + SCALED_IN_PROCESS,
+)
+case(
+    "temporal/spans-floor-number",
+    "Series.floordiv",
+    level="L3",
+    covers=("other",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(pd.to_timedelta(["1h", "90min", None, "-3h"]), name="s").floordiv(
+        0
+    ),
+    in_process=True,
+    note="a span floored over zero is missing. " + SCALED_IN_PROCESS,
+)
+case(
+    "temporal/spans-times-numbers",
+    "Series.mul",
+    level="L3",
+    covers=("other",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(pd.to_timedelta(["1h", "90min", None, "-3h"]), name="s").mul(
+        pd.Series([2, 0, 3.5, 4])
+    ),
+    in_process=True,
+    note="a span series times a number series lines up by label. " + SCALED_IN_PROCESS,
+)
+case(
+    "temporal/spans-over-span",
+    "Series.truediv",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(pd.to_timedelta(["1h", "90min", None, "-3h"]), name="s").truediv(
+        pd.Timedelta("30min")
+    ),
+    in_process=True,
+    note="a span over a span is a float. " + SCALED_IN_PROCESS,
+)
+case(
+    "temporal/spans-floor-span",
+    "Series.floordiv",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: (
+        pd.Series(pd.to_timedelta(["1h", "90min", None, "-3h"]), name="s")
+        .dropna()
+        .floordiv(pd.Timedelta("1h"))
+    ),
+    in_process=True,
+    note="a floor of spans with nothing missing is whole numbers. " + SCALED_IN_PROCESS,
+)
+case(
+    "temporal/spans-mod-span",
+    "Series.mod",
+    level="L3",
+    covers=("other",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(pd.to_timedelta(["1h", "90min", None, "-3h"]), name="s").mod(
+        pd.Timedelta("-1h")
+    ),
+    in_process=True,
+    note="a remainder of spans takes the divisor's sign. " + SCALED_IN_PROCESS,
+)
+case(
+    "temporal/spans-plus-day",
+    "Series.add",
+    level="L3",
+    covers=("other",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(pd.to_timedelta(["1h", "90min", None, "-3h"]), name="s").add(
+        pd.offsets.Day(1)
+    ),
+    in_process=True,
+    note="a fixed offset beside spans is the span it lasts. " + SCALED_IN_PROCESS,
+)
+COUNTED_IN_PROCESS = "firepanda #1241 reads counts and rounds spans in the Python layer"
+case(
+    "temporal/numbers-as-spans",
+    "Series.astype",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series([3600, 5, 90], name="z").astype("timedelta64[s]"),
+    in_process=True,
+    note="numbers cast to spans are counts of the unit named. " + COUNTED_IN_PROCESS,
+)
+case(
+    "temporal/numbers-as-instants",
+    "Series.astype",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series([0, 86400], name="z").astype("datetime64[s]"),
+    in_process=True,
+    note="numbers cast to instants are counts from the epoch. " + COUNTED_IN_PROCESS,
+)
+case(
+    "temporal/spans-round-hour",
+    "Series.dt.round",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(
+        pd.to_timedelta(["30min", "90min", "-30min", "150min", None]), name="s"
+    ).dt.round("h"),
+    in_process=True,
+    note="spans round to a fixed frequency with ties to even. " + COUNTED_IN_PROCESS,
+)
+case(
+    "temporal/spans-floor-hour",
+    "Series.dt.floor",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(pd.to_timedelta(["1h29min", "-2h31min"]), name="s").dt.floor("h"),
+    in_process=True,
+    note="a floor of a negative span goes further from zero. " + COUNTED_IN_PROCESS,
+)
+case(
+    "temporal/spans-quantile",
+    "Series.quantile",
+    level="L3",
+    covers=("q",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(pd.to_timedelta(["1h", "90min", None]), name="s").quantile(
+        [0.25, 0.5]
+    ),
+    in_process=True,
+    note="a quantile of spans is a span. " + COUNTED_IN_PROCESS,
+)
+case(
+    "temporal/spans-interpolate",
+    "Series.interpolate",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(
+        pd.to_timedelta([0, None, None, 2, None, None, -2], unit="us").as_unit("us"), name="x"
+    ).interpolate(),
+    in_process=True,
+    note="interpolated spans truncate toward zero. " + COUNTED_IN_PROCESS,
+)
+case(
+    "temporal/list-beside-series",
+    "Series.add",
+    level="L2",
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series([1, 2, 3], index=[5, 6, 7], name="a").add([10, 20, 30]),
+    in_process=True,
+    note="a list beside a series takes the series' labels. " + COUNTED_IN_PROCESS,
+)
 case(
     "temporal/groupby-day",
     "GroupBy.sum",
