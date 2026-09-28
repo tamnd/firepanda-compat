@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `groupby/kurt`, `groupby/flat-kurt` and `groupby/ohlc` cases, run in process, for the grouped excess kurtosis and the open, high, low and close of each group that firepanda #1230 added.
+- Board after firepanda #1230: 4538 pass, 359 unimplemented, 95 divergent, 5 fail.
 - Three `basics` cases for `DataFrame.to_html` and the notebook repr from firepanda #1229: the default table over three frames, four sets of arguments, and `_repr_html_`.
 - Board after firepanda #1229: 4530 pass, 361 unimplemented, 95 divergent, 5 fail.
 - A `textread` section with 31 cases for `read_csv`, `read_table` and `read_fwf` after firepanda #1226: two dozen `read_csv` arguments, the blank, repeated and leading names, short rows, chunks, a `to_csv` round trip over three frames, two mistakes and fixed width reads. The two mistakes join `engine/pandas-exception-classes` and the `header=None` read joins `engine/integer-column-labels`.

@@ -81,13 +81,14 @@ for name in (
         "these the section can say nothing at all about whether the numbers are right",
     )
 
-for name in ("std", "var", "sem", "skew"):
+for name in ("std", "var", "sem", "skew", "kurt"):
     case(
         f"groupby/{name}",
         f"GroupBy.{name}",
         frames=("keys_10", "keys_awkward"),
         expr=(lambda method: lambda pd, df: getattr(df.groupby("key"), method)())(name),
         rules=SPREAD,
+        in_process=name == "kurt",
         note="a group of one gives a null and not a zero, which the thousand key frame "
         "would make into sixty four nulls and no information",
     )
@@ -99,6 +100,7 @@ for name in ("std", "var", "sem", "skew"):
             name
         ),
         rules=SPREAD,
+        in_process=name == "kurt",
         note="the dispersion with the keys left as a column, so that the arithmetic "
         "can fail separately from the shape",
     )
@@ -825,4 +827,14 @@ case(
     expr=lambda pd, df: df.groupby("key")["value"].sample(frac=0.25, replace=True, random_state=3),
     in_process=True,
     note="a share of each group, drawn with replacement, comes back group after group",
+)
+
+case(
+    "groupby/ohlc",
+    "GroupBy.ohlc",
+    frames=("keys_10", "keys_awkward"),
+    expr=lambda pd, df: df.groupby("key")["value"].ohlc(),
+    in_process=True,
+    note="the first, highest, lowest and last value of each group as four columns, "
+    "labelled by the key, which firepanda #1230 builds from four grouped reductions",
 )
