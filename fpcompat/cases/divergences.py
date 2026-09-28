@@ -658,6 +658,24 @@ case(
     "zero as missing and both count the holes as missing, so what is registered beside "
     "this is the word each of them writes and not what either of them thinks is there.",
 )
+case(
+    "divergences/missing-spelling/text-values",
+    "Series.tolist",
+    frames=("strings_null_heavy",),
+    expr=lambda pd, df: df["value"].head(4).tolist(),
+    in_process=True,
+    note="a text column read out as Python objects. pandas 3 hands the gap out as a NaN "
+    "and firepanda handed out None until it learned to spell a gap for the column's type.",
+)
+case(
+    "divergences/missing-spelling/one-cell",
+    "Series.iat",
+    frames=("float64_half_null",),
+    expr=lambda pd, df: [df["value"].iat[1], df.iat[3, list(df.columns).index("value")]],
+    in_process=True,
+    note="one missing cell of a column and one of a frame, each read by position. Both "
+    "hand out a NaN, the same value `tolist` gives for that row.",
+)
 
 # The thirtieth, found by implementing the first two `str` names whose answer is a
 # frame. It is the only difference those two have from pandas and it is not about
