@@ -65,6 +65,7 @@ CASE_MODULES = (
     "inplace",
     "pickle",
     "columnar",
+    "textread",
     "divergences",
     "resolution",
     "signature",

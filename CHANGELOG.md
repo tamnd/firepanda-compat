@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- A `textread` section with 31 cases for `read_csv`, `read_table` and `read_fwf` after firepanda #1226: two dozen `read_csv` arguments, the blank, repeated and leading names, short rows, chunks, a `to_csv` round trip over three frames, two mistakes and fixed width reads. The two mistakes join `engine/pandas-exception-classes` and the `header=None` read joins `engine/integer-column-labels`.
+- Board after firepanda #1227: 4522 pass, 363 unimplemented, 95 divergent, 5 fail.
 - A `columnar` section with ten cases that write a frame to Parquet, Feather and ORC through a temporary file and read it back, with the row labels, `index=False`, a codec, `columns` and the bytes `to_parquet` returns with no path. They run in process, as the pickle cases do.
 - Board after firepanda #1224: 4488 pass, 367 unimplemented, 92 divergent, 5 fail.
 - The pickle cases run in process, with a note saying why: pickling lives in firepanda's Python layer, and the driver has no entry for any of them, so the first board after #1222 counted their thirteen runs as unimplemented while each agreed with pandas.
