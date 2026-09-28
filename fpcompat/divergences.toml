@@ -24,15 +24,6 @@ expect = "raises"
 since = "2026-09-04"
 
 [[divergence]]
-id = "engine/pickle"
-cases = ["divergences/pickle/*"]
-kind = "engine"
-reason = "Reading a pickle executes whatever code is in it, so read_pickle on an untrusted file is arbitrary code execution with a friendly name. It also pins the file format to the exact class layout of the version that wrote it, which means a pickle is unreadable by any other tool and often by a later pandas. firepanda raises with a pointer to Parquet and Arrow IPC, both of which another program can read and neither of which runs anything on load."
-spec = "06-pandas-parity.md#the-genuine-omissions"
-expect = "raises"
-since = "2026-09-04"
-
-[[divergence]]
 id = "engine/object-dtype"
 cases = ["divergences/object-dtype/*"]
 kind = "engine"

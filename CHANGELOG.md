@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Pickle cases in `fpcompat/cases/pickle.py`: the three round trips that asserted the `engine/pickle` divergence, with new ids, and seven more for `pandas.to_pickle`, compression by the file's ending and by name, a zip archive, the protocol, and the standard library's `pickle.dumps` on a frame and a column. `engine/pickle` is retired after firepanda #1222 made frames, columns and indexes pickle, which leaves twenty three entries.
+- Board after firepanda #1222: 4446 pass, 392 unimplemented, 92 divergent, 5 fail.
 - The resolution and signature cases for `pandas.set_eng_float_format` and `pandas.show_versions` pass through the driver now that firepanda has both, and a frame's repr reads `display.precision` and `display.float_format` as pandas does.
 - Board after firepanda #1221: 4438 pass, 391 unimplemented, 92 divergent, 5 fail.
 - `pandas.eval` with `inplace=True` moved from the divergence block to `fpcompat/cases/inplace.py` as `inplace/module-eval` and passes, since firepanda #1220 has the module level function, which retires `engine/inplace` and leaves twenty four entries. `pandas.NA`, `pandas.IndexSlice`, `pandas.eval` and `pandas.col` resolve and their signatures match.

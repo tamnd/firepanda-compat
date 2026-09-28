@@ -582,9 +582,15 @@ def test_the_committed_registry_loads():
 
     `engine/inplace` is retired, which leaves twenty four. Its last callable was the
     module level `pandas.eval`, which firepanda has now, so the case moved to
-    `fpcompat/cases/inplace.py` and scores the ordinary way."""
+    `fpcompat/cases/inplace.py` and scores the ordinary way.
+
+    `engine/pickle` is retired, which leaves twenty three. firepanda pickles frames,
+    columns and indexes now, through the Arrow data a frame already exports, and
+    `read_pickle` carries the same warning about trusting the file that pandas gives.
+    The three cases moved to `fpcompat/cases/pickle.py` with new ids and seven more
+    beside them."""
     entries = divergences.registry()
-    assert len(entries) == 24
+    assert len(entries) == 23
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

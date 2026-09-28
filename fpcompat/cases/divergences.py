@@ -80,44 +80,6 @@ case(
 )
 
 # ---------------------------------------------------------------------------
-# Pickle
-# ---------------------------------------------------------------------------
-
-
-def _roundtrip(pd, value):
-    """Writes a pickle to a temporary file and reads it back."""
-    import tempfile
-    from pathlib import Path
-
-    with tempfile.TemporaryDirectory() as folder:
-        target = Path(folder) / "frame.pkl"
-        value.to_pickle(target)
-        return pd.read_pickle(target)
-
-
-case(
-    "divergences/pickle/frame-roundtrip",
-    "DataFrame.to_pickle",
-    frames=("two", "tall"),
-    expr=lambda pd, df: _roundtrip(pd, df),
-    note="a real round trip rather than a name check, because the thing being given up "
-    "is the round trip. firepanda points at Parquet and Arrow IPC, both of which "
-    "another program can read and neither of which executes code on load",
-)
-case(
-    "divergences/pickle/series-roundtrip",
-    "Series.to_pickle",
-    frames=("two",),
-    expr=lambda pd, df: _roundtrip(pd, df["b"]),
-)
-case(
-    "divergences/pickle/read",
-    "pandas.read_pickle",
-    frames=("two",),
-    expr=lambda pd, df: _roundtrip(pd, df).shape,
-)
-
-# ---------------------------------------------------------------------------
 # dtype=object
 # ---------------------------------------------------------------------------
 
