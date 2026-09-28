@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `divergences/missing-spelling/text-values` and `divergences/missing-spelling/one-cell` check that a gap read out of a text column, a column cell and a frame cell comes back as pandas hands it out.
+- Board after firepanda #1186: 4286 pass, 497 unimplemented, 94 divergent, 6 fail.
 - `groupby/sample` and `groupby/sample-frac` check that each group's rows are drawn as pandas draws them for the same seed.
 - Board after firepanda #1184: 4284 pass, 497 unimplemented, 94 divergent, 6 fail.
 - Five `basics/json-normalize` cases check nested records, `sep` and `max_level`, a missing record, `record_path` with `meta`, and both prefixes against pandas.
