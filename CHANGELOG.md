@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/nat`, `basics/nat-refuses`, `divergences/missing-spelling/timestamp-values` and `divergences/missing-spelling/timestamp-cell` check `NaT` as a scalar and as the gap read out of a timestamp column, and the comparison now names an engine's own `NaT` as `NaT`.
+- Board after firepanda #1187: 4291 pass, 496 unimplemented, 94 divergent, 6 fail.
 - `divergences/missing-spelling/text-values` and `divergences/missing-spelling/one-cell` check that a gap read out of a text column, a column cell and a frame cell comes back as pandas hands it out.
 - Board after firepanda #1186: 4286 pass, 497 unimplemented, 94 divergent, 6 fail.
 - `groupby/sample` and `groupby/sample-frac` check that each group's rows are drawn as pandas draws them for the same seed.

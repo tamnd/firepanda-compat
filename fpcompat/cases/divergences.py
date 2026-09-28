@@ -649,6 +649,23 @@ case(
     "way. Both write NaT now.",
 )
 case(
+    "divergences/missing-spelling/timestamp-values",
+    "Series.tolist",
+    frames=("temporal_range",),
+    expr=lambda pd, df: [repr(v) for v in df["second"].head(3).mask([False, True, False])],
+    in_process=True,
+    note="a timestamp column read out as Python objects. pandas hands the hole out as "
+    "`NaT` and firepanda handed out None until it had a `NaT` of its own.",
+)
+case(
+    "divergences/missing-spelling/timestamp-cell",
+    "Series.iat",
+    frames=("temporal_range",),
+    expr=lambda pd, df: df["second"].head(3).mask([False, True, False]).iat[1],
+    in_process=True,
+    note="one missing cell of a timestamp column, which is `NaT` in both.",
+)
+case(
     "divergences/missing-spelling/isna-agrees",
     "Series.isna",
     frames=("float64_half_null",),

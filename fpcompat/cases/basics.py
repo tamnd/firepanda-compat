@@ -3717,3 +3717,32 @@ case(
     in_process=True,
     note="the prefixes go in front of the record and metadata columns",
 )
+case(
+    "basics/nat",
+    "pandas.NaT",
+    frames=("single",),
+    expr=lambda pd, df: [
+        repr(pd.NaT),
+        pd.NaT == pd.NaT,
+        pd.NaT != pd.NaT,
+        pd.Timestamp(None) is pd.NaT,
+        pd.Timedelta("nat") is pd.NaT,
+        pd.isna(pd.NaT),
+        repr(pd.NaT + pd.Timedelta("1D")),
+        repr(pd.Timestamp("2020-01-01") - pd.NaT),
+        repr(pd.NaT.day_name()),
+        pd.NaT.year != pd.NaT.year,
+    ],
+    in_process=True,
+    note="the missing moment and span, its equality, its arithmetic and its fields",
+)
+case(
+    "basics/nat-refuses",
+    "pandas.NaT",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: pd.NaT.strftime("%Y"),
+    raises=("ValueError", "NaTType does not support strftime"),
+    in_process=True,
+    note="NaT refuses to format itself with the same error pandas raises",
+)

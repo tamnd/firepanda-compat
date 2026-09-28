@@ -655,6 +655,15 @@ def _from_producer(answer: Any, shape: str | None) -> Answer:
     )
 
 
+def _is_nat(value: Any) -> bool:
+    """Whether a scalar is `NaT`, pandas' own or the one an engine under test defines.
+
+    An engine that copies pandas' missing moment has its own class for it, which is
+    not `pd.NaT` and is named the same, so it is recognised by that name.
+    """
+    return value is pd.NaT or type(value).__name__ == "NaTType"
+
+
 def _scalar_type(value: Any) -> str:
     """The canonical type of a scalar answer.
 
@@ -669,7 +678,7 @@ def _scalar_type(value: Any) -> str:
     Returns:
         The rendering.
     """
-    if value is pd.NaT:
+    if _is_nat(value):
         return "null[NaT]"
     if value is pd.NA:
         return "null[NA]"
@@ -1298,7 +1307,7 @@ def _scalar_value(value: Any) -> Any:
         A Python value, with the three pandas spellings of missing mapped to None
         after `_scalar_type` has already kept them apart.
     """
-    if value is None or value is pd.NA or value is pd.NaT:
+    if value is None or value is pd.NA or _is_nat(value):
         return None
     if isinstance(value, np.generic):
         return value.item()
