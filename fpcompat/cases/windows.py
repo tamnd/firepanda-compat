@@ -222,7 +222,10 @@ case(
     frames=("temporal_range",),
     expr=lambda pd, df: df.rolling("30s", on="second")["row"].sum(),
     note="a time based window is a different algorithm from a count based one, and it "
-    "needs the index to be sorted and the offsets to be understood",
+    "needs the index to be sorted and the offsets to be understood. firepanda's Python "
+    "layer finds pandas' bounds for each row and reduces over them, so the case runs in "
+    "process",
+    in_process=True,
 )
 
 # ---------------------------------------------------------------------------

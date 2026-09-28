@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `windows/rolling-time` runs in process with a note, now that firepanda measures a rolling window as a span of time along the row labels or an `on` column.
+- Board after firepanda #1218: 4417 pass, 412 unimplemented, 92 divergent, 5 fail.
 - Categorical cases in process: grouping by a category column with and without `observed`, `concat` of the same categories, `Categorical.from_codes`, `CategoricalDtype` and `cat.codes` now run through firepanda's Python layer, after firepanda #1212, #1213, #1214 and #1216. The codes are answered in pandas' narrow width, so `engine/category-code-width` is retired.
 - Board after firepanda #1216: 4416 pass, 413 unimplemented, 92 divergent, 5 fail.
 - Groupby cases for keys from outside the frame: a column worked out from the frame, a list as long as it, a function of the row labels, `level=0`, and a column grouped by another. `groupby/agg-lambda`, `transform-lambda`, `apply-frame`, `describe`, `grouper` and `temporal/groupby-day` now run in process, since firepanda answers each in its Python layer.
