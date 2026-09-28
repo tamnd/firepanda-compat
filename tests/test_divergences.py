@@ -425,13 +425,12 @@ def test_the_committed_registry_loads():
     `engine/zero-divisor` are the two that arrived first, and both of them are cases
     where firepanda answers something pandas does not rather than refusing to answer.
 
-    `engine/category-code-width` arrived with the category cases, and it is not about
-    categories. firepanda writes int32 codes whatever the number of categories, where
-    pandas picks the width from the cardinality, which is a decision about the dtype
-    vocabulary rather than about the encoder. `engine/comparison-null` arrived beside
-    it and has since gone: a comparison against a missing row answers False, as it
-    does in pandas, because a mask with a third state gave nothing back that `isna`
-    does not already say.
+    `engine/category-code-width` and `engine/comparison-null` arrived with the category
+    cases and have both gone. The codes are answered in the narrowest integer that
+    holds them, as pandas picks the width from the cardinality, while the column still
+    stores int32. A comparison against a missing row answers False, as it does in
+    pandas, because a mask with a third state gave nothing back that `isna` does not
+    already say.
 
     `engine/string-count-width` is the eleventh, and it is the ninth again from the
     other direction. There the row with no answer was one divided by zero, here it is
@@ -581,7 +580,7 @@ def test_the_committed_registry_loads():
     column print through pandas' own text formatter now, which writes a text gap as
     NaN and a temporal one as NaT, so the renderings it registered agree."""
     entries = divergences.registry()
-    assert len(entries) == 26
+    assert len(entries) == 25
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

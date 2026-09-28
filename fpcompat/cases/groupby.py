@@ -200,7 +200,10 @@ case(
     frames=("categorical_unordered",),
     expr=lambda pd, df: df.groupby("value", observed=False).size(),
     note="a category with no rows in it is still a group when observed is off, which "
-    "is the only way to get a row for something that is not in the data",
+    "is the only way to get a row for something that is not in the data. Filling in the "
+    "categories is firepanda's Python layer and the driver has no entry for it, so the "
+    "case runs in process",
+    in_process=True,
 )
 case(
     "groupby/observed-true",
@@ -209,6 +212,9 @@ case(
     covers=("by", "observed"),
     frames=("categorical_unordered", "categorical_ordered"),
     expr=lambda pd, df: df.groupby("value", observed=True).size(),
+    note="grouping by a category column goes through its codes in firepanda's Python "
+    "layer and the driver has no entry for it, so the case runs in process",
+    in_process=True,
 )
 case(
     "groupby/on-tall",

@@ -20,6 +20,16 @@ section("categorical")
 
 BOTH = ("categorical_unordered", "categorical_ordered")
 ORDERED = ("categorical_ordered",)
+TYPES = (
+    "Categorical, CategoricalDtype and CategoricalIndex are thin Python shells over the "
+    "category column in firepanda's Python layer, and the driver has no entry for them, "
+    "so the case runs in process"
+)
+GROUPS = (
+    "grouping by a category column goes through the codes, and observed=False fills in "
+    "each category with no rows, both in firepanda's Python layer, so the case runs in "
+    "process because the driver has no entry for it"
+)
 
 # ---------------------------------------------------------------------------
 # What a categorical is made of
@@ -39,7 +49,10 @@ case(
     frames=BOTH,
     expr=lambda pd, df: df["value"].cat.codes,
     note="a null is code minus one and not a null code, which means the codes column "
-    "has no nulls in it at all",
+    "has no nulls in it at all. The column stores int32 codes and firepanda's Python "
+    "layer answers them in the narrowest integer that holds them, as pandas does, so "
+    "the case runs in process",
+    in_process=True,
 )
 case(
     "categorical/ordered",
@@ -276,12 +289,16 @@ case(
     "GroupBy.size",
     frames=BOTH,
     expr=lambda pd, df: df.groupby("value", observed=False).size(),
+    note=GROUPS,
+    in_process=True,
 )
 case(
     "categorical/groupby-agg",
     "GroupBy.sum",
     frames=BOTH,
     expr=lambda pd, df: df.groupby("value", observed=True)["row"].sum(),
+    note=GROUPS,
+    in_process=True,
 )
 case(
     "categorical/isin",
@@ -332,7 +349,8 @@ case(
     frames=BOTH,
     expr=lambda pd, df: pd.concat([df, df])["value"].dtype.categories,
     note="two categoricals with the same categories concatenate to a categorical, and "
-    "two with different ones fall back to strings, which is a silent dtype change",
+    "two with different ones fall back to strings, which is a silent dtype change. " + TYPES,
+    in_process=True,
 )
 case(
     "categorical/str-accessor",
@@ -350,6 +368,8 @@ case(
     expr=lambda pd, df: pd.Categorical.from_codes(
         df["value"].cat.codes, categories=df["value"].cat.categories
     ),
+    note=TYPES,
+    in_process=True,
 )
 case(
     "categorical/dtype-construct",
@@ -358,4 +378,6 @@ case(
     covers=("categories", "ordered"),
     frames=BOTH,
     expr=lambda pd, df: str(pd.CategoricalDtype(["b", "a"], ordered=True)),
+    note=TYPES,
+    in_process=True,
 )
