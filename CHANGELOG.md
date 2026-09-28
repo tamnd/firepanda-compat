@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Two `to_datetime` cases that run in process: text guessed day first with `dayfirst=True`, and two digit years read year first with `format="mixed"` and `yearfirst=True`. They cover firepanda #1177.
+- Board after firepanda #1177: 4258 pass, 501 unimplemented, 96 divergent, 6 fail.
 - Four `to_datetime` cases that run in process: month first text, a month name with a twelve hour clock, and a short month name, all with no format, plus a `%Y-%j` format. They cover the guesser firepanda gained in #1171.
 - Board after firepanda #1171: 4256 pass, 501 unimplemented, 96 divergent, 6 fail.
 - firepanda's `to_datetime` reads `format="ISO8601"` and `format="mixed"` every row with its own format (tamnd/firepanda#1167), answers a `DatetimeIndex` for a list and one instant for one value (tamnd/firepanda#1168), names the first instant out of range when `as_unit("ns")` cannot restate it (tamnd/firepanda#1169), and reads `tz_convert(None)` (tamnd/firepanda#1170). `errors/out-of-bounds-datetime` joins `engine/pandas-exception-classes`, because firepanda now raises its own `OutOfBoundsDatetime` with pandas' sentence and no firepanda class can be a subclass of pandas' one.
