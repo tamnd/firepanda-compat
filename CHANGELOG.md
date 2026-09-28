@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for firepanda #1240, #1241 and #1242: spans scaled by a number and divided by a span, numbers cast to spans and instants, spans rounded, floored, interpolated and taken a quantile of, a list beside a series or a frame, and text joined and repeated by operators.
+- Board after firepanda #1242: 4617 pass, 338 unimplemented, 95 divergent, 5 fail.
 - Cases for firepanda #1238 and #1239: DatetimeIndex insert, drop, putmask, isin and delete, to_timedelta of a list, and the frequency after sort, take, union, normalize, append and tz_localize, plus Index.sort_values with a key.
 - Board after firepanda #1239: 4589 pass, 338 unimplemented, 95 divergent, 5 fail.
 - Cases for `DataFrame.to_xml` from firepanda #1237, with the standard library's parser: the default document, and one with a stand-in for missing values, columns as attributes and as elements, a namespace prefix, the root and row names and the encoding.
