@@ -22,6 +22,11 @@ section("nested")
 LISTS = ("nested_list",)
 STRUCTS = ("nested_struct", "nested_deep")
 STRICT = Rules(strict_index=True)
+IN_PROCESS = (
+    "in process, because the driver reads the corpus through the extension's Arrow import, "
+    "which has no nested column, and firepanda reads a nested table as object columns of "
+    "lists and dicts, the way to_pandas does"
+)
 
 
 def _arrow(pd, series):
@@ -46,6 +51,7 @@ case(
     "Series.dtype",
     frames=LISTS,
     expr=lambda pd, df: str(_arrow(pd, df["value"]).dtype),
+    in_process=True,
     note="the corpus stores this as a large list and pandas gives it back as objects, "
     "so the width of the offsets is gone by the time anything can look. That is a "
     "real loss and this case is what says so out loud",
@@ -55,6 +61,7 @@ case(
     "list.len",
     frames=LISTS,
     expr=lambda pd, df: _arrow(pd, df["value"]).list.len(),
+    in_process=True,
     note="an empty list is length zero and a null list is a null, which are two "
     "different rows in the corpus on purpose",
 )
@@ -64,6 +71,7 @@ case(
     level="L4",
     frames=LISTS,
     expr=lambda pd, df: _arrow(pd, df["value"]).list[0],
+    in_process=True,
     raises=("ArrowInvalid", "out of bounds"),
     note="the corpus has an empty list in it and the accessor refuses the whole column "
     "rather than giving that one row a null, which is a real answer and a surprising "
@@ -74,6 +82,7 @@ case(
     "Series.list",
     frames=LISTS,
     expr=lambda pd, df: _arrow(pd, df["value"].dropna()[df["value"].str.len() > 2]).list[0],
+    in_process=True,
     note="the same call on rows that are all long enough, which is the half that works",
 )
 case(
@@ -81,6 +90,7 @@ case(
     "list.flatten",
     frames=LISTS,
     expr=lambda pd, df: _arrow(pd, df["value"]).list.flatten(),
+    in_process=True,
     note="flatten drops the empty and the null rows entirely, which is where it "
     "differs from explode and the reason both exist",
 )
@@ -90,8 +100,9 @@ case(
     frames=LISTS,
     expr=lambda pd, df: df["value"].explode(),
     rules=STRICT,
+    in_process=True,
     note="explode keeps a row for the empty list with a null in it, and the index says "
-    "which original row each element came from",
+    "which original row each element came from. " + IN_PROCESS,
 )
 case(
     "nested/list-explode-frame",
@@ -100,20 +111,25 @@ case(
     covers=("column", "ignore_index"),
     frames=LISTS,
     expr=lambda pd, df: df.explode("value", ignore_index=True),
+    in_process=True,
+    note=IN_PROCESS,
 )
 case(
     "nested/list-isna",
     "Series.isna",
     frames=LISTS,
     expr=lambda pd, df: df["value"].isna(),
+    in_process=True,
     note="a null list is missing and an empty list is not, which is the distinction "
-    "everything else in this section rests on",
+    "everything else in this section rests on. " + IN_PROCESS,
 )
 case(
     "nested/list-count",
     "Series.count",
     frames=LISTS,
     expr=lambda pd, df: df["value"].count(),
+    in_process=True,
+    note=IN_PROCESS,
 )
 
 # ---------------------------------------------------------------------------
@@ -125,6 +141,7 @@ case(
     "Series.dtype",
     frames=STRUCTS,
     expr=lambda pd, df: str(_arrow(pd, df["value"]).dtype),
+    in_process=True,
     note="field order is part of the type, so two structs with the same fields in a "
     "different order are different types and the comparison keeps them apart",
 )
@@ -133,6 +150,8 @@ case(
     "struct.dtypes",
     frames=STRUCTS,
     expr=lambda pd, df: _arrow(pd, df["value"]).struct.dtypes.astype(str),
+    in_process=True,
+    note=IN_PROCESS,
 )
 case(
     "nested/struct-field-name",
@@ -141,6 +160,8 @@ case(
     covers=("name_or_index",),
     frames=("nested_struct",),
     expr=lambda pd, df: _arrow(pd, df["value"]).struct.field("a"),
+    in_process=True,
+    note=IN_PROCESS,
 )
 case(
     "nested/struct-field-second",
@@ -149,6 +170,8 @@ case(
     covers=("name_or_index",),
     frames=("nested_struct",),
     expr=lambda pd, df: _arrow(pd, df["value"]).struct.field("b"),
+    in_process=True,
+    note=IN_PROCESS,
 )
 case(
     "nested/struct-field-index",
@@ -157,6 +180,7 @@ case(
     covers=("name_or_index",),
     frames=("nested_struct",),
     expr=lambda pd, df: _arrow(pd, df["value"]).struct.field(0),
+    in_process=True,
     note="by position as well as by name, and the two have to agree",
 )
 case(
@@ -166,6 +190,7 @@ case(
     covers=("name_or_index",),
     frames=("nested_deep",),
     expr=lambda pd, df: _arrow(pd, df["value"]).struct.field("inner"),
+    in_process=True,
     note="a struct inside a struct, which is where a flat implementation of the field "
     "lookup stops working",
 )
@@ -176,6 +201,7 @@ case(
     covers=("name_or_index",),
     frames=("nested_deep",),
     expr=lambda pd, df: _arrow(pd, df["value"]).struct.field(["inner", "deep"]),
+    in_process=True,
     note="a path rather than a name, which is the only way to reach the second level",
 )
 case(
@@ -183,6 +209,7 @@ case(
     "struct.explode",
     frames=STRUCTS,
     expr=lambda pd, df: _arrow(pd, df["value"]).struct.explode(),
+    in_process=True,
     note="one column per field, named after the field, which is the whole struct in "
     "one call and the thing anyone actually wants",
 )
@@ -191,8 +218,9 @@ case(
     "Series.isna",
     frames=("nested_struct",),
     expr=lambda pd, df: df["value"].isna(),
+    in_process=True,
     note="a null struct is different from a struct whose every field is null, and the "
-    "corpus has both",
+    "corpus has both. " + IN_PROCESS,
 )
 case(
     "nested/struct-field-of-null",
@@ -201,6 +229,7 @@ case(
     covers=("name_or_index",),
     frames=("nested_struct",),
     expr=lambda pd, df: _arrow(pd, df["value"]).struct.field("a").isna(),
+    in_process=True,
     note="reading a field out of a null struct gives a null rather than raising",
 )
 
@@ -213,8 +242,9 @@ case(
     "DataFrame.head",
     frames=LISTS + STRUCTS,
     expr=lambda pd, df: df.head(4),
+    in_process=True,
     note="slicing a nested column has to keep the child data and the offsets in step, "
-    "which is the operation an offset bug shows up in first",
+    "which is the operation an offset bug shows up in first. " + IN_PROCESS,
 )
 case(
     "nested/list-take",
@@ -224,7 +254,8 @@ case(
     frames=LISTS + STRUCTS,
     expr=lambda pd, df: df.take([3, 0, 3]),
     rules=STRICT,
-    note="a repeated index, so the child data is read twice from one place",
+    in_process=True,
+    note="a repeated index, so the child data is read twice from one place. " + IN_PROCESS,
 )
 case(
     "nested/list-concat",
@@ -234,6 +265,8 @@ case(
     frames=LISTS + STRUCTS,
     expr=lambda pd, df: pd.concat([df.head(3), df.tail(3)]),
     rules=STRICT,
+    in_process=True,
+    note=IN_PROCESS,
 )
 case(
     "nested/list-sort-by-other",
@@ -243,10 +276,14 @@ case(
     frames=LISTS + STRUCTS,
     expr=lambda pd, df: df.sort_values("row", ascending=False),
     rules=STRICT,
+    in_process=True,
+    note=IN_PROCESS,
 )
 case(
     "nested/struct-to-frame",
     "Series.to_frame",
     frames=STRUCTS,
     expr=lambda pd, df: df["value"].to_frame(),
+    in_process=True,
+    note=IN_PROCESS,
 )

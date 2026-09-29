@@ -143,6 +143,9 @@ case(
     "dt.time",
     frames=RANGE,
     expr=lambda pd, df: df["second"].dt.time,
+    in_process=True,
+    note="an object column of Python times, in process because the driver has no entry "
+    "for it and firepanda answers an object column as pandas does",
 )
 case(
     "temporal/normalize",
