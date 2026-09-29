@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- firepanda #1293 adds `to_sql` on frames and columns, and `read_sql`, `read_sql_query` and `read_sql_table`, over a sqlite3 connection, matching pandas without SQLAlchemy.
+- Board after firepanda #1293: 4865 pass, 115 unimplemented, 87 divergent, 0 fail.
 - `interval_range` resolves after firepanda #1289, `DataFrame.unstack`, `Series.from_arrow` and both `to_markdown` methods resolve and match pandas' signatures after firepanda #1290, and `StringDtype`, `DatetimeTZDtype`, `dt.timetz` and a group by's key column read as an attribute resolve after firepanda #1291.
 - Board after firepanda #1291: 4855 pass, 125 unimplemented, 87 divergent, 0 fail.
 - `reshape/cut` and `reshape/qcut` run in process and pass after firepanda #1287, which labels bins with intervals and exports a category of intervals as pandas' `pandas.interval` type. `IntervalDtype` and `IntervalIndex` resolve and match pandas' signatures, and `basics/dtypes` on the temporal frame now agrees exactly, so that frame is off the `engine/dtype-spelling` entry.
