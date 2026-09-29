@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Resampler upsampling from firepanda #1297: `ffill`, `bfill`, `nearest`, `asfreq` and `interpolate` fill new bins as pandas does, and `interpolate(method="time")` works over dates and spans.
+- Board after firepanda #1297: 4875 pass, 105 unimplemented, 87 divergent, 0 fail.
 - firepanda #1296 adds `GroupBy.resample`, which resamples each group on its own and stacks the answers under the group's key.
 - Board after firepanda #1296: 4875 pass, 105 unimplemented, 87 divergent, 0 fail.
 - firepanda #1295 adds `to_clipboard` on frames and columns and `read_clipboard`, through the same system commands pandas' copy of pyperclip uses.
