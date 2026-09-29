@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- firepanda #1295 adds `to_clipboard` on frames and columns and `read_clipboard`, through the same system commands pandas' copy of pyperclip uses.
+- Board after firepanda #1295: 4873 pass, 107 unimplemented, 87 divergent, 0 fail.
 - firepanda #1294 adds `read_xml` with both of pandas' parsers, etree and lxml, including `iterparse` and both `dtype_backend` choices.
 - Board after firepanda #1294: 4867 pass, 113 unimplemented, 87 divergent, 0 fail.
 - firepanda #1293 adds `to_sql` on frames and columns, and `read_sql`, `read_sql_query` and `read_sql_table`, over a sqlite3 connection, matching pandas without SQLAlchemy.
