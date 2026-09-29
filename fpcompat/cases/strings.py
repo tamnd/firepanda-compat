@@ -28,6 +28,10 @@ CASED = ("strings_ascii", "strings_pattern", "strings_null_heavy", "strings_fold
 # ---------------------------------------------------------------------------
 
 
+LABELS_IN_PROCESS = (
+    "It runs in process, because the driver builds its frame in Mojo, where a column "
+    "is named with text, and only the Python layer names one with an integer"
+)
 SPLIT_IN_PROCESS = (
     "firepanda writes this name in Python over the rows and the driver has no entry for "
     "it, so it is run in process"
@@ -567,11 +571,8 @@ case(
     "that one, which is one accessor giving two readings of one flag",
 )
 EXTRACT_LABELS = (
-    "and the whole frame is compared here, so this case carries "
-    "`engine/integer-column-labels`: pandas labels an unnamed group with its own "
-    "position as an integer and firepanda labels it with the text of that integer. "
-    "The two cases under this one read a column out by position instead, which is "
-    "where the values get scored"
+    "and the whole frame is compared here, labels included: pandas labels an unnamed "
+    "group with its own position as an integer, and so does firepanda. " + LABELS_IN_PROCESS
 )
 
 case(
@@ -581,6 +582,7 @@ case(
     covers=("pat",),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.extract(r"([a-z]+)(\d+)"),
+    in_process=True,
     note="two groups gives two columns named zero and one, and a row that does not "
     "match gives nulls rather than being dropped, " + EXTRACT_LABELS,
 )
@@ -761,8 +763,8 @@ case(
     "the group covered and not the text the assertion looked at, which is the mistake "
     "a lookbehind implemented as an ordinary group makes. The one column is taken out "
     "by position the way every other extract case here takes it, so that the case "
-    "scores the pattern and leaves the integer column label to "
-    "engine/integer-column-labels, which is where strings/extract already scores it",
+    "scores the pattern and leaves the integer column label to strings/extract, which "
+    "scores it",
 )
 
 # These six were the rest of `divergences/regex/*`, on the narrower grounds that the
@@ -915,8 +917,8 @@ case(
     in_process=True,
     note="the column count is the widest row, and every shorter row is padded with "
     "nulls, so one long row changes the shape of the whole answer. The whole frame is "
-    "compared, so this case carries `engine/integer-column-labels`, and the cases under "
-    "it read the columns by position. " + SPLIT_IN_PROCESS,
+    "compared, labels included, and the cases under it read the columns by position. "
+    + SPLIT_IN_PROCESS,
 )
 case(
     "strings/split-expand-first",
@@ -998,16 +1000,13 @@ case(
     "is a different algorithm from splitting on a single space",
 )
 CUT_BY_POSITION = (
-    "The column is read by position and then renamed, because the name pandas gives it "
-    "is the integer label and that is `engine/integer-column-labels`, which the two "
-    "frame cases above carry. Renaming here is what keeps this case about the values"
+    "The column is read by position and then renamed, which keeps this case about the "
+    "values, since the two frame cases above already score the labels"
 )
 
 CUT_LABELS = (
-    "and the whole frame is compared here, so this case carries "
-    "`engine/integer-column-labels`: pandas labels the three columns with the integers "
-    "0, 1 and 2 and firepanda labels them with the text. The five cases under this one "
-    "read a column out by position instead, which is where the values get scored"
+    "and the whole frame is compared here, labels included: pandas labels the three "
+    "columns with the integers 0, 1 and 2, and so does firepanda. " + LABELS_IN_PROCESS
 )
 
 case(
@@ -1017,6 +1016,7 @@ case(
     covers=("sep",),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.partition("-"),
+    in_process=True,
     note="no row of this frame holds a hyphen, which is on purpose rather than by "
     "accident, because a row the separator is not in is where the two names differ in "
     "the way nobody guesses: the row survives whole and goes into the first column for "
@@ -1029,6 +1029,7 @@ case(
     covers=("sep",),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.rpartition("-"),
+    in_process=True,
     note="the same eighteen rows and the same absent separator, and the pair is what "
     "says the two names put an uncut row at opposite ends, " + CUT_LABELS,
 )

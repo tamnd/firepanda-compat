@@ -588,9 +588,15 @@ def test_the_committed_registry_loads():
     columns and indexes now, through the Arrow data a frame already exports, and
     `read_pickle` carries the same warning about trusting the file that pandas gives.
     The three cases moved to `fpcompat/cases/pickle.py` with new ids and seven more
-    beside them."""
+    beside them.
+
+    `engine/integer-column-labels` is retired, which leaves twenty two. firepanda
+    names a column with any value now, holding a name that is not text as written
+    text the way it holds the levels of a `MultiIndex`, so a partition, an extract,
+    a split and a frame built from integer keys are labelled 0, 1 and 2 as pandas
+    labels them. The three cases moved to `fpcompat/cases/basics.py` with new ids."""
     entries = divergences.registry()
-    assert len(entries) == 23
+    assert len(entries) == 22
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

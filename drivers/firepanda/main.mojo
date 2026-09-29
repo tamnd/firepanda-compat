@@ -820,8 +820,8 @@ def pattern_extract(column: Series, pattern: String) raises -> DataFrame:
     of, a frame needs its columns to have distinct names, and the Python layer
     of firepanda makes the same choice one level up. A named group is labelled
     with its name and an unnamed one with its own position counted from zero,
-    which is the text of an integer where pandas uses the integer and is
-    `engine/integer-column-labels`.
+    which is the text of an integer where pandas uses the integer, so the cases
+    that score the labels run in process instead.
 
     Args:
         column: The text column.
@@ -1365,9 +1365,8 @@ def cut_frame(column: Series, sep: String, from_right: Bool) raises -> DataFrame
     the name of the column they were cut out of, so somebody has to choose, and
     the Python layer of firepanda makes the same choice one level up.
 
-    These are the text `0`, `1` and `2` where pandas uses the integers, which is
-    `engine/integer-column-labels` and is the only difference either of these two
-    names has from pandas.
+    These are the text `0`, `1` and `2` where pandas uses the integers, so the
+    cases that score the labels run in process instead.
 
     Args:
         column: The text column.
