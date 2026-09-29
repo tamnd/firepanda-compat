@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- firepanda #1296 adds `GroupBy.resample`, which resamples each group on its own and stacks the answers under the group's key.
+- Board after firepanda #1296: 4875 pass, 105 unimplemented, 87 divergent, 0 fail.
 - firepanda #1295 adds `to_clipboard` on frames and columns and `read_clipboard`, through the same system commands pandas' copy of pyperclip uses.
 - Board after firepanda #1295: 4873 pass, 107 unimplemented, 87 divergent, 0 fail.
 - firepanda #1294 adds `read_xml` with both of pandas' parsers, etree and lxml, including `iterparse` and both `dtype_backend` choices.
