@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `DataFrame.style` is pandas' Styler in firepanda #1329, writing the same HTML, LaTeX, text and Typst as pandas when jinja2 is installed and refusing with pandas' AttributeError when it is not, so `engine/plotting` is retired and `divergences/plotting/frame-style` scores against pandas.
+- Board after firepanda #1329: 4975 pass, 5 unimplemented, 87 divergent, 0 fail.
 - Frame gaps under the styler are closed in firepanda: `apply` frames per-column list answers, `loc` reads slice and list keys per MultiIndex level in pandas' order, and numbers compared with text answer as pandas does.
 - Board after firepanda #1328: 4973 pass, 7 unimplemented, 87 divergent, 0 fail.
 - HDF5 cases for `HDFStore`, `read_hdf` and `to_hdf` now resolve against firepanda's port of pandas io/pytables.

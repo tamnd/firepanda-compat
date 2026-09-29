@@ -598,9 +598,14 @@ def test_the_committed_registry_loads():
 
     `engine/object-dtype` is retired, which leaves twenty one. firepanda holds any
     Python value in an object column now, written as text the extension carries, so
-    the object dtype cases run in process and a fourth with mixed values joins them."""
+    the object dtype cases run in process and a fourth with mixed values joins them.
+
+    `engine/plotting` is retired, which leaves twenty. It had narrowed to the styler
+    alone, and firepanda carries pandas' Styler now and refuses it only without jinja2,
+    with pandas' own class and message, so the one case stayed where it was and scores
+    against pandas like any other."""
     entries = divergences.registry()
-    assert len(entries) == 21
+    assert len(entries) == 20
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

@@ -64,11 +64,10 @@ EXPECTATIONS = ("raises", "differs")
 # look like is visible in one place.
 #
 # `AttributeError` is in the list and it is the interesting one. An entry that names it
-# is saying the divergence is the absence itself, which is what `engine/plotting` means
-# of the styler and is a different statement from a method nobody has written yet. The
-# runner reads
-# that difference and nothing else can tell it: both are an `AttributeError` about a
-# name that is not there, and only the registry knows which of the two it is.
+# is saying the divergence is the absence itself, which is a different statement from a
+# method nobody has written yet. The runner reads that difference and nothing else can
+# tell it: both are an `AttributeError` about a name that is not there, and only the
+# registry knows which of the two it is.
 RAISED = {
     "AttributeError": AttributeError,
     "KeyError": KeyError,

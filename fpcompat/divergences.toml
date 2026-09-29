@@ -15,15 +15,6 @@
 # firepanda parity document, restated as things a suite can check.
 
 [[divergence]]
-id = "engine/plotting"
-cases = ["divergences/plotting/frame-style"]
-kind = "engine"
-reason = "This entry has been narrowed and what is left under it is not plotting, which is why the id is kept rather than corrected: an id here is a promise made to users and renaming one silently breaks every link to it. It used to say that plotting and styling are a different library's job and that firepanda raised on every name of either. Plotting is answered now. firepanda carries pandas' matplotlib front end, checks the arguments the way pandas does, and imports matplotlib only when a plot is drawn, so the five plotting cases moved to fpcompat/cases/basics.py and score. What is left is the styler, `DataFrame.style`, an HTML presentation layer built on jinja2. pandas itself refuses it when jinja2 is not installed, and firepanda refuses it everywhere."
-spec = "06-pandas-parity.md#the-genuine-omissions"
-expect = "raises"
-since = "2026-09-04"
-
-[[divergence]]
 id = "engine/regex-lookaround"
 cases = ["divergences/regex/*"]
 kind = "engine"

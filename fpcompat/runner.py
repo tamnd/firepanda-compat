@@ -380,9 +380,9 @@ def run_case(
     # move the excusing from the outcome into the column beside it.
     #
     # The one thing that steps aside here is an entry that names the class that came
-    # out. `engine/plotting` says firepanda has no styler, so the absence is the
-    # divergence rather than a gap in front of it, and an entry naming
-    # `AttributeError` is how that gets said. Nothing else can tell the two apart,
+    # out. An entry that says firepanda has no such name makes the absence the
+    # divergence rather than a gap in front of it, and naming `AttributeError` is how
+    # that gets said. Nothing else can tell the two apart,
     # because a name that was removed on purpose and a name nobody has written yet
     # raise the same exception about the same missing attribute.
     # `Absent` is never what an entry declared, whatever it declared. It is a

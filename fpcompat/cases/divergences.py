@@ -23,7 +23,10 @@ section("divergences")
 # ---------------------------------------------------------------------------
 
 # The plotting cases that stood here moved to fpcompat/cases/basics.py when firepanda
-# gained pandas' matplotlib front end. What is left is the styler.
+# gained pandas' matplotlib front end. What is left is the styler, which was registered
+# as `engine/plotting` while firepanda refused it everywhere. firepanda carries pandas'
+# Styler now and refuses it only without jinja2, as pandas does, so the entry is gone
+# and the case stayed to keep the two refusing alike in the pinned environment.
 
 case(
     "divergences/plotting/frame-style",
@@ -33,9 +36,9 @@ case(
     expr=lambda pd, df: df.style,
     raises=("AttributeError", "requires jinja2"),
     note="pandas itself refuses this one in the pinned environment, because the styler "
-    "needs jinja2 and jinja2 is not a dependency of a dataframe library. The message "
-    "differs from firepanda's and the registry does not care which message it is, only "
-    "that the operation refuses",
+    "needs jinja2 and jinja2 is not a dependency of a dataframe library. firepanda "
+    "refuses it with the same class and the same message, and with jinja2 installed "
+    "both hand back a Styler that writes the same HTML",
 )
 
 # ---------------------------------------------------------------------------
