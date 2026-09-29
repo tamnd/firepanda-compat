@@ -324,6 +324,12 @@ case(
 # Long and wide
 # ---------------------------------------------------------------------------
 
+WIDE_IN_PROCESS = (
+    "The columns of the answer are named by values of a column, and only firepanda's "
+    "Python layer names a column with something other than text, so the case runs in "
+    "process"
+)
+
 case(
     "reshape/pivot",
     "DataFrame.pivot",
@@ -333,6 +339,8 @@ case(
     expr=lambda pd, df: df.drop_duplicates(subset=["left", "right"]).pivot(
         index="left", columns="right", values="value"
     ),
+    in_process=True,
+    note=WIDE_IN_PROCESS,
 )
 case(
     "reshape/pivot-table",
@@ -344,7 +352,8 @@ case(
         index="left", columns="right", values="value", aggfunc="sum"
     ),
     note="the table form aggregates duplicates instead of raising, which is the only "
-    "difference from pivot and the reason both exist",
+    "difference from pivot and the reason both exist. " + WIDE_IN_PROCESS,
+    in_process=True,
 )
 case(
     "reshape/pivot-table-fill",
@@ -355,6 +364,8 @@ case(
     expr=lambda pd, df: df.pivot_table(
         index="left", columns="right", values="value", aggfunc="mean", fill_value=0
     ),
+    in_process=True,
+    note=WIDE_IN_PROCESS,
 )
 case(
     "reshape/melt",
@@ -434,6 +445,8 @@ case(
     "DataFrame.unstack",
     frames=("keys_two_column",),
     expr=lambda pd, df: df.groupby(["left", "right"])["value"].sum().unstack(),
+    in_process=True,
+    note=WIDE_IN_PROCESS,
 )
 case(
     "reshape/unstack-fill",
@@ -443,7 +456,8 @@ case(
     frames=("keys_two_column",),
     expr=lambda pd, df: df.groupby(["left", "right"])["value"].sum().unstack(fill_value=0),
     note="without a fill value the missing combinations become nulls and widen the "
-    "integer column to float, which is the quiet part",
+    "integer column to float, which is the quiet part. " + WIDE_IN_PROCESS,
+    in_process=True,
 )
 case(
     "reshape/transpose",
@@ -477,6 +491,8 @@ case(
     covers=("index", "columns"),
     frames=("keys_two_column",),
     expr=lambda pd, df: pd.crosstab(df["left"], df["right"]),
+    in_process=True,
+    note=WIDE_IN_PROCESS,
 )
 case(
     "reshape/cut",
