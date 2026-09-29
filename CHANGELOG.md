@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `read_iceberg`, `DataFrame.to_iceberg` and `read_spss` now run against firepanda #1320, which reads and writes Iceberg tables through pyiceberg and reads SPSS files through pyreadstat.
+- Board after firepanda #1320: 4959 pass, 21 unimplemented, 87 divergent, 0 fail.
 - `to_excel` on frames and series and `ExcelWriter` from firepanda #1319 write workbooks through openpyxl, xlsxwriter and odfpy with a port of pandas' cell formatter, which turns the last six Excel cases from unimplemented to pass.
 - Board after firepanda #1319: 4953 pass, 27 unimplemented, 87 divergent, 0 fail.
 - `read_excel` and `ExcelFile` from firepanda #1318 read xlsx, xls, xlsb and OpenDocument workbooks through pandas' engines and a port of pandas' Python parser, which turns the Excel reader cases from unimplemented to pass.
