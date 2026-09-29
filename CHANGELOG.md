@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- firepanda #1306 adds `read_html`, reading HTML tables with pandas' table, header and span rules and no lxml.
+- Board after firepanda #1306: 4904 pass, 76 unimplemented, 87 divergent, 0 fail.
 - firepanda #1305 adds `DataFrame.to_latex` and `Series.to_latex`, writing the tabular, table and longtable text pandas writes.
 - Board after firepanda #1305: 4902 pass, 78 unimplemented, 87 divergent, 0 fail.
 - firepanda #1303 adds `pandas.array` and `pandas.arrays`, and arrays now carry pandas' class names and reprs.
