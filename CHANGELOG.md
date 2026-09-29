@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `DataFrame.to_xarray` and `Series.to_xarray` now resolve in firepanda, with pandas' signature, and the select_dtypes and frame mapping fixes from firepanda #1314 and #1315 leave the board where it was.
+- Board after firepanda #1316: 4943 pass, 37 unimplemented, 87 divergent, 0 fail.
 - Plotting is now covered: `DataFrame.plot`, `Series.plot`, `DataFrame.hist`, `Series.hist` and `DataFrame.boxplot` resolve in firepanda, so their five cases moved from `divergences/plotting/*` to `basics/plotting-*` and the `engine/plotting` entry is narrowed to the styler.
 - Board after firepanda #1313: 4939 pass, 41 unimplemented, 87 divergent, 0 fail.
 - Sparse columns are now covered: `pandas.SparseDtype`, `Series.sparse` and `DataFrame.sparse` resolve in firepanda and answer with pandas' dtype names, fill values and errors.
