@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- firepanda #1303 adds `pandas.array` and `pandas.arrays`, and arrays now carry pandas' class names and reprs.
+- Board after firepanda #1303: 4898 pass, 82 unimplemented, 87 divergent, 0 fail.
 - firepanda #1302 adds `to_period` and `to_timestamp` on Series, DataFrame, DatetimeIndex and `dt`, and a `PeriodProperties` accessor for period columns.
 - Board after firepanda #1302: 4895 pass, 85 unimplemented, 87 divergent, 0 fail.
 - PeriodIndex and period_range: an index of periods with its fields, conversions, lookups by period or text, Freq footers, and pd.Index, groupby and category of periods giving one (firepanda #1301).
