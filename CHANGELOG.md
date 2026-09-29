@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Sparse columns are now covered: `pandas.SparseDtype`, `Series.sparse` and `DataFrame.sparse` resolve in firepanda and answer with pandas' dtype names, fill values and errors.
+- Board after firepanda #1312: 4923 pass, 57 unimplemented, 87 divergent, 0 fail.
 - pandas.test now resolves on firepanda, with pandas' signature, marks and exit status.
 - Board after firepanda #1311: 4917 pass, 63 unimplemented, 87 divergent, 0 fail.
 - ExponentialMovingWindow.online() now resolves on firepanda, with an update-able mean that needs no numba.
