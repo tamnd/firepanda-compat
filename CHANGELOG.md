@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `read_stata`, `StataReader` and `StataMissingValue` now match pandas after firepanda #1323, a pure struct port of pandas' Stata reader covering versions 104 to 119.
+- Board after firepanda #1323: 4961 pass, 19 unimplemented, 87 divergent, 0 fail.
 - `read_spss(dtype_backend="pyarrow")` and `convert_dtypes(dtype_backend="pyarrow")` now match pandas after firepanda #1321 and #1322, which move each converted column to its Arrow type as pandas does.
 - Board after firepanda #1322: 4959 pass, 21 unimplemented, 87 divergent, 0 fail.
 - Cases for `read_iceberg`, `DataFrame.to_iceberg` and `read_spss` now run against firepanda #1320, which reads and writes Iceberg tables through pyiceberg and reads SPSS files through pyreadstat.
