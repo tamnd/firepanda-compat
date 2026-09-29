@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- firepanda #1305 adds `DataFrame.to_latex` and `Series.to_latex`, writing the tabular, table and longtable text pandas writes.
+- Board after firepanda #1305: 4902 pass, 78 unimplemented, 87 divergent, 0 fail.
 - firepanda #1303 adds `pandas.array` and `pandas.arrays`, and arrays now carry pandas' class names and reprs.
 - Board after firepanda #1303: 4898 pass, 82 unimplemented, 87 divergent, 0 fail.
 - firepanda #1302 adds `to_period` and `to_timestamp` on Series, DataFrame, DatetimeIndex and `dt`, and a `PeriodProperties` accessor for period columns.
