@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `Styler.to_excel` in firepanda #1330 writes the fonts, fills, borders, alignments and number formats pandas writes through openpyxl, xlsxwriter and odf, and a `loc` key with a slice or a list for fewer levels than a `MultiIndex` has keeps every level as pandas does.
+- Board after firepanda #1330: 4975 pass, 5 unimplemented, 87 divergent, 0 fail.
 - `DataFrame.style` is pandas' Styler in firepanda #1329, writing the same HTML, LaTeX, text and Typst as pandas when jinja2 is installed and refusing with pandas' AttributeError when it is not, so `engine/plotting` is retired and `divergences/plotting/frame-style` scores against pandas.
 - Board after firepanda #1329: 4975 pass, 5 unimplemented, 87 divergent, 0 fail.
 - Frame gaps under the styler are closed in firepanda: `apply` frames per-column list answers, `loc` reads slice and list keys per MultiIndex level in pandas' order, and numbers compared with text answer as pandas does.
