@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- ExponentialMovingWindow.online() now resolves on firepanda, with an update-able mean that needs no numba.
+- Board after firepanda #1310: 4915 pass, 65 unimplemented, 87 divergent, 0 fail.
 - The pandas.compat, pandas.core, pandas.io and pandas.errors submodule names (errors.abc, errors.cow, errors.ctypes) now resolve on firepanda.
 - Board after firepanda #1309: 4913 pass, 67 unimplemented, 87 divergent, 0 fail.
 - `pandas.util` resolves on firepanda, with `hash_pandas_object` and `hash_array` giving pandas' exact row hashes and `util.version` ordering versions like pandas.
