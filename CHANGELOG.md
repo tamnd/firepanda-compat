@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `pandas.util` resolves on firepanda, with `hash_pandas_object` and `hash_array` giving pandas' exact row hashes and `util.version` ordering versions like pandas.
+- Board after firepanda #1308: 4907 pass, 73 unimplemented, 87 divergent, 0 fail.
 - `pandas.tseries` with its `api`, `frequencies` and `offsets` modules and the `pandas.pandas` self name now resolve on firepanda, and `to_offset` fails with pandas' exact words.
 - Board after firepanda #1307: 4906 pass, 74 unimplemented, 87 divergent, 0 fail.
 - firepanda #1306 adds `read_html`, reading HTML tables with pandas' table, header and span rules and no lxml.
