@@ -457,6 +457,8 @@ case(
     covers=("pat",),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.findall(r"\d+"),
+    in_process=True,
+    note="a list of matches per row. " + SPLIT_IN_PROCESS,
 )
 case(
     "strings/contains-inline-ignorecase",
@@ -1000,6 +1002,8 @@ case(
     covers=("pat", "n"),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.rsplit("-", n=1),
+    in_process=True,
+    note="a list per row, split from the right. " + SPLIT_IN_PROCESS,
 )
 case(
     "strings/split-whitespace",
@@ -1118,6 +1122,8 @@ case(
     covers=("sep",),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.split("-").str.join("+"),
+    in_process=True,
+    note="the split lists joined back. " + SPLIT_IN_PROCESS,
 )
 
 # ---------------------------------------------------------------------------

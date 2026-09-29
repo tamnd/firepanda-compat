@@ -281,8 +281,10 @@ case(
     covers=("dtype",),
     frames=("strings_ascii", "keys_awkward", "strings_null_heavy"),
     expr=lambda pd, df: df.iloc[:, -1].astype("category").cat.categories,
+    in_process=True,
     note="building a categorical from strings sorts the categories, and a null does "
-    "not become a category",
+    "not become a category. In process because firepanda #1277 holds categories of "
+    "numbers in the Python layer, which the driver does not reach",
 )
 case(
     "categorical/groupby",
