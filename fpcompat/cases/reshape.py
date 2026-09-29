@@ -512,6 +512,7 @@ case(
     covers=("x", "bins"),
     frames=("tall", "keys_1000"),
     expr=lambda pd, df: pd.cut(df["value"], 4).value_counts().sort_index(),
+    in_process=True,
     note="an integer bin count refuses a column containing an infinity, which is why "
     "the float frames are not here and why that refusal is its own case in the errors "
     "section",
@@ -523,6 +524,9 @@ case(
     covers=("x", "q"),
     frames=("tall",),
     expr=lambda pd, df: pd.qcut(df["value"], 4).value_counts().sort_index(),
+    in_process=True,
+    note="In process because cut and qcut are written in firepanda's Python layer, which "
+    "the driver does not reach",
 )
 case(
     "reshape/factorize",

@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `reshape/cut` and `reshape/qcut` run in process and pass after firepanda #1287, which labels bins with intervals and exports a category of intervals as pandas' `pandas.interval` type. `IntervalDtype` and `IntervalIndex` resolve and match pandas' signatures, and `basics/dtypes` on the temporal frame now agrees exactly, so that frame is off the `engine/dtype-spelling` entry.
+- Board after firepanda #1287: 4839 pass, 141 unimplemented, 87 divergent, 0 fail.
 - `reshape/explode`, `reshape/get-dummies`, `reshape/compare`, `groupby/agg-multiple-columns` and `temporal/date-column` run in process, since firepanda writes each of them in its Python layer, and every one of their runs passes after firepanda #1286.
 - Board after firepanda #1286: 4828 pass, 151 unimplemented, 88 divergent, 0 fail.
 - The masked type names, `Int8Dtype` to `UInt64Dtype`, `Float32Dtype`, `Float64Dtype` and `BooleanDtype`, resolve and match pandas' signatures after firepanda #1280, and `Series.list` and `Series.struct` read off the class answer the accessor class after firepanda #1282, which clears the resolution and signature fails those two names had.
