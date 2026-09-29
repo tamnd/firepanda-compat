@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- firepanda #1299 adds the real `pd.PeriodDtype`, and `api.types.pandas_dtype` and `is_period_dtype` now read period text through it.
+- Board after firepanda #1299: 4879 pass, 101 unimplemented, 87 divergent, 0 fail.
 - firepanda #1298 adds `pd.Period` and `Timestamp.to_period`, so the Period scalar surface now resolves.
 - Board after firepanda #1298: 4877 pass, 103 unimplemented, 87 divergent, 0 fail.
 - Resampler upsampling from firepanda #1297: `ffill`, `bfill`, `nearest`, `asfreq` and `interpolate` fill new bins as pandas does, and `interpolate(method="time")` works over dates and spans.
