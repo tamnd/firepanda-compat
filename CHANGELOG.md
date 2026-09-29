@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- HDF5 cases for `HDFStore`, `read_hdf` and `to_hdf` now resolve against firepanda's port of pandas io/pytables.
+- Board after firepanda #1326: 4973 pass, 7 unimplemented, 87 divergent, 0 fail.
 - `read_sas` resolves and matches pandas' signature, with the XPORT and SAS7BDAT readers ported in firepanda #1325.
 - Board after firepanda #1325: 4965 pass, 15 unimplemented, 87 divergent, 0 fail.
 - `DataFrame.to_stata` and the Stata writers now match pandas after firepanda #1324, which writes dta files byte for byte as pandas does in versions 114, 117, 118 and 119.
