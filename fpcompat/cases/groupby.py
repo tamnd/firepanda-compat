@@ -378,7 +378,9 @@ case(
     covers=("func",),
     frames=("keys_two_column",),
     expr=lambda pd, df: df.groupby("left").agg(["min", "max"]),
-    note="a two level column index, which is where the shape gets interesting",
+    in_process=True,
+    note="a two level column index, which is where the shape gets interesting. In "
+    "process because firepanda #1275 builds the two levels in its Python layer",
 )
 
 # ---------------------------------------------------------------------------
