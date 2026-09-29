@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Period columns: a column of Period values of one frequency is a period column with dtype period[M], built by value, dtype= or astype (firepanda #1300).
+- Board after firepanda #1300: 4879 pass, 101 unimplemented, 87 divergent, 0 fail.
 - firepanda #1299 adds the real `pd.PeriodDtype`, and `api.types.pandas_dtype` and `is_period_dtype` now read period text through it.
 - Board after firepanda #1299: 4879 pass, 101 unimplemented, 87 divergent, 0 fail.
 - firepanda #1298 adds `pd.Period` and `Timestamp.to_period`, so the Period scalar surface now resolves.
