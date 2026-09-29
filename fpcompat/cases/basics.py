@@ -3883,3 +3883,51 @@ case(
     in_process=True,
     note="the same three columns read by position rather than by label",
 )
+
+# ---------------------------------------------------------------------------
+# Plotting
+# ---------------------------------------------------------------------------
+
+# These five were the `divergences/plotting/*` cases, on the grounds that plotting is a
+# different library's job and firepanda refused every plotting name. firepanda has
+# pandas' matplotlib front end now, so each name resolves to what pandas hands back.
+# They return an accessor or a bound method, neither of which this suite can compare,
+# so the case asks for the type name. matplotlib is imported only when a plot is drawn,
+# so the pinned environment does not need it.
+
+case(
+    "basics/plotting-frame-plot",
+    "DataFrame.plot",
+    level="L0",
+    frames=("two",),
+    expr=lambda pd, df: type(df.plot).__name__,
+    note="pandas hands back a PlotAccessor, and so does firepanda",
+)
+case(
+    "basics/plotting-series-plot",
+    "Series.plot",
+    level="L0",
+    frames=("two",),
+    expr=lambda pd, df: type(df["a"].plot).__name__,
+)
+case(
+    "basics/plotting-frame-hist",
+    "DataFrame.hist",
+    level="L0",
+    frames=("two",),
+    expr=lambda pd, df: type(df.hist).__name__,
+)
+case(
+    "basics/plotting-series-hist",
+    "Series.hist",
+    level="L0",
+    frames=("two",),
+    expr=lambda pd, df: type(df["a"].hist).__name__,
+)
+case(
+    "basics/plotting-frame-boxplot",
+    "DataFrame.boxplot",
+    level="L0",
+    frames=("two",),
+    expr=lambda pd, df: type(df.boxplot).__name__,
+)

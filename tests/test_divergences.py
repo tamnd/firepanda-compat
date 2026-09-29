@@ -31,7 +31,7 @@ ORACLE = load("pandas")
 
 GOOD = {
     "id": "engine/scratch",
-    "cases": ["divergences/plotting/frame-plot"],
+    "cases": ["divergences/plotting/frame-style"],
     "kind": "engine",
     "reason": "A reason long enough to be a sentence, which is the point of the length "
     "check, since the field is what a user reads when their program behaves differently.",
@@ -55,7 +55,7 @@ def load_one(**overrides):
 
 def build(**overrides) -> Case:
     fields = {
-        "id": "divergences/plotting/frame-plot",
+        "id": "divergences/plotting/frame-style",
         "api": "DataFrame.plot",
         "section": "divergences",
         "milestone": "M6",
@@ -131,8 +131,8 @@ def test_a_frame_list_narrows_which_runs_have_to_differ():
 def test_an_entry_with_no_frame_list_covers_every_frame():
     """Which is the behaviour every entry written before the field had."""
     entry = load_one()[0]
-    assert entry.matches("divergences/plotting/frame-plot", "two")
-    assert entry.matches("divergences/plotting/frame-plot", "anything-at-all")
+    assert entry.matches("divergences/plotting/frame-style", "two")
+    assert entry.matches("divergences/plotting/frame-style", "anything-at-all")
 
 
 def test_a_frame_no_covered_case_runs_on_is_refused():
