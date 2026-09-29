@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- The pandas.compat, pandas.core, pandas.io and pandas.errors submodule names (errors.abc, errors.cow, errors.ctypes) now resolve on firepanda.
+- Board after firepanda #1309: 4913 pass, 67 unimplemented, 87 divergent, 0 fail.
 - `pandas.util` resolves on firepanda, with `hash_pandas_object` and `hash_array` giving pandas' exact row hashes and `util.version` ordering versions like pandas.
 - Board after firepanda #1308: 4907 pass, 73 unimplemented, 87 divergent, 0 fail.
 - `pandas.tseries` with its `api`, `frequencies` and `offsets` modules and the `pandas.pandas` self name now resolve on firepanda, and `to_offset` fails with pandas' exact words.
