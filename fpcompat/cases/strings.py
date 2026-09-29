@@ -681,8 +681,9 @@ case(
     covers=("pat",),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.extractall(r"(\d)"),
+    in_process=True,
     note="a two level index with a match number in it, which is the only place in the "
-    "string accessor that a row count changes",
+    "string accessor that a row count changes. " + LABELS_IN_PROCESS,
 )
 
 # ---------------------------------------------------------------------------
