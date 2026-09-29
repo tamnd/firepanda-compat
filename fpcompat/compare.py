@@ -576,6 +576,21 @@ def _labels_are_default(labels: pa.Array, name: Any) -> bool:
     return labels.to_pylist() == list(range(len(labels)))
 
 
+def _producer_columns(answer: Any, table: pa.Table) -> list[Any]:
+    """The column labels of a frame that is not pandas', read from `columns` when it can.
+
+    Arrow names every field with text, so a column labelled with the integer 0 crosses
+    as the field "0", and reading the labels from the stream would call it the string.
+    The frame's own `columns` still knows, so it is asked first, and the field names are
+    the fallback for a frame that has no `columns` or cannot answer it.
+    """
+    try:
+        labels = list(answer.columns.tolist())
+    except Exception:  # noqa: BLE001  a frame that cannot answer falls back to the fields
+        return list(table.column_names)
+    return labels if len(labels) == table.num_columns else list(table.column_names)
+
+
 def _from_producer(answer: Any, shape: str | None) -> Answer:
     """Normalizes an answer belonging to an engine that is not pandas.
 
@@ -628,7 +643,7 @@ def _from_producer(answer: Any, shape: str | None) -> Answer:
             kind="frame",
             table=pa.Table.from_arrays(arrays, names=names),
             n_index=len(index_arrays),
-            columns=tuple(_label(label) for label in table.column_names),
+            columns=tuple(_label(label) for label in _producer_columns(answer, table)),
             index_names=index_names,
             default_index=default_index,
         )

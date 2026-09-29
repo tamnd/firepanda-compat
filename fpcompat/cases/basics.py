@@ -3846,3 +3846,37 @@ case(
     note="a list beside a frame lines up with the rows for the named form on the rows. "
     "firepanda #1242 reads the list as a series in the Python layer",
 )
+
+# Column labels that are integers. These three asserted `engine/integer-column-labels`
+# until firepanda #1258 named columns with any value, and they score the ordinary way now.
+
+case(
+    "basics/integer-labels-partition",
+    "str.partition",
+    frames=("strings_pattern",),
+    expr=lambda pd, df: [type(label).__name__ for label in df["value"].str.partition("o").columns],
+    in_process=True,
+    note="pandas labels the three columns `str.partition` hands back with the integers 0, "
+    "1 and 2. The type name of each label is read rather than the label, because the text "
+    "`0` and the integer 0 print the same way",
+)
+case(
+    "basics/integer-labels-constructor",
+    "pandas.DataFrame",
+    milestone="M2",
+    frames=("empty",),
+    expr=lambda pd, df: [
+        type(label).__name__ for label in pd.DataFrame({0: [1, 2], 1: [3, 4]}).columns
+    ],
+    in_process=True,
+    note="a dictionary with integer keys builds a frame with integer labels, with no string "
+    "method in the way. The corpus frame is ignored because the case builds its own",
+)
+case(
+    "basics/integer-labels-values",
+    "str.partition",
+    frames=("strings_pattern",),
+    expr=lambda pd, df: df["value"].str.partition("o").iloc[:, 1].tolist(),
+    in_process=True,
+    note="the same three columns read by position rather than by label",
+)

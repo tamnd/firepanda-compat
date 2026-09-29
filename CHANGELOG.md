@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `engine/integer-column-labels` is retired after firepanda #1258, which leaves twenty two entries. firepanda names a column with any value now, so its three cases moved to `fpcompat/cases/basics.py` as `basics/integer-labels-*`, and `strings/partition`, `strings/rpartition` and `strings/extract` run in process and score their integer labels. A frame answer's columns are read from `columns` when the frame has one, so a number label is compared as a number.
+- Board after firepanda #1258: 4691 pass, 284 unimplemented, 88 divergent, 3 fail.
 - Moving windows on a group by (`groupby/rolling`, `groupby/expanding`, `groupby/ewm`), `groupby/value-counts` and `reshape/concat-keys` run in process, because their answers are labelled by a MultiIndex, which is firepanda's Python layer.
 - Board after firepanda #1252: 4684 pass, 284 unimplemented, 95 divergent, 3 fail.
 - Cases whose answer is labelled by a MultiIndex run in process, since the Mojo driver has no entry for firepanda's Python layer: the two key group bys, `set_index` and `reset_index` with levels, `sort_index` by level, `droplevel`, `swaplevel`, `reorder_levels`, `xs`, `loc` by a prefix, `stack`, `DataFrame.value_counts`, `GroupBy.value_counts`, `GroupBy.corr` and `GroupBy.cov`, and the comparison reads a firepanda answer whose index has several levels.
