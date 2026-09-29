@@ -1896,6 +1896,9 @@ case(
     "DataFrame.transpose",
     frames=("single", "two"),
     expr=lambda pd, df: df[[df.columns[0], df.columns[1]]].transpose(),
+    in_process=True,
+    note="the columns of a transpose are the old row labels, which are numbers here, and "
+    "only firepanda's Python layer names a column with a number, so the case runs in process",
 )
 case(
     "basics/where",

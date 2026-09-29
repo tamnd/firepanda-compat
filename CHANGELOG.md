@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `reshape/pivot`, `pivot-table`, `pivot-table-fill`, `unstack`, `unstack-fill`, `crosstab` and `basics/transpose` run in process, since firepanda #1258 names columns by the numbers and instants these spread across the columns.
+- Board after firepanda #1258: 4699 pass, 276 unimplemented, 88 divergent, 3 fail.
 - `engine/integer-column-labels` is retired after firepanda #1258, which leaves twenty two entries. firepanda names a column with any value now, so its three cases moved to `fpcompat/cases/basics.py` as `basics/integer-labels-*`, and `strings/partition`, `strings/rpartition` and `strings/extract` run in process and score their integer labels. A frame answer's columns are read from `columns` when the frame has one, so a number label is compared as a number.
 - Board after firepanda #1258: 4691 pass, 284 unimplemented, 88 divergent, 3 fail.
 - Moving windows on a group by (`groupby/rolling`, `groupby/expanding`, `groupby/ewm`), `groupby/value-counts` and `reshape/concat-keys` run in process, because their answers are labelled by a MultiIndex, which is firepanda's Python layer.
