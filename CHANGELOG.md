@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `read_sas` resolves and matches pandas' signature, with the XPORT and SAS7BDAT readers ported in firepanda #1325.
+- Board after firepanda #1325: 4965 pass, 15 unimplemented, 87 divergent, 0 fail.
 - `DataFrame.to_stata` and the Stata writers now match pandas after firepanda #1324, which writes dta files byte for byte as pandas does in versions 114, 117, 118 and 119.
 - Board after firepanda #1324: 4963 pass, 17 unimplemented, 87 divergent, 0 fail.
 - `read_stata`, `StataReader` and `StataMissingValue` now match pandas after firepanda #1323, a pure struct port of pandas' Stata reader covering versions 104 to 119.
