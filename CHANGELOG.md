@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `read_excel` and `ExcelFile` from firepanda #1318 read xlsx, xls, xlsb and OpenDocument workbooks through pandas' engines and a port of pandas' Python parser, which turns the Excel reader cases from unimplemented to pass.
+- Board after firepanda #1318: 4947 pass, 33 unimplemented, 87 divergent, 0 fail.
 - A missing optional package is now named in pandas 3's words, "`Import xarray` failed.  Use pip or conda to install the xarray package.", with pandas' install names.
 - Board after firepanda #1317: 4943 pass, 37 unimplemented, 87 divergent, 0 fail.
 - `DataFrame.to_xarray` and `Series.to_xarray` now resolve in firepanda, with pandas' signature, and the select_dtypes and frame mapping fixes from firepanda #1314 and #1315 leave the board where it was.
