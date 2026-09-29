@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- pandas.test now resolves on firepanda, with pandas' signature, marks and exit status.
+- Board after firepanda #1311: 4917 pass, 63 unimplemented, 87 divergent, 0 fail.
 - ExponentialMovingWindow.online() now resolves on firepanda, with an update-able mean that needs no numba.
 - Board after firepanda #1310: 4915 pass, 65 unimplemented, 87 divergent, 0 fail.
 - The pandas.compat, pandas.core, pandas.io and pandas.errors submodule names (errors.abc, errors.cow, errors.ctypes) now resolve on firepanda.
