@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Frame gaps under the styler are closed in firepanda: `apply` frames per-column list answers, `loc` reads slice and list keys per MultiIndex level in pandas' order, and numbers compared with text answer as pandas does.
+- Board after firepanda #1328: 4973 pass, 7 unimplemented, 87 divergent, 0 fail.
 - HDF5 cases for `HDFStore`, `read_hdf` and `to_hdf` now resolve against firepanda's port of pandas io/pytables.
 - Board after firepanda #1326: 4973 pass, 7 unimplemented, 87 divergent, 0 fail.
 - `read_sas` resolves and matches pandas' signature, with the XPORT and SAS7BDAT readers ported in firepanda #1325.
