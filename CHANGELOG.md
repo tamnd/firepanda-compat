@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- A missing optional package is now named in pandas 3's words, "`Import xarray` failed.  Use pip or conda to install the xarray package.", with pandas' install names.
+- Board after firepanda #1317: 4943 pass, 37 unimplemented, 87 divergent, 0 fail.
 - `DataFrame.to_xarray` and `Series.to_xarray` now resolve in firepanda, with pandas' signature, and the select_dtypes and frame mapping fixes from firepanda #1314 and #1315 leave the board where it was.
 - Board after firepanda #1316: 4943 pass, 37 unimplemented, 87 divergent, 0 fail.
 - Plotting is now covered: `DataFrame.plot`, `Series.plot`, `DataFrame.hist`, `Series.hist` and `DataFrame.boxplot` resolve in firepanda, so their five cases moved from `divergences/plotting/*` to `basics/plotting-*` and the `engine/plotting` entry is narrowed to the styler.
