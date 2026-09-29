@@ -1313,8 +1313,10 @@ case(
     "Series.dtype",
     frames=RANGE,
     expr=lambda pd, df: str(df["date"].dtype),
+    in_process=True,
     note="a date32 column comes back as objects holding Python dates, which is a "
-    "pandas fact rather than a good idea and it has to be copied anyway",
+    "pandas fact rather than a good idea and it has to be copied anyway. In process "
+    "because the object column is held in firepanda's Python layer",
 )
 
 

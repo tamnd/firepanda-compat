@@ -479,8 +479,10 @@ case(
     frames=("nested_list",),
     expr=lambda pd, df: df.explode("value"),
     rules=Rules(strict_index=True),
+    in_process=True,
     note="an empty list gives one row with a null in it rather than no rows, which is "
-    "the case that separates explode from a flatten",
+    "the case that separates explode from a flatten. In process because firepanda holds "
+    "a list column in its Python layer, which the driver does not reach",
 )
 case(
     "reshape/get-dummies",
@@ -489,6 +491,9 @@ case(
     covers=("data",),
     frames=("categorical_unordered", "keys_awkward"),
     expr=lambda pd, df: pd.get_dummies(df.iloc[:, -2 if "row" in df else 0]),
+    in_process=True,
+    note="In process because get_dummies is written in firepanda's Python layer, which "
+    "the driver does not reach",
 )
 case(
     "reshape/crosstab",
@@ -567,6 +572,9 @@ case(
     frames=("float64_half_null",),
     expr=lambda pd, df: df.compare(df.fillna(0.0)),
     rules=Rules(strict_index=True),
+    in_process=True,
+    note="In process because firepanda #1276 writes compare in its Python layer, which "
+    "the driver does not reach",
 )
 
 
