@@ -459,13 +459,44 @@ def _array(values: Any) -> pa.Array:
     Returns:
         An Arrow array.
     """
+    if getattr(getattr(values, "dtype", None), "kind", "") == "O" and any(
+        isinstance(value, np.generic) for value in values
+    ):
+        # A row read across typed columns holds numpy scalars, which pyarrow will not
+        # mix, where an engine holds the same values as Python ones. They are the same
+        # answer, so they are unwrapped first, as a scalar answer is.
+        values = [value.item() if isinstance(value, np.generic) else value for value in values]
+        try:
+            return pa.array(values, from_pandas=True)
+        except (pa.ArrowInvalid, pa.ArrowTypeError, pa.ArrowNotImplementedError, ValueError):
+            return _rendered(values)
     try:
         if _keeps_its_nans(values):
             return pa.array(values, from_pandas=False)
         return pa.array(values)
     except (pa.ArrowInvalid, pa.ArrowTypeError, pa.ArrowNotImplementedError, ValueError):
-        rendered = [None if value is None or value is pd.NA else repr(value) for value in values]
-        return pa.array(rendered, type=pa.large_string())
+        return _rendered(values)
+
+
+def _rendered(values: Any) -> pa.Array:
+    """An object column as the repr of each value, for one Arrow has no type for.
+
+    A numpy scalar is rendered as the Python value it holds, since `np.int64(5)` and
+    `5` are the same answer and only numpy's repr tells them apart.
+
+    Args:
+        values: The values.
+
+    Returns:
+        A string array with a null for each gap.
+    """
+    rendered = [
+        None
+        if value is None or value is pd.NA
+        else repr(value.item() if isinstance(value, np.generic) else value)
+        for value in values
+    ]
+    return pa.array(rendered, type=pa.large_string())
 
 
 def _index_arrays(index: pd.Index) -> tuple[list[pa.Array], tuple[str, ...]]:
@@ -546,7 +577,14 @@ def _producer_array(value: Any) -> pa.Array:
     Returns:
         The array, with any chunking flattened so the comparison sees one buffer.
     """
-    array = pa.array(value)
+    try:
+        array = pa.array(value)
+    except (pa.ArrowInvalid, pa.ArrowTypeError, pa.ArrowNotImplementedError):
+        # An object column pyarrow has no one type for is refused for pandas too, and
+        # `_array` renders pandas' to strings, so the engine's is rendered the same way.
+        if not hasattr(value, "tolist"):
+            raise
+        return _rendered(value.tolist())
     if isinstance(array, pa.ChunkedArray):
         return array.combine_chunks()
     return array
@@ -633,11 +671,20 @@ def _from_producer(answer: Any, shape: str | None) -> Answer:
     prefix = [f"{INDEX_PREFIX}{i}" for i in range(len(index_arrays))]
 
     if shape == "frame" or (shape is None and hasattr(answer, "__arrow_c_stream__")):
-        table = pa.table(answer)
         arrays = [*index_arrays]
         names = [*prefix]
-        for position in range(table.num_columns):
-            arrays.append(table.column(position).combine_chunks())
+        try:
+            table = pa.table(answer)
+            columns = [table.column(i).combine_chunks() for i in range(table.num_columns)]
+        except (pa.ArrowInvalid, pa.ArrowTypeError, pa.ArrowNotImplementedError):
+            # A column pyarrow has no one type for, which `_producer_array` renders the
+            # way `_array` renders pandas' own, read one column at a time.
+            if not hasattr(answer, "iloc"):
+                raise
+            columns = [_producer_array(answer.iloc[:, i]) for i in range(answer.shape[1])]
+            table = pa.Table.from_arrays(columns, names=[f"c{i}" for i in range(len(columns))])
+        for position, column in enumerate(columns):
+            arrays.append(column)
             names.append(f"c{position}")
         return Answer(
             kind="frame",

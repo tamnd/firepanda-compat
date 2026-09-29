@@ -83,28 +83,45 @@ case(
 # dtype=object
 # ---------------------------------------------------------------------------
 
+OBJECT_DTYPE = (
+    "in process, because the driver has no entry for it. This was registered as "
+    "`engine/object-dtype` when firepanda refused a column of Python values, and "
+    "firepanda has pandas' object column now, so the case stayed to keep it answering "
+    "the same. The dtype is compared as a string, because firepanda spells a dtype as "
+    "a word"
+)
+
 case(
     "divergences/object-dtype/construct",
     "pandas.DataFrame",
     frames=("two",),
     expr=lambda pd, df: pd.DataFrame({"a": [b"one", b"two"]}).dtypes.astype(str).tolist(),
-    note="the divergence a beginner hits first. pandas stores a column of arbitrary "
-    "Python objects and reaches into the interpreter once per element to do anything "
-    "with it, and firepanda raises at construction naming the column and the type",
+    in_process=True,
+    note="the divergence a beginner hit first, a column of bytes, " + OBJECT_DTYPE,
 )
 case(
     "divergences/object-dtype/astype",
     "Series.astype",
     frames=("two", "tall"),
-    expr=lambda pd, df: df.iloc[:, 0].astype(object).dtype.name,
+    expr=lambda pd, df: str(df.iloc[:, 0].astype(object).dtype),
+    in_process=True,
+    note="a cast to object, " + OBJECT_DTYPE,
 )
 case(
     "divergences/object-dtype/mixed-column",
     "pandas.Series",
     frames=("two",),
-    expr=lambda pd, df: pd.Series([1, "two", 3.0]).dtype.name,
-    note="one column holding an integer, a string and a float, which pandas accepts "
-    "and which has no Arrow type at all",
+    expr=lambda pd, df: str(pd.Series([1, "two", 3.0]).dtype),
+    in_process=True,
+    note="one column holding an integer, a string and a float, " + OBJECT_DTYPE,
+)
+case(
+    "divergences/object-dtype/mixed-values",
+    "pandas.Series",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series([1, "two", 3.0, None, [4, 5]]),
+    in_process=True,
+    note="the values themselves, read back and printed as pandas prints them, " + OBJECT_DTYPE,
 )
 
 # ---------------------------------------------------------------------------

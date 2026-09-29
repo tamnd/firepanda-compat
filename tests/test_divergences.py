@@ -594,9 +594,13 @@ def test_the_committed_registry_loads():
     names a column with any value now, holding a name that is not text as written
     text the way it holds the levels of a `MultiIndex`, so a partition, an extract,
     a split and a frame built from integer keys are labelled 0, 1 and 2 as pandas
-    labels them. The three cases moved to `fpcompat/cases/basics.py` with new ids."""
+    labels them. The three cases moved to `fpcompat/cases/basics.py` with new ids.
+
+    `engine/object-dtype` is retired, which leaves twenty one. firepanda holds any
+    Python value in an object column now, written as text the extension carries, so
+    the object dtype cases run in process and a fourth with mixed values joins them."""
     entries = divergences.registry()
-    assert len(entries) == 22
+    assert len(entries) == 21
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

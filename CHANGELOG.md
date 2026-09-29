@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- The object-dtype cases run in process now that firepanda has object columns, the engine/object-dtype divergence is retired, and a new mixed-values case checks a column of text and numbers. The harness compares object columns holding numpy scalars by their Python values and renders a producer Arrow cannot type value by value, and the iloc-row, str.split, transpose, melt and describe cases that answer object columns run in process too.
+- Board after firepanda #1266: 4726 pass, 252 unimplemented, 88 divergent, 1 fail.
 - `strings/extractall` runs in process and passes, with its resolution and signature cases, after firepanda #1261 added `str.extractall`.
 - Board after firepanda #1261: 4702 pass, 273 unimplemented, 88 divergent, 3 fail.
 - `reshape/pivot`, `pivot-table`, `pivot-table-fill`, `unstack`, `unstack-fill`, `crosstab` and `basics/transpose` run in process, since firepanda #1258 names columns by the numbers and instants these spread across the columns.

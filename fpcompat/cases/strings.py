@@ -903,10 +903,15 @@ case(
 case(
     "strings/split",
     "str.split",
+    in_process=True,
     level="L3",
     covers=("pat",),
     frames=("strings_pattern", "strings_ascii"),
     expr=lambda pd, df: df["value"].str.split("-"),
+    note=(
+        "a split without expand answers a list per row, an object column the Python "
+        "surface holds and the driver cannot spell"
+    ),
 )
 case(
     "strings/split-expand",
@@ -979,10 +984,14 @@ case(
 case(
     "strings/split-n",
     "str.split",
+    in_process=True,
     level="L3",
     covers=("pat", "n"),
     frames=("strings_pattern",),
     expr=lambda pd, df: df["value"].str.split("-", n=1),
+    note=(
+        "a split without expand answers a list per row, an object column the Python surface holds"
+    ),
 )
 case(
     "strings/rsplit",
@@ -995,6 +1004,7 @@ case(
 case(
     "strings/split-whitespace",
     "str.split",
+    in_process=True,
     frames=("strings_ascii",),
     expr=lambda pd, df: df["value"].str.split(),
     note="no pattern means split on any run of whitespace and drop the empties, which "
