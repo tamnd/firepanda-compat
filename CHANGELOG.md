@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- PeriodIndex and period_range: an index of periods with its fields, conversions, lookups by period or text, Freq footers, and pd.Index, groupby and category of periods giving one (firepanda #1301).
+- Board after firepanda #1301: 4883 pass, 97 unimplemented, 87 divergent, 0 fail.
 - Period columns: a column of Period values of one frequency is a period column with dtype period[M], built by value, dtype= or astype (firepanda #1300).
 - Board after firepanda #1300: 4879 pass, 101 unimplemented, 87 divergent, 0 fail.
 - firepanda #1299 adds the real `pd.PeriodDtype`, and `api.types.pandas_dtype` and `is_period_dtype` now read period text through it.
