@@ -19,53 +19,12 @@ from fpcompat.cases import case, section
 section("divergences")
 
 # ---------------------------------------------------------------------------
-# Plotting and styling
+# Styling
 # ---------------------------------------------------------------------------
 
-# These return an accessor or a figure, neither of which is an answer this suite can
-# compare, so the case asks for the type name instead. That is enough. The claim being
-# made is that the name resolves at all, which is exactly what firepanda refuses to do,
-# and comparing the string keeps the oracle side honest without dragging matplotlib
-# into a pinned environment that has no use for it.
+# The plotting cases that stood here moved to fpcompat/cases/basics.py when firepanda
+# gained pandas' matplotlib front end. What is left is the styler.
 
-case(
-    "divergences/plotting/frame-plot",
-    "DataFrame.plot",
-    level="L0",
-    frames=("two",),
-    expr=lambda pd, df: type(df.plot).__name__,
-    note="pandas hands back a PlotAccessor. firepanda has no plotting and points at "
-    "to_pandas() instead, which is a one line change for the user and several thousand "
-    "for the library",
-)
-case(
-    "divergences/plotting/series-plot",
-    "Series.plot",
-    level="L0",
-    frames=("two",),
-    expr=lambda pd, df: type(df["a"].plot).__name__,
-)
-case(
-    "divergences/plotting/frame-hist",
-    "DataFrame.hist",
-    level="L0",
-    frames=("two",),
-    expr=lambda pd, df: type(df.hist).__name__,
-)
-case(
-    "divergences/plotting/series-hist",
-    "Series.hist",
-    level="L0",
-    frames=("two",),
-    expr=lambda pd, df: type(df["a"].hist).__name__,
-)
-case(
-    "divergences/plotting/frame-boxplot",
-    "DataFrame.boxplot",
-    level="L0",
-    frames=("two",),
-    expr=lambda pd, df: type(df.boxplot).__name__,
-)
 case(
     "divergences/plotting/frame-style",
     "DataFrame.style",
