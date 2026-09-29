@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `pandas.tseries` with its `api`, `frequencies` and `offsets` modules and the `pandas.pandas` self name now resolve on firepanda, and `to_offset` fails with pandas' exact words.
+- Board after firepanda #1307: 4906 pass, 74 unimplemented, 87 divergent, 0 fail.
 - firepanda #1306 adds `read_html`, reading HTML tables with pandas' table, header and span rules and no lxml.
 - Board after firepanda #1306: 4904 pass, 76 unimplemented, 87 divergent, 0 fail.
 - firepanda #1305 adds `DataFrame.to_latex` and `Series.to_latex`, writing the tabular, table and longtable text pandas writes.
