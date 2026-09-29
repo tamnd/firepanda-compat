@@ -64,6 +64,7 @@ case(
 case(
     "stats/describe-strings",
     "Series.describe",
+    in_process=True,
     frames=("strings_ascii", "strings_null_heavy"),
     expr=lambda pd, df: df["value"].describe(),
     note="a different set of statistics for a string column, which is a shape change "
@@ -96,8 +97,13 @@ case(
 case(
     "stats/describe-categorical",
     "Series.describe",
+    in_process=True,
     frames=("categorical_ordered", "categorical_unordered"),
     expr=lambda pd, df: df["value"].describe(),
+    note=(
+        "describe on categories mixes counts and values in one column, an object "
+        "column only the Python surface holds"
+    ),
 )
 
 # ---------------------------------------------------------------------------

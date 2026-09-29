@@ -43,8 +43,13 @@ case(
 case(
     "indexing/iloc-row",
     "DataFrame.iloc",
+    in_process=True,
     frames=SHAPES,
     expr=lambda pd, df: df.iloc[0],
+    note=(
+        "a row across typed columns is an object column, which the Python surface "
+        "holds and the driver cannot spell"
+    ),
 )
 case(
     "indexing/iloc-slice",

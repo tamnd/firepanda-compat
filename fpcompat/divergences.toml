@@ -24,15 +24,6 @@ expect = "raises"
 since = "2026-09-04"
 
 [[divergence]]
-id = "engine/object-dtype"
-cases = ["divergences/object-dtype/*"]
-kind = "engine"
-reason = "A column of arbitrary Python objects is a column with no type, no memory layout and no vectorized operation available to it. Every operation on one becomes a loop that reaches into the interpreter once per element, which is where the ten to one performance difference this project exists for disappears. firepanda raises at construction, naming the column and the offending Python type, so the user finds out at the point they can still fix it rather than after their program is written."
-spec = "06-pandas-parity.md#the-genuine-omissions"
-expect = "raises"
-since = "2026-09-04"
-
-[[divergence]]
 id = "engine/regex-lookaround"
 cases = ["divergences/regex/*"]
 kind = "engine"

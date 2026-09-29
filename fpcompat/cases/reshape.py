@@ -407,6 +407,7 @@ case(
 case(
     "reshape/melt-function",
     "pandas.melt",
+    in_process=True,
     level="L3",
     covers=("frame", "id_vars"),
     frames=("two",),
@@ -462,8 +463,13 @@ case(
 case(
     "reshape/transpose",
     "DataFrame.T",
+    in_process=True,
     frames=("single", "keys_10"),
     expr=lambda pd, df: df.head(4).T,
+    note=(
+        "a transpose over columns of different types answers object columns, which "
+        "only the Python surface holds"
+    ),
 )
 case(
     "reshape/explode",
