@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- firepanda #1298 adds `pd.Period` and `Timestamp.to_period`, so the Period scalar surface now resolves.
+- Board after firepanda #1298: 4877 pass, 103 unimplemented, 87 divergent, 0 fail.
 - Resampler upsampling from firepanda #1297: `ffill`, `bfill`, `nearest`, `asfreq` and `interpolate` fill new bins as pandas does, and `interpolate(method="time")` works over dates and spans.
 - Board after firepanda #1297: 4875 pass, 105 unimplemented, 87 divergent, 0 fail.
 - firepanda #1296 adds `GroupBy.resample`, which resamples each group on its own and stacks the answers under the group's key.
