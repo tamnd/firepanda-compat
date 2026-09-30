@@ -5506,3 +5506,48 @@ case(
     in_process=True,
     note="a mean has no meaning for text. Since firepanda #1376",
 )
+case(
+    "basics/rename-rows-and-columns",
+    "DataFrame.rename",
+    level="L3",
+    covers=("index", "columns"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.head(4).rename(index=lambda label: label * 10, columns=str.upper),
+    in_process=True,
+    note="both axes in one call, the row labels through a function and built into an index again",
+)
+case(
+    "basics/rename-one-level",
+    "DataFrame.rename",
+    level="L3",
+    covers=("index", "level"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"v": [1, 2, 3]},
+        index=pd.MultiIndex.from_arrays([["p", "p", "q"], ["x", "y", "z"]], names=["o", "i"]),
+    ).rename(index={"p": "P", "x": "X"}, level="o"),
+    in_process=True,
+    note="level names the one level of a MultiIndex the mapping applies to",
+)
+case(
+    "basics/series-rename-labels",
+    "Series.rename",
+    level="L3",
+    covers=("index",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].head(3).rename({0: "zero", 2: "two"}),
+    in_process=True,
+    note="a mapping renames the row labels rather than the column, a label with no key "
+    "kept as it was",
+)
+case(
+    "basics/rename-missing-label",
+    "DataFrame.rename",
+    level="L4",
+    covers=("index", "errors"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.rename(index={"not_a_label": 1}, errors="raise"),
+    raises=("KeyError", "['not_a_label'] not found in axis"),
+    in_process=True,
+    note="errors='raise' lists the keys that are not labels",
+)

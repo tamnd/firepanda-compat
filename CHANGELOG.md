@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/rename-rows-and-columns`, `basics/rename-one-level`, `basics/series-rename-labels` and `basics/rename-missing-label` cover `rename` of the row labels, which firepanda #1402 answers as pandas does, `level=` and `errors="raise"` included.
+- Board after firepanda #1402: 5407 pass, 0 unimplemented, 67 divergent, 2 fail.
 - `windows/rolling-corr-every-pair` and `windows/ewm-cov-every-pair` cover `corr` and `cov` of every pair of columns over a window of a frame, which firepanda #1401 answers under a second level of row labels as pandas does.
 - Board after firepanda #1401: 5403 pass, 0 unimplemented, 67 divergent, 2 fail.
 - `windows/rolling-list-over-frame`, `windows/expanding-dict-of-lists` and `windows/ewm-list-over-frame` cover a list of reductions over a window of a frame, which firepanda #1400 answers under two levels of column labels as pandas does. The rolling and ewm cases join `engine/window-infinity-dense` on the frame with infinities in it.
