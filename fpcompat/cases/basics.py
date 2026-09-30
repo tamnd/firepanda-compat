@@ -6479,3 +6479,15 @@ case(
     in_process=True,
     note="a gap that is not skipped counts as true, so the group with one is true",
 )
+case(
+    "basics/pct-change-freq",
+    "Series.pct_change",
+    level="L3",
+    covers=("freq",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        [1.0, 2.0, 4.0, 5.0, 10.0], index=pd.date_range("2024-01-01", periods=5, freq="D")
+    ).pct_change(freq="2D"),
+    in_process=True,
+    note="each value over the one two days earlier, matched by label",
+)

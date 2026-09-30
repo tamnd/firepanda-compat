@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/pct-change-freq: a Series pct_change with a freq matches values by label.
+- Board after firepanda #1446: 5487 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/groupby-any-keep-gaps: a group by any with skipna=False counts a gap as true.
 - Board after firepanda #1445: 5486 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases basics/groupby-shift-fill and basics/groupby-cumcount-descending: `GroupBy.shift(fill_value=0)` fills each group's opened rows and keeps whole numbers whole, and `GroupBy.cumcount(ascending=False)` numbers each group from its last row.
