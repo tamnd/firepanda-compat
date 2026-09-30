@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/rank-axis-none, `DataFrame.rank(axis=None)` raising pandas' "No axis named None" ValueError, after firepanda #1460 stopped reading a None axis as the default on 26 methods.
+- Board after firepanda #1460: 5500 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/groupby-cummax-skipna-false, a group by's `cummax(skipna=False)` leaving the rest of a group missing after a gap, lifted from a refusal in firepanda #1459.
 - Board after firepanda #1459: 5499 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/quantile-method-table, `DataFrame.quantile(method="table")` taking whole rows at each quantile, lifted from a refusal in firepanda #1458.

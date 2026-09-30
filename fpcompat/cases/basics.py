@@ -6657,3 +6657,15 @@ case(
     in_process=True,
     note="a gap that may not be skipped leaves the rest of its group missing",
 )
+
+case(
+    "basics/rank-axis-none",
+    "DataFrame.rank",
+    level="L4",
+    covers=("axis",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df.rank(axis=None),
+    raises=("ValueError", "No axis named None for object type DataFrame"),
+    in_process=True,
+    note="pandas reads axis=None as no axis here rather than as the default",
+)
