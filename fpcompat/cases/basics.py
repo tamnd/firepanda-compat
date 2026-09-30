@@ -6491,3 +6491,19 @@ case(
     in_process=True,
     note="each value over the one two days earlier, matched by label",
 )
+case(
+    "basics/groupby-describe-include-object",
+    "GroupBy.describe",
+    level="L3",
+    covers=("include",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {"k": ["a", "b", "a", "b"], "v": [1.0, 2.0, 3.0, 4.0], "s": ["x", "y", "x", "z"]}
+        )
+        .groupby("k")
+        .describe(include="object")
+    ),
+    in_process=True,
+    note="only the text column is described, by count, unique, top and freq",
+)
