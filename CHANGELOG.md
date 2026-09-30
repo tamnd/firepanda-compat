@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Parameter cases for the apply family: `DataFrame.apply` with raw, result_type, by_row and engine, `transform` and `agg` across rows with arguments, `DataFrame.map`, and `pipe`, `agg`, `apply` and `map` on a column.
+- Board after firepanda #1349: 5219 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Parameter cases for Series and DataFrame `to_csv`, `Series.to_string`, `sample`, `sort_index` with a key and `na_position`, the cumulative reductions, `product` across rows, `reindex_like` and `str.wrap`.
 - Board after firepanda #1347: 5199 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cover the masked text type `string`: `convert_dtypes` turning text into `string` on two text frames, and the `str` accessor answering `Int64` and `boolean` with gaps on the masked type.

@@ -4832,3 +4832,161 @@ case(
     in_process=True,
     note="every textwrap option handed through. " + PARAMETER_IN_PROCESS,
 )
+
+
+def _plus(values, step, extra=0):
+    """A function with a positional and a keyword argument, for the `args` and `kwargs` cases."""
+    return values + step + extra
+
+
+case(
+    "basics/frame-apply-raw",
+    "DataFrame.apply",
+    level="L3",
+    covers=("func", "raw", "args", "kwargs"),
+    frames=("two", "float64_half_null"),
+    expr=lambda pd, df: df.select_dtypes("number").apply(
+        lambda values, step, extra: values.max() + step + extra, raw=True, args=(1,), extra=2
+    ),
+    in_process=True,
+    note="each column handed over as a numpy array. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-apply-expand",
+    "DataFrame.apply",
+    level="L3",
+    covers=("result_type",),
+    frames=("two", "float64_half_null"),
+    expr=lambda pd, df: df.select_dtypes("number").apply(
+        lambda row: [row.iloc[0], row.iloc[-1] * 2], axis=1, result_type="expand"
+    ),
+    in_process=True,
+    note="a list for each row made into columns. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-apply-broadcast",
+    "DataFrame.apply",
+    level="L3",
+    covers=("result_type",),
+    frames=("two", "float64_half_null"),
+    expr=lambda pd, df: df.select_dtypes("number").apply(
+        lambda column: column.sum(), result_type="broadcast"
+    ),
+    in_process=True,
+    note="each column's total spread down the column. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-apply-engine",
+    "DataFrame.apply",
+    level="L3",
+    covers=("by_row", "engine", "engine_kwargs"),
+    frames=("two",),
+    expr=lambda pd, df: df[["a", "b"]].apply(
+        lambda column: column * 2, by_row=False, engine="python", engine_kwargs=None
+    ),
+    in_process=True,
+    note="the Python engine named, on whole columns. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-transform-options",
+    "DataFrame.transform",
+    level="L3",
+    covers=("func", "axis", "args", "kwargs"),
+    frames=("two", "float64_half_null"),
+    expr=lambda pd, df: df.select_dtypes("number").transform(_plus, 1, 1, extra=2),
+    in_process=True,
+    note="a transform across each row with arguments. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-transform-options",
+    "Series.transform",
+    level="L3",
+    covers=("func", "axis", "args", "kwargs"),
+    frames=("two",),
+    expr=lambda pd, df: df["a"].transform(
+        {"plus": _plus, "twice": lambda v, step: v * 2 + step}, 0, 1
+    ),
+    in_process=True,
+    note="a dict of functions, which answers a frame. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-agg-rows",
+    "DataFrame.agg",
+    level="L3",
+    covers=("axis", "args", "kwargs"),
+    frames=("two", "float64_half_null"),
+    expr=lambda pd, df: (
+        df.select_dtypes("number")
+        .agg(["sum", "max"], axis=1)
+        .assign(
+            plus=df.select_dtypes("number").agg(
+                lambda row, step, extra: row.sum() + step + extra, 1, 1, extra=2
+            )
+        )
+    ),
+    in_process=True,
+    note="a list of reductions across each row, and a function with an argument. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-map-options",
+    "DataFrame.map",
+    level="L3",
+    covers=("func", "na_action", "kwargs"),
+    frames=("two", "float64_half_null"),
+    expr=lambda pd, df: df.select_dtypes("number").map(_plus, na_action="ignore", step=1),
+    in_process=True,
+    note="each cell through a function with a keyword, gaps left alone. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-pipe-options",
+    "DataFrame.pipe",
+    level="L3",
+    covers=("func", "args", "kwargs"),
+    frames=("two",),
+    expr=lambda pd, df: df[["a", "b"]].pipe(_plus, 1, extra=2),
+    in_process=True,
+    note="the frame through a function with arguments. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-pipe-options",
+    "Series.pipe",
+    level="L3",
+    covers=("func", "args", "kwargs"),
+    frames=("two",),
+    expr=lambda pd, df: df["b"].pipe((lambda step, values: values * step, "values"), 3),
+    in_process=True,
+    note="a column piped in as a named argument. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-agg-options",
+    "Series.agg",
+    level="L3",
+    covers=("axis", "args", "kwargs"),
+    frames=("two", "float64_half_null"),
+    expr=lambda pd, df: df.iloc[:, 1].agg(
+        lambda values, step, extra: values.sum() + step + extra, 0, 1, extra=2
+    ),
+    in_process=True,
+    note="a reduction with arguments. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-apply-options",
+    "Series.apply",
+    level="L3",
+    covers=("func", "by_row", "kwargs"),
+    frames=("two",),
+    expr=lambda pd, df: df["a"].apply(_plus, by_row=False, step=1, extra=2),
+    in_process=True,
+    note="the whole column through a function with keywords. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-map-options",
+    "Series.map",
+    level="L3",
+    covers=("engine", "kwargs"),
+    frames=("two",),
+    expr=lambda pd, df: df["a"].map(_plus, engine=None, step=1),
+    in_process=True,
+    note="each value through a function with a keyword. " + PARAMETER_IN_PROCESS,
+)
