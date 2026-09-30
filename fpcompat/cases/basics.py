@@ -6574,3 +6574,16 @@ case(
     in_process=True,
     note="the old row labels land in a column named from names rather than the index name",
 )
+case(
+    "basics/dt-as-unit-round-ok-false",
+    "dt.as_unit",
+    level="L4",
+    covers=("round_ok",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        pd.to_datetime(["2024-01-01 00:00:01", "2024-01-01 00:00:02.25"], format="ISO8601")
+    ).dt.as_unit("s", round_ok=False),
+    raises=("ValueError", "Cannot losslessly cast '1704067202250000 us' to s"),
+    in_process=True,
+    note="the first instant a coarser unit would round is named by its count in microseconds",
+)

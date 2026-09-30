@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/dt-as-unit-round-ok-false: dt.as_unit with round_ok=False raising pandas' error for an instant that would be rounded, which firepanda now answers (firepanda #1454).
+- Board after firepanda #1454: 5494 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/reset-index-names-flat: DataFrame.reset_index with names on a one-level index, which firepanda now answers (firepanda #1453).
 - Board after firepanda #1453: 5493 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/melt-col-level: DataFrame.melt with col_level naming one level of columns, which firepanda now answers (firepanda #1452).
