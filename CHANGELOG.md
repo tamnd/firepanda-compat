@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/reset-index-names-flat: DataFrame.reset_index with names on a one-level index, which firepanda now answers (firepanda #1453).
+- Board after firepanda #1453: 5493 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/melt-col-level: DataFrame.melt with col_level naming one level of columns, which firepanda now answers (firepanda #1452).
 - Board after firepanda #1452: 5492 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/sort-index-columns-key: DataFrame.sort_index(axis=1) with a key over the column labels, which firepanda now answers (firepanda #1451).

@@ -6562,3 +6562,15 @@ case(
     in_process=True,
     note="the lower level of columns is melted as if it were the only one",
 )
+case(
+    "basics/reset-index-names-flat",
+    "DataFrame.reset_index",
+    level="L3",
+    covers=("names",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"v": [1, 2]}, index=pd.Index([10, 20], name="k")).reset_index(
+        names="x"
+    ),
+    in_process=True,
+    note="the old row labels land in a column named from names rather than the index name",
+)
