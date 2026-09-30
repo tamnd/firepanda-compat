@@ -6748,3 +6748,16 @@ case(
     in_process=True,
     note="categories of instants stay instants and print as dates",
 )
+
+case(
+    "basics/isin-datetime",
+    "Series.isin",
+    level="L3",
+    covers=("values",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(pd.to_datetime(["2024-01-02", "2024-01-01", "2024-01-03"])).isin(
+        [pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")]
+    ),
+    in_process=True,
+    note="a datetime column finds a row by its instant",
+)

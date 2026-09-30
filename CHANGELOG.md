@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/isin-datetime`: `Series.isin` on a datetime column finds rows by their instant (firepanda #1466).
+- Board after firepanda #1466: 5507 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/astype-category-datetime` checks that a category of instants keeps them as instants and prints them as dates, which firepanda #1465 added.
 - Board after firepanda #1465: 5506 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/join-list-of-frames` checks that `DataFrame.join` with a list of frames with unique labels lays them side by side in pandas' order, which firepanda #1464 added.
