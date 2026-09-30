@@ -5681,3 +5681,39 @@ case(
     in_process=True,
     note="the mean of an object row skips the gap",
 )
+case(
+    "basics/frame-cumsum-across-rows",
+    "DataFrame.cumsum",
+    level="L3",
+    covers=("axis",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"a": [1, 2], "b": [3, 4], "c": [5, 6]}, index=["x", "y"]
+    ).cumsum(axis=1),
+    in_process=True,
+    note="a scan across the rows is the scan down the frame turned on its side",
+)
+case(
+    "basics/frame-cummax-across-rows-with-gaps",
+    "DataFrame.cummax",
+    level="L3",
+    covers=("axis", "skipna"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1.0, None], "b": [3.0, 4.0], "c": [None, 6.0]}).cummax(
+        axis=1, skipna=True
+    ),
+    in_process=True,
+    note="a gap across a row is passed over",
+)
+case(
+    "basics/frame-cumsum-flags-across-rows",
+    "DataFrame.cumsum",
+    level="L3",
+    covers=("axis",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1.0, None], "b": [True, False], "c": [2, 3]}).cumsum(
+        axis=1
+    ),
+    in_process=True,
+    note="flags beside numbers turn into objects scanned in Python",
+)

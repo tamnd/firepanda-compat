@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for running scans across the rows of a frame: a cumsum of whole numbers, a cummax over gaps, and a cumsum over flags beside numbers.
+- Board after firepanda #1410: 5433 pass, 0 unimplemented, 67 divergent, 2 fail.
 - Cases for row reductions over flags beside numbers, a sum and a mean with a gap, which pandas answers as objects.
 - Board after firepanda #1407: 5430 pass, 0 unimplemented, 67 divergent, 2 fail.
 - Cases for column reductions over flags beside numbers or text: an int64 sum over flags and integers, and object answers from max and min.
