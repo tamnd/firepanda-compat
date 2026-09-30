@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for row reductions over flags beside numbers, a sum and a mean with a gap, which pandas answers as objects.
+- Board after firepanda #1407: 5430 pass, 0 unimplemented, 67 divergent, 2 fail.
 - Cases for column reductions over flags beside numbers or text: an int64 sum over flags and integers, and object answers from max and min.
 - Board after firepanda #1406: 5428 pass, 0 unimplemented, 67 divergent, 2 fail.
 - Case for a frame with MultiIndex columns times an int Series that covers every column, which keeps int64.

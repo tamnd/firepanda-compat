@@ -5657,3 +5657,27 @@ case(
     in_process=True,
     note="a number and a string side by side in an object answer",
 )
+case(
+    "basics/frame-row-sum-flags-and-numbers",
+    "DataFrame.sum",
+    level="L3",
+    covers=("axis",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2], "b": [True, False], "c": [1.5, 2.5]}).sum(
+        axis=1
+    ),
+    in_process=True,
+    note="a row of flags beside numbers is read as objects and added in Python",
+)
+case(
+    "basics/frame-row-mean-flags-and-gaps",
+    "DataFrame.mean",
+    level="L3",
+    covers=("axis", "skipna"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1.0, None, 3.0], "b": [True, False, True]}).mean(
+        axis=1, skipna=True
+    ),
+    in_process=True,
+    note="the mean of an object row skips the gap",
+)
