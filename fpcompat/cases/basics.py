@@ -1975,6 +1975,50 @@ case(
     "because a numpy column has nowhere to keep a gap. Python layer",
 )
 case(
+    "basics/flags-with-gap",
+    "pandas.Series",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([*(df["value"].head(3) % 2 == 0).tolist(), None]),
+    in_process=True,
+    note="flags beside a gap are an object column, since numpy has no flag that can be "
+    "missing. Held as objects since firepanda #1357. Python layer",
+)
+case(
+    "basics/flags-with-gap-frame",
+    "pandas.DataFrame",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"flag": [True, None, False], "n": [1, 2, 3]}).dtypes.astype(
+        str
+    ),
+    in_process=True,
+    note="the same rule for a column handed to a frame in a mapping. Python layer",
+)
+case(
+    "basics/flags-with-gap-convert",
+    "Series.convert_dtypes",
+    covers=("convert_boolean",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.concat(
+        [
+            pd.Series([True, None, False]).convert_dtypes().astype(str),
+            pd.Series([True, None, False]).convert_dtypes(convert_boolean=False).astype(str),
+        ],
+        axis=1,
+    ),
+    in_process=True,
+    note="an object column of flags becomes boolean, and stays objects with convert_boolean "
+    "off. Python layer",
+)
+case(
+    "basics/flags-as-text",
+    "Series.astype",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (df["value"] % 2 == 0).astype(str),
+    in_process=True,
+    note="a flag written as text is True or False, as Python spells it, since firepanda "
+    "#1358. Python layer",
+)
+case(
     "basics/mask-widens-frame",
     "DataFrame.mask",
     frames=("int64_no_nulls", "float64_half_null"),

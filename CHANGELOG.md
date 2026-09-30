@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for flags beside a gap, which pandas holds as objects in a series and in a frame and turns into boolean with convert_dtypes, and for flags written as text.
+- Board after firepanda #1358: 5275 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for a group by first or last that may not skip gaps, and for the first, the last and the largest of a category column, which answer categories.
 - Board after firepanda #1356: 5271 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for the frequency the row labels remember, printed through head, every other row, a reversed order, arithmetic, concat and resample, and for shift by a frequency on days, hours, spans, periods and an inferred step.
