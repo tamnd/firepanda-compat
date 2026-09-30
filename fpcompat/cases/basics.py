@@ -6785,3 +6785,53 @@ case(
     in_process=True,
     note="one count per row, read by position",
 )
+
+case(
+    "basics/isin-aligned-frame",
+    "DataFrame.isin",
+    level="L3",
+    covers=("values",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}, index=[10, 11, 12]).isin(
+        pd.DataFrame({"a": [1, 0, 3], "c": [4, 5, 6]}, index=[10, 11, 13])
+    ),
+    in_process=True,
+    note="a frame is lined up by label and compared cell against cell",
+)
+
+case(
+    "basics/str-get-dummies-float",
+    "str.get_dummies",
+    level="L3",
+    covers=("sep", "dtype"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(["a|b", "b", "c"]).str.get_dummies(sep="|", dtype=float),
+    in_process=True,
+    note="the flags come back in the numeric type asked for",
+)
+
+case(
+    "basics/concat-keys-verify-integrity",
+    "pandas.concat",
+    level="L3",
+    covers=("objs", "keys", "verify_integrity"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.concat(
+        [pd.DataFrame({"a": [1, 2]}), pd.DataFrame({"a": [3, 4]})],
+        keys=["x", "y"],
+        verify_integrity=True,
+    ),
+    in_process=True,
+    note="keys keep repeated labels apart, so the check passes",
+)
+
+case(
+    "basics/squeeze-row-axis",
+    "DataFrame.squeeze",
+    level="L3",
+    covers=("axis",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1], "b": [2]}, index=["r"]).squeeze(axis=0),
+    in_process=True,
+    note="dropping the row axis answers the one row as a series named by its label",
+)

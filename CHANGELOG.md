@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/isin-aligned-frame`, `basics/str-get-dummies-float`, `basics/concat-keys-verify-integrity` and `basics/squeeze-row-axis`: aligned `isin`, numeric `get_dummies` types, keyed `concat` under `verify_integrity`, and a row squeeze (firepanda #1468).
+- Board after firepanda #1468: 5513 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/nlargest-two-columns-keep-all` and `basics/str-repeat-per-row`: `DataFrame.nlargest` over several columns with `keep="all"`, and `str.repeat` with a count per row (firepanda #1467).
 - Board after firepanda #1467: 5509 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/isin-datetime`: `Series.isin` on a datetime column finds rows by their instant (firepanda #1466).
