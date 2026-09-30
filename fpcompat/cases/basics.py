@@ -6615,3 +6615,18 @@ case(
     in_process=True,
     note="exact=False searches each row for the format and passes over the rest",
 )
+
+case(
+    "basics/reset-index-col-level",
+    "DataFrame.reset_index",
+    level="L3",
+    covers=("col_level", "col_fill"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        [[1, 2], [3, 4]],
+        index=pd.MultiIndex.from_tuples([("p", 1), ("q", 2)], names=["k", "n"]),
+        columns=pd.MultiIndex.from_tuples([("a", "x"), ("a", "y")], names=["u", "w"]),
+    ).reset_index(col_level=1, col_fill="f"),
+    in_process=True,
+    note="the labels land under a tuple with the name at col_level and col_fill elsewhere",
+)
