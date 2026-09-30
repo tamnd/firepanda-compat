@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for the frequency the row labels remember, printed through head, every other row, a reversed order, arithmetic, concat and resample, and for shift by a frequency on days, hours, spans, periods and an inferred step.
+- Board after firepanda #1355: 5261 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Parameter cases for the group by reductions `sum`, `prod`, `min`, `max`, `mean`, `median`, `skew`, `std`, `var` and `sem` with skipna, min_count, numeric_only and ddof, and cases for `where` and `mask` widening a column of whole numbers to float64, `shift` on a column of flags and the printed `DataFrame.dtypes`.
 - Board after firepanda #1352: 5246 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Parameter cases for the apply family: `DataFrame.apply` with raw, result_type, by_row and engine, `transform` and `agg` across rows with arguments, `DataFrame.map`, and `pipe`, `agg`, `apply` and `map` on a column.

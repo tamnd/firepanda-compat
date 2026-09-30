@@ -1897,3 +1897,56 @@ case(
     in_process=True,
     note="text read from labels with a gap keeps the gap as NaN, and the time of a gap is NaT",
 )
+
+
+def _days(pd):
+    return pd.Series(
+        [1.0, 2.0, 3.0, 4.0, 5.0, 6.0], index=pd.date_range("2026-01-01", periods=6), name="v"
+    )
+
+
+ROW_FREQ = {
+    "head": lambda pd: _days(pd).head(3),
+    "every-other": lambda pd: _days(pd).iloc[::2],
+    "picked": lambda pd: _days(pd).iloc[[0, 2, 3]],
+    "reversed": lambda pd: _days(pd).sort_index(ascending=False),
+    "sorted-values": lambda pd: _days(pd).sort_values(ascending=False),
+    "arithmetic": lambda pd: _days(pd) * 2,
+    "concat": lambda pd: pd.concat([_days(pd).head(2), _days(pd).iloc[2:4]]),
+    "resampled": lambda pd: _days(pd).resample("2D").sum(),
+    "frame": lambda pd: _days(pd).to_frame().assign(w=1),
+}
+for _name, _build in ROW_FREQ.items():
+    case(
+        f"temporal/row-freq-{_name}",
+        "Series.__repr__",
+        level="L3",
+        frames=RANGE,
+        expr=lambda pd, df, _build=_build: repr(_build(pd)),
+        in_process=True,
+        note="the row labels remember the step they were built with, and the repr ends with "
+        "Freq while the labels still step by it",
+    )
+SHIFT_FREQ = {
+    "days": lambda pd: _days(pd).shift(2, freq="D"),
+    "hours": lambda pd: _days(pd).shift(-3, freq="h"),
+    "infer": lambda pd: _days(pd).shift(1, freq="infer"),
+    "frame": lambda pd: _days(pd).to_frame().shift(1, freq="2D"),
+    "spans": lambda pd: pd.Series(
+        [1, 2], index=pd.timedelta_range("1h", periods=2, freq="h")
+    ).shift(1, freq="30min"),
+    "periods": lambda pd: pd.Series(
+        [1, 2], index=pd.period_range("2026-01", periods=2, freq="M")
+    ).shift(1, freq="M"),
+}
+for _name, _build in SHIFT_FREQ.items():
+    case(
+        f"temporal/shift-freq-{_name}",
+        "Series.shift",
+        level="L3",
+        covers=("periods", "freq"),
+        frames=RANGE,
+        expr=lambda pd, df, _build=_build: repr(_build(pd)),
+        in_process=True,
+        note="shifting by a frequency moves the labels and leaves every value where it is",
+    )
