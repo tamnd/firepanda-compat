@@ -947,7 +947,7 @@ for _kind in ("first", "last"):
     case(
         f"groupby/{_kind}-category",
         f"GroupBy.{_kind}",
-        level="L3",
+        level="L2",
         frames=SMALL,
         expr=lambda pd, df, kind=_kind: getattr(
             df.assign(tag=df["value"].mod(3).astype(str).astype("category")).groupby("key")["tag"],
@@ -960,7 +960,7 @@ for _kind in ("first", "last"):
 case(
     "groupby/max-ordered-category",
     "GroupBy.max",
-    level="L3",
+    level="L2",
     frames=SMALL,
     expr=lambda pd, df: (
         df.assign(tag=df["value"].mod(3).astype(str).astype("category").cat.as_ordered())
@@ -974,6 +974,7 @@ case(
     "groupby/value-counts-keep-gaps",
     "GroupBy.value_counts",
     level="L3",
+    covers=("dropna",),
     frames=SMALL,
     expr=lambda pd, df: (
         df.assign(
@@ -990,6 +991,7 @@ case(
     "groupby/value-counts-drop-gaps",
     "GroupBy.value_counts",
     level="L3",
+    covers=("normalize", "sort"),
     frames=SMALL,
     expr=lambda pd, df: (
         df.assign(

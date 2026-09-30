@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cover window reductions over a column that is not numbers: rolling and ewm refuse it with pandas' DataError (registered under engine/pandas-exception-classes), and a rolling count reads text; also give the L3 cases that named no parameter a `covers=` or the L2 level they belong at.
+- Board after firepanda #1385: 5354 pass, 0 unimplemented, 65 divergent, 2 fail.
 - Cover pivot_table totals beside several values and beside a dict of functions with a custom totals name (two reshape cases).
 - Board after firepanda #1384: 5353 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cover pivot and pivot_table into columns of several levels: a list or dict of functions, several values, pivot with a list of values or none, and totals beside a list of functions (six reshape cases).

@@ -1960,7 +1960,7 @@ for _name, _build in ROW_FREQ.items():
     case(
         f"temporal/row-freq-{_name}",
         "Series.__repr__",
-        level="L3",
+        level="L2",
         frames=RANGE,
         expr=lambda pd, df, _build=_build: repr(_build(pd)),
         in_process=True,

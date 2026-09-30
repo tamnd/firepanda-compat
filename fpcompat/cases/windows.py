@@ -430,6 +430,37 @@ case(
     raises=("NotImplementedError", "sum is not implemented with times"),
 )
 
+case(
+    "windows/rolling-text-refused",
+    "DataFrame.rolling",
+    level="L4",
+    covers=("window",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.rolling(2).sum(),
+    raises=("DataError", "Cannot aggregate non-numeric type"),
+)
+case(
+    "windows/ewm-text-refused",
+    "DataFrame.ewm",
+    level="L4",
+    covers=("span",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df["left"].ewm(span=3).mean(),
+    raises=("DataError", "No numeric types to aggregate"),
+)
+case(
+    "windows/rolling-count-text",
+    "DataFrame.rolling",
+    level="L3",
+    covers=("window",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.rolling(3).count(),
+    in_process=True,
+    note="a count reads the values present in each window whatever their kind, so a "
+    "text column counts where every other reduction refuses it. The kernel reads numbers only, "
+    "so firepanda's Python layer marks the values present, and the case runs in process",
+)
+
 # ---------------------------------------------------------------------------
 # Windows inside groups, which is where the two features meet
 # ---------------------------------------------------------------------------

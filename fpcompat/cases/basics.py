@@ -4592,7 +4592,7 @@ case(
 case(
     "basics/string-dtype-accessor",
     "Series.str.len",
-    level="L3",
+    level="L2",
     frames=("strings_null_heavy",),
     expr=lambda pd, df: df["value"].astype("string").str.len(),
     in_process=True,
@@ -4603,6 +4603,7 @@ case(
     "basics/string-dtype-contains",
     "Series.str.contains",
     level="L3",
+    covers=("pat",),
     frames=("strings_null_heavy",),
     expr=lambda pd, df: df["value"].astype("string").str.contains("1"),
     in_process=True,
