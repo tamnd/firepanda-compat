@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cover set_index with labels handed in: a date range, a column read by position, labels beside a column name, and pandas' length refusal (four indexing cases).
+- Board after firepanda #1386: 5358 pass, 0 unimplemented, 65 divergent, 2 fail.
 - Cover window reductions over a column that is not numbers: rolling and ewm refuse it with pandas' DataError (registered under engine/pandas-exception-classes), and a rolling count reads text; also give the L3 cases that named no parameter a `covers=` or the L2 level they belong at.
 - Board after firepanda #1385: 5354 pass, 0 unimplemented, 65 divergent, 2 fail.
 - Cover pivot_table totals beside several values and beside a dict of functions with a custom totals name (two reshape cases).

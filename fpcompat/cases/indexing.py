@@ -257,6 +257,56 @@ case(
     "so the case runs in process",
     in_process=True,
 )
+LABELS_HANDED_IN = (
+    "labels handed in rather than a column name are read by position and name the level "
+    "after what was handed in. firepanda sets them in its Python layer, so the case runs in "
+    "process"
+)
+
+case(
+    "indexing/set-index-date-range",
+    "DataFrame.set_index",
+    level="L3",
+    covers=("keys",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(df.set_index(pd.date_range("2024-01-01", periods=len(df)))),
+    in_process=True,
+    note="a date range as the row labels, which keeps its step. " + LABELS_HANDED_IN,
+)
+case(
+    "indexing/set-index-series",
+    "DataFrame.set_index",
+    level="L3",
+    covers=("keys",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(
+        df.set_index(pd.Series(range(len(df)), index=list(range(len(df)))[::-1], name="s"))
+    ),
+    in_process=True,
+    note="a column with labels of its own, read by position rather than aligned. "
+    + LABELS_HANDED_IN,
+)
+case(
+    "indexing/set-index-array-and-column",
+    "DataFrame.set_index",
+    level="L3",
+    covers=("keys", "drop"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(
+        df.set_index(["left", pd.Index(range(len(df)), name="n")], drop=False)
+    ),
+    in_process=True,
+    note="labels beside a column name make two levels. " + LABELS_HANDED_IN,
+)
+case(
+    "indexing/set-index-length-refused",
+    "DataFrame.set_index",
+    level="L4",
+    covers=("keys",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.set_index(pd.Index([1, 2])),
+    raises=("ValueError", "Length mismatch: Expected 8 rows, received array of length 2"),
+)
 case(
     "indexing/reset-index-levels",
     "DataFrame.reset_index",
