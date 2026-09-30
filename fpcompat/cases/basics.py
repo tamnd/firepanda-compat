@@ -6718,3 +6718,20 @@ case(
     in_process=True,
     note="pandas 3 took the fill away and refuses any method",
 )
+
+case(
+    "basics/join-list-of-frames",
+    "DataFrame.join",
+    level="L3",
+    covers=("other", "how"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"z": [6.0, 7.0]}, index=["c", "a"]).join(
+        [
+            pd.DataFrame({"y": [4, 5]}, index=["b", "d"]),
+            pd.DataFrame({"x": [1, 2, 3]}, index=["a", "b", "c"]),
+        ],
+        how="right",
+    ),
+    in_process=True,
+    note="a list of frames with unique labels is laid side by side in the last frame's order",
+)

@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/join-list-of-frames` checks that `DataFrame.join` with a list of frames with unique labels lays them side by side in pandas' order, which firepanda #1464 added.
+- Board after firepanda #1464: 5505 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/index-view-cls` and `basics/pct-change-fill-method` check that `Index.view` with a type reads the labels' bytes as that type and that `pct_change` refuses a `fill_method` with pandas' ValueError, which firepanda #1463 added.
 - Board after firepanda #1463: 5504 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/reset-index-allow-duplicates` checks that `allow_duplicates=True` with no clash answers as pandas does and that `index` falls back to `level_0`, which firepanda #1462 added.
