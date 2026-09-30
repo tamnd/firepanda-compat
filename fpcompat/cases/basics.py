@@ -5404,3 +5404,37 @@ case(
     in_process=True,
     note="an attribute that names a column writes the column. Since firepanda #1375",
 )
+case(
+    "basics/text-sum-joins",
+    "Series.sum",
+    frames=("strings_ascii", "strings_null_heavy"),
+    expr=lambda pd, df: df["value"].head(20).sum(),
+    in_process=True,
+    note="a sum of text joins the rows in order and passes over gaps. Since firepanda #1376",
+)
+case(
+    "basics/text-cumsum-joins",
+    "Series.cumsum",
+    frames=("strings_ascii", "strings_null_heavy"),
+    expr=lambda pd, df: df["value"].head(8).cumsum(),
+    in_process=True,
+    note="a running sum of text is a running join. Since firepanda #1376",
+)
+case(
+    "basics/text-group-sum-joins",
+    "GroupBy.sum",
+    frames=("strings_ascii", "strings_null_heavy"),
+    expr=lambda pd, df: df.head(6).assign(k=["a", "b"] * 3).groupby("k")["value"].sum(),
+    in_process=True,
+    note="each group's text is joined in row order. Since firepanda #1376",
+)
+case(
+    "basics/text-mean-refused",
+    "Series.mean",
+    level="L4",
+    frames=("strings_ascii",),
+    expr=lambda pd, df: df["value"].mean(),
+    raises=("TypeError", "Cannot perform reduction 'mean' with string dtype"),
+    in_process=True,
+    note="a mean has no meaning for text. Since firepanda #1376",
+)

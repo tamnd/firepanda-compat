@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for text sums, running joins and group sums that join rows in order, and for a text mean refused with pandas' TypeError.
+- Board after firepanda #1376: 5327 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for text and number arithmetic refused with pandas' TypeError, by a column and by a frame, and for `df.a = [...]` writing an existing column.
 - Board after firepanda #1375: 5320 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for a list of tuples read as levels, `tupleize_cols=False` and tuple keyed mappings (firepanda #1373), and for assigning to `columns`, `index`, `name` and an index's name, with the length refusal (firepanda #1374).
