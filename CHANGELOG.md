@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- A case for `DataFrame.quantile` across the rows at a list of quantiles under `interpolation="nearest"`.
+- Board after firepanda #1418: 5449 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `DataFrame.shift` and `GroupBy.shift` by a list of periods.
 - Board after firepanda #1417: 5448 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `DataFrame.sort_index` with a direction per level, with and without `level=`.

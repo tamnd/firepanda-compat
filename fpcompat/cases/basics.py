@@ -5911,3 +5911,15 @@ case(
     in_process=True,
     note="a group by shifts within each group by each period and answers a frame",
 )
+case(
+    "basics/frame-quantile-across-rows",
+    "DataFrame.quantile",
+    level="L3",
+    covers=("q", "axis", "interpolation"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"a": [1, 2, 3], "b": [4.5, 0.5, 6.0], "c": [7, 8, 1]}, index=["x", "y", "z"]
+    ).quantile([0.1, 0.9], axis=1, interpolation="nearest"),
+    in_process=True,
+    note="a quantile across each row is one down the frame turned on its side",
+)
