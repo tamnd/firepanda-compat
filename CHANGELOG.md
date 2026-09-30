@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Parameter cases for Series and DataFrame `to_csv`, `Series.to_string`, `sample`, `sort_index` with a key and `na_position`, the cumulative reductions, `product` across rows, `reindex_like` and `str.wrap`.
+- Board after firepanda #1347: 5199 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cover the masked text type `string`: `convert_dtypes` turning text into `string` on two text frames, and the `str` accessor answering `Int64` and `boolean` with gaps on the masked type.
 - Board after firepanda #1346: 5178 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Parameter cases for ddof, min_count, cut, get_dummies, melt, to_datetime units and coerce, interpolate limits, align, compare, concat sort, crosstab values, ewm, rolling, reindex, sort_index, merge keys and indicator, pivot_table margins, convert_dtypes flags, corrwith, Timestamp parts and Timestamp.replace, 52 records in all.

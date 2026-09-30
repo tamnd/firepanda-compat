@@ -4606,3 +4606,229 @@ case(
     in_process=True,
     note="an instant with some of its parts swapped. " + PARAMETER_IN_PROCESS,
 )
+case(
+    "basics/series-to-csv-options",
+    "Series.to_csv",
+    level="L3",
+    covers=("sep", "na_rep", "float_format", "header", "index_label"),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: (
+        df["value"]
+        .head(8)
+        .to_csv(sep=";", na_rep="-", float_format="%.3f", header=True, index_label="at")
+    ),
+    in_process=True,
+    note="a column as separated text with a missing marker and three float digits. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-to-csv-bare",
+    "Series.to_csv",
+    level="L3",
+    covers=("index", "header", "lineterminator", "decimal"),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: (
+        df["value"].head(8).to_csv(index=False, header=False, lineterminator="|", decimal=",")
+    ),
+    in_process=True,
+    note="a column with no labels and no header, ended by a bar, with a decimal comma. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/to-csv-columns",
+    "DataFrame.to_csv",
+    level="L3",
+    covers=("columns", "header", "index_label", "quoting", "quotechar", "decimal"),
+    frames=("two",),
+    expr=lambda pd, df: df.to_csv(
+        columns=["b", "c"],
+        header=["x", "y"],
+        index_label="at",
+        quoting=1,
+        quotechar="'",
+        decimal=",",
+    ),
+    in_process=True,
+    note="two columns renamed in the header, every field quoted with a single quote. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/to-csv-dates",
+    "DataFrame.to_csv",
+    level="L3",
+    covers=("date_format", "lineterminator"),
+    frames=("temporal_range",),
+    expr=lambda pd, df: df.to_csv(date_format="%Y/%m/%d %H", lineterminator="\n"),
+    in_process=True,
+    note="instants written with a format of their own. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/to-csv-escape",
+    "DataFrame.to_csv",
+    level="L3",
+    covers=("doublequote", "escapechar"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame({"t": ['a"b', "c"]}).to_csv(
+        doublequote=False, escapechar="\\"
+    ),
+    in_process=True,
+    note="a quote inside a field escaped rather than doubled. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-to-string-options",
+    "Series.to_string",
+    level="L3",
+    covers=("na_rep", "float_format", "header", "index", "max_rows", "min_rows"),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].to_string(
+        na_rep="-", float_format="{:.2f}".format, header=True, index=False, max_rows=6, min_rows=4
+    ),
+    in_process=True,
+    note="a column printed without labels, cut to a few rows. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-sample-options",
+    "Series.sample",
+    level="L3",
+    covers=("n", "replace", "ignore_index", "axis"),
+    frames=("tall",),
+    expr=lambda pd, df: df["value"].sample(
+        n=5, replace=True, random_state=1, ignore_index=True, axis=0
+    ),
+    in_process=True,
+    note="five rows drawn with replacement and numbered again. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-sample-weights",
+    "Series.sample",
+    level="L3",
+    covers=("frac", "weights"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].sample(frac=0.25, weights=df["row"] + 1, random_state=3),
+    in_process=True,
+    note="a quarter of the rows drawn with weights. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-sample-options",
+    "DataFrame.sample",
+    level="L3",
+    covers=("n", "replace", "weights", "axis", "ignore_index"),
+    frames=("two",),
+    expr=lambda pd, df: (
+        df.sample(n=2, axis=1, random_state=0).columns.tolist()
+        + df.sample(n=3, replace=True, weights=[1, 2], random_state=0, ignore_index=True)[
+            "a"
+        ].tolist()
+    ),
+    in_process=True,
+    note="columns drawn along the other axis and rows drawn with weights. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-sort-index-options",
+    "Series.sort_index",
+    level="L3",
+    covers=("na_position", "kind", "key", "axis"),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: (
+        df.set_index("value")["row"]
+        .sort_index(na_position="first", kind="stable", axis=0, key=lambda labels: -labels)
+        .head(8)
+    ),
+    in_process=True,
+    note="labels sorted through a key with the gaps first. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-sort-index-level",
+    "DataFrame.sort_index",
+    level="L3",
+    covers=("level", "sort_remaining", "kind", "na_position", "key"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.set_index(["left", "right"]).sort_index(
+        level=1, sort_remaining=False, kind="stable", na_position="first", key=None
+    ),
+    in_process=True,
+    note="two levels of labels sorted by the second only. " + PARAMETER_IN_PROCESS,
+)
+for name in ("cummax", "cummin", "cumprod"):
+    case(
+        f"basics/{name}-options",
+        f"DataFrame.{name}",
+        level="L3",
+        covers=("axis", "skipna", "numeric_only"),
+        frames=("two", "float64_half_null"),
+        expr=(
+            lambda method: (
+                lambda pd, df: getattr(df.select_dtypes("number"), method)(
+                    axis=0, skipna=False, numeric_only=True
+                )
+            )
+        )(name),
+        in_process=True,
+        note="a running answer that stops at the first gap. " + PARAMETER_IN_PROCESS,
+    )
+case(
+    "basics/product-options",
+    "DataFrame.product",
+    level="L3",
+    covers=("axis", "skipna", "numeric_only", "min_count"),
+    frames=("two", "float64_half_null"),
+    expr=lambda pd, df: pd.concat(
+        [
+            df.product(numeric_only=True, min_count=3),
+            df.product(axis=1, numeric_only=True).add_prefix("row"),
+        ]
+    ),
+    in_process=True,
+    note="a product that needs three values and a product across each row. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/reindex-like-options",
+    "DataFrame.reindex_like",
+    level="L3",
+    covers=("other", "method", "limit", "tolerance"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.concat(
+        [
+            df.iloc[::3].reindex_like(df.iloc[:10], method="ffill", limit=1),
+            df.iloc[::3].reindex_like(df.iloc[:10], method="nearest", tolerance=1),
+        ]
+    ),
+    in_process=True,
+    note="the labels of another frame, filled forward once or from the nearest label. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/str-wrap-options",
+    "str.wrap",
+    level="L3",
+    covers=(
+        "expand_tabs",
+        "tabsize",
+        "replace_whitespace",
+        "drop_whitespace",
+        "initial_indent",
+        "subsequent_indent",
+        "fix_sentence_endings",
+        "break_long_words",
+        "break_on_hyphens",
+        "max_lines",
+        "placeholder",
+    ),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: df["value"].str.wrap(
+        6,
+        expand_tabs=False,
+        tabsize=4,
+        replace_whitespace=False,
+        drop_whitespace=False,
+        initial_indent=">",
+        subsequent_indent=" ",
+        fix_sentence_endings=True,
+        break_long_words=False,
+        break_on_hyphens=False,
+        max_lines=2,
+        placeholder="~",
+    ),
+    in_process=True,
+    note="every textwrap option handed through. " + PARAMETER_IN_PROCESS,
+)
