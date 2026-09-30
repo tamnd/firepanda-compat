@@ -5291,3 +5291,88 @@ case(
     in_process=True,
     note="a gap in a list condition cannot be turned over. Since firepanda #1371",
 )
+
+
+def _assigned(owner, attribute, value):
+    """The object after `owner.attribute = value`, which a lambda cannot write."""
+    setattr(owner, attribute, value)
+    return owner
+
+
+def _index_named(owner, value):
+    """The object after its index is named through `owner.index.name = value`."""
+    owner.index.name = value
+    return owner
+
+
+case(
+    "basics/index-tuples-levels",
+    "pandas.Index",
+    covers=("data",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1, 2], index=pd.Index([("a", 1), ("b", 2)])),
+    in_process=True,
+    note="a list of tuples is read as levels. Since firepanda #1373",
+)
+case(
+    "basics/index-tuples-kept",
+    "pandas.Index",
+    covers=("tupleize_cols",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        [1, 2], index=pd.Index([("a", 1), ("b", 2)], tupleize_cols=False)
+    ).reset_index(drop=True),
+    in_process=True,
+    note="turning tupleize_cols off keeps the tuples as labels. Since firepanda #1373",
+)
+case(
+    "basics/series-tuple-keys",
+    "pandas.Series",
+    covers=("data",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series({("a", 1): 1, ("b", 2): 2, ("b", 3): 3}),
+    in_process=True,
+    note="a mapping with tuple keys is labelled by levels. Since firepanda #1373",
+)
+case(
+    "basics/columns-assigned",
+    "DataFrame.columns",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _assigned(df.head(3), "columns", [f"c{i}" for i in range(df.shape[1])]),
+    in_process=True,
+    note="assigning to the columns relabels them. Since firepanda #1374",
+)
+case(
+    "basics/index-assigned",
+    "DataFrame.index",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _assigned(df.head(3), "index", ["x", "y", "z"]),
+    in_process=True,
+    note="assigning to the index relabels the rows. Since firepanda #1374",
+)
+case(
+    "basics/name-assigned",
+    "Series.name",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _assigned(df["value"].head(3), "name", "renamed"),
+    in_process=True,
+    note="assigning a name renames the column. Since firepanda #1374",
+)
+case(
+    "basics/index-name-assigned",
+    "DataFrame.index",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _index_named(df.head(3), "rows"),
+    in_process=True,
+    note="naming an index read off a frame names the frame's rows. Since firepanda #1374",
+)
+case(
+    "basics/columns-assigned-short",
+    "DataFrame.columns",
+    level="L4",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _assigned(df.head(3), "columns", ["only"]),
+    raises=("ValueError", "Length mismatch"),
+    in_process=True,
+    note="labels of another length are refused. Since firepanda #1374",
+)
