@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Three `basics/frame-dropna-*` cases: `thresh` with `subset`, `axis=1` with `how`, and `ignore_index`, as firepanda #1388 counts values to drop rows and columns as pandas does.
+- Board after firepanda #1388: 5370 pass, 0 unimplemented, 65 divergent, 2 fail.
 - Six `temporal/resample-calendar-*` cases: resampling on month ends and starts, weeks, quarters and years, with `closed`, `label`, `on` and a list for `agg`, as firepanda #1387 lays calendar bins as pandas does.
 - Board after firepanda #1387: 5364 pass, 0 unimplemented, 65 divergent, 2 fail.
 - Cover set_index with labels handed in: a date range, a column read by position, labels beside a column name, and pandas' length refusal (four indexing cases).

@@ -1136,6 +1136,37 @@ case(
     note=FLAG_IN_PYTHON,
 )
 case(
+    "basics/frame-dropna-thresh",
+    "DataFrame.dropna",
+    level="L3",
+    covers=("thresh", "subset"),
+    frames=("two", "strings_null_heavy"),
+    expr=lambda pd, df: df.dropna(thresh=1, subset=list(df.columns[:2])),
+    in_process=True,
+    note="a row is kept with at least `thresh` values among the columns looked at. "
+    + FLAG_IN_PYTHON,
+)
+case(
+    "basics/frame-dropna-columns",
+    "DataFrame.dropna",
+    level="L3",
+    covers=("axis", "how"),
+    frames=("two", "strings_null_heavy"),
+    expr=lambda pd, df: df.dropna(axis=1, how="all"),
+    in_process=True,
+    note="with axis=1 a column is dropped by the values in it, as a row is. " + FLAG_IN_PYTHON,
+)
+case(
+    "basics/frame-dropna-ignore-index",
+    "DataFrame.dropna",
+    level="L3",
+    covers=("ignore_index",),
+    frames=("two", "strings_null_heavy"),
+    expr=lambda pd, df: df.dropna(ignore_index=True),
+    in_process=True,
+    note="what is left is numbered again from zero. " + FLAG_IN_PYTHON,
+)
+case(
     "basics/fillna",
     "Series.fillna",
     level="L3",
