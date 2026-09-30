@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `signature/rolling.max` scores against pandas: firepanda #1332 declares `Rolling.max` with pandas' ignored `*args` and `**kwargs`, so `engine/rolling-max-varargs` is retired.
+- Board after firepanda #1332: 4981 pass, 0 unimplemented, 84 divergent, 2 fail.
 - `Styler.to_excel` in firepanda #1330 writes the fonts, fills, borders, alignments and number formats pandas writes through openpyxl, xlsxwriter and odf, and a `loc` key with a slice or a list for fewer levels than a `MultiIndex` has keeps every level as pandas does.
 - Board after firepanda #1330: 4975 pass, 5 unimplemented, 87 divergent, 0 fail.
 - `DataFrame.style` is pandas' Styler in firepanda #1329, writing the same HTML, LaTeX, text and Typst as pandas when jinja2 is installed and refusing with pandas' AttributeError when it is not, so `engine/plotting` is retired and `divergences/plotting/frame-style` scores against pandas.

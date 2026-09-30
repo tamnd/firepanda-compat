@@ -603,9 +603,14 @@ def test_the_committed_registry_loads():
     `engine/plotting` is retired, which leaves twenty. It had narrowed to the styler
     alone, and firepanda carries pandas' Styler now and refuses it only without jinja2,
     with pandas' own class and message, so the one case stayed where it was and scores
-    against pandas like any other."""
+    against pandas like any other.
+
+    `engine/rolling-max-varargs` is retired, which leaves nineteen. firepanda declares
+    `Rolling.max` with pandas' ignored `*args` and `**kwargs` now, generated as a special
+    case for that one member, so the signature case matches pandas' parameter for
+    parameter."""
     entries = divergences.registry()
-    assert len(entries) == 20
+    assert len(entries) == 19
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
