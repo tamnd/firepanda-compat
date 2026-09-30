@@ -608,9 +608,14 @@ def test_the_committed_registry_loads():
     `engine/rolling-max-varargs` is retired, which leaves nineteen. firepanda declares
     `Rolling.max` with pandas' ignored `*args` and `**kwargs` now, generated as a special
     case for that one member, so the signature case matches pandas' parameter for
-    parameter."""
+    parameter.
+
+    `engine/dtype-spelling` is retired, which leaves eighteen. firepanda spells text `str`
+    now, pandas' `StringDtype` with NaN for a gap, so the text cases and the whole frame
+    member agree. The date case had already agreed, because a date column read from
+    Arrow is a column of date objects on both sides and both call it `object`."""
     entries = divergences.registry()
-    assert len(entries) == 19
+    assert len(entries) == 18
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

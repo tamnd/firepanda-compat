@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `engine/dtype-spelling` is retired: firepanda #1333 spells text `str` as pandas 3 does, and the date column already agreed, so `divergences/dtype-spelling/text-column`, `divergences/dtype-spelling/text-frame` and `basics/dtypes` on every frame score against pandas.
+- Board after firepanda #1333: 4986 pass, 0 unimplemented, 79 divergent, 2 fail.
 - `signature/rolling.max` scores against pandas: firepanda #1332 declares `Rolling.max` with pandas' ignored `*args` and `**kwargs`, so `engine/rolling-max-varargs` is retired.
 - Board after firepanda #1332: 4981 pass, 0 unimplemented, 84 divergent, 2 fail.
 - `Styler.to_excel` in firepanda #1330 writes the fonts, fills, borders, alignments and number formats pandas writes through openpyxl, xlsxwriter and odf, and a `loc` key with a slice or a list for fewer levels than a `MultiIndex` has keeps every level as pandas does.

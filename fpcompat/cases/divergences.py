@@ -300,8 +300,8 @@ case(
     frames=("single",),
     expr=lambda pd, df: str(df["c"].dtype),
     in_process=True,
-    note="pandas 3 says `str` and firepanda says `string`, which is Arrow's name for "
-    "the same thing. " + DTYPE_SPELLING,
+    note="pandas 3 says `str` and firepanda used to say `string`, which is Arrow's name "
+    "for the same thing. It says `str` now and this case guards that. " + DTYPE_SPELLING,
 )
 case(
     "divergences/dtype-spelling/text-frame",
@@ -311,7 +311,7 @@ case(
     in_process=True,
     note="the same word through the plural member, which matters because `dtypes` is "
     "the shape people actually read and a list of three where one is wrong looks like "
-    "a list of three that is right. " + DTYPE_SPELLING,
+    "a list of three that is right. It agrees now, as the column case does. " + DTYPE_SPELLING,
 )
 case(
     "divergences/dtype-spelling/date-column",
@@ -322,7 +322,8 @@ case(
     note="a date carrying a day and no clock is `date32[day]` in Arrow and firepanda keeps that "
     "name. pandas has no date dtype at all, so it reads the column into a column of "
     "Python date objects and calls it `object`, which is the type it refuses to have "
-    "anywhere else. " + DTYPE_SPELLING,
+    "anywhere else. firepanda reads it into date objects too and says `object` as well, "
+    "so the case agrees. " + DTYPE_SPELLING,
 )
 case(
     "divergences/dtype-spelling/timestamp-column",
@@ -520,7 +521,7 @@ case(
     in_process=True,
     note="a text column, where pandas 3 carries the gap as a NaN even though the column "
     "holds strings. One line is read rather than the rendering, because the footer "
-    "spells the type `string` here and `str` there and that is `engine/dtype-spelling` "
+    "used to spell the type `string` here and `str` there, which was `engine/dtype-spelling` "
     "rather than this. Both write NaN now.",
 )
 case(

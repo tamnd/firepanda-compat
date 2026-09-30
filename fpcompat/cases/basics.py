@@ -110,9 +110,8 @@ case(
     expr=lambda pd, df: df.dtypes.astype(str),
     in_process=True,
     note="compared as strings because a dtype object is not a value the comparison can "
-    "hold. The frames with text and dates in them are back now that "
-    "`engine/dtype-spelling` is registered, so this case asserts the divergence over the "
-    "types that have one and the agreement over the types that do not. " + MEASURING,
+    "hold. Text is spelt `str` on both sides now, so the frames with text in them agree "
+    "exactly, and so does the temporal frame. " + MEASURING,
 )
 case(
     "basics/dtypes-labels",
@@ -551,8 +550,8 @@ case(
     expr=lambda pd, df: repr(relabelled(df)).splitlines()[-1],
     in_process=True,
     note="the footer under the listing, which names the column and its type. The float "
-    "column is the one read, because a text column spells its type differently here and "
-    "that is `engine/dtype-spelling` rather than anything this member decides. " + PRINTED,
+    "column is the one read, because a text column used to spell its type differently "
+    "here, which was `engine/dtype-spelling` rather than anything this member decides. " + PRINTED,
 )
 case(
     "basics/repr-elided",
