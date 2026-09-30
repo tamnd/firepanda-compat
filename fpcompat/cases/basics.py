@@ -6735,3 +6735,16 @@ case(
     in_process=True,
     note="a list of frames with unique labels is laid side by side in the last frame's order",
 )
+
+case(
+    "basics/astype-category-datetime",
+    "Series.astype",
+    level="L3",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        pd.to_datetime(["2024-01-02", "2024-01-01", "2024-01-02"])
+    ).astype("category"),
+    in_process=True,
+    note="categories of instants stay instants and print as dates",
+)
