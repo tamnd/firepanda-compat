@@ -4502,6 +4502,37 @@ case(
     + PARAMETER_IN_PROCESS,
 )
 case(
+    "basics/convert-dtypes-text",
+    "DataFrame.convert_dtypes",
+    level="L3",
+    covers=("convert_string",),
+    frames=("strings_ascii", "strings_null_heavy"),
+    expr=lambda pd, df: df.convert_dtypes().dtypes.astype(str),
+    in_process=True,
+    note="text columns, which become the masked `string` type when `convert_string` is left on. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/string-dtype-accessor",
+    "Series.str.len",
+    level="L3",
+    frames=("strings_null_heavy",),
+    expr=lambda pd, df: df["value"].astype("string").str.len(),
+    in_process=True,
+    note="the `str` accessor on the masked `string` type, which answers `Int64` with a gap "
+    "where the row was one. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/string-dtype-contains",
+    "Series.str.contains",
+    level="L3",
+    frames=("strings_null_heavy",),
+    expr=lambda pd, df: df["value"].astype("string").str.contains("1"),
+    in_process=True,
+    note="a test on the masked `string` type, which answers `boolean` with a gap where the "
+    "row was one. " + PARAMETER_IN_PROCESS,
+)
+case(
     "basics/convert-dtypes-flags",
     "DataFrame.convert_dtypes",
     level="L3",
