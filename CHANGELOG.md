@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/nlargest-two-columns-keep-all` and `basics/str-repeat-per-row`: `DataFrame.nlargest` over several columns with `keep="all"`, and `str.repeat` with a count per row (firepanda #1467).
+- Board after firepanda #1467: 5509 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/isin-datetime`: `Series.isin` on a datetime column finds rows by their instant (firepanda #1466).
 - Board after firepanda #1466: 5507 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/astype-category-datetime` checks that a category of instants keeps them as instants and prints them as dates, which firepanda #1465 added.

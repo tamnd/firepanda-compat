@@ -6761,3 +6761,27 @@ case(
     in_process=True,
     note="a datetime column finds a row by its instant",
 )
+
+case(
+    "basics/nlargest-two-columns-keep-all",
+    "DataFrame.nlargest",
+    level="L3",
+    covers=("n", "columns", "keep"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"a": [1, 1, 2, 2, 3, 3], "b": [5, 4, 3, 9, 1, 1]}, index=list("pqrstu")
+    ).nlargest(3, ["a", "b"], keep="all"),
+    in_process=True,
+    note="several columns are ranked one at a time, and keep='all' keeps every tie at the edge",
+)
+
+case(
+    "basics/str-repeat-per-row",
+    "str.repeat",
+    level="L3",
+    covers=("repeats",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(["a", "bc", "d"], index=[5, 6, 7]).str.repeat([2, 0, 3]),
+    in_process=True,
+    note="one count per row, read by position",
+)
