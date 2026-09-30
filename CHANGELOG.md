@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for a group by first or last that may not skip gaps, and for the first, the last and the largest of a category column, which answer categories.
+- Board after firepanda #1356: 5271 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for the frequency the row labels remember, printed through head, every other row, a reversed order, arithmetic, concat and resample, and for shift by a frequency on days, hours, spans, periods and an inferred step.
 - Board after firepanda #1355: 5261 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Parameter cases for the group by reductions `sum`, `prod`, `min`, `max`, `mean`, `median`, `skew`, `std`, `var` and `sem` with skipna, min_count, numeric_only and ddof, and cases for `where` and `mask` widening a column of whole numbers to float64, `shift` on a column of flags and the printed `DataFrame.dtypes`.

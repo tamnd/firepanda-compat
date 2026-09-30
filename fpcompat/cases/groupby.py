@@ -932,6 +932,45 @@ for _kind in ("mean", "median", "skew"):
         note=REDUCE_OPTIONS,
     )
 
+for _kind in ("first", "last"):
+    case(
+        f"groupby/{_kind}-no-skip",
+        f"GroupBy.{_kind}",
+        level="L3",
+        covers=("skipna",),
+        frames=SMALL,
+        expr=lambda pd, df, kind=_kind: getattr(_gappy(df).groupby("key"), kind)(skipna=False),
+        in_process=True,
+        note=REDUCE_OPTIONS + ", while a first or last that may not skip reads the group's first "
+        "or last row whatever it holds",
+    )
+    case(
+        f"groupby/{_kind}-category",
+        f"GroupBy.{_kind}",
+        level="L3",
+        frames=SMALL,
+        expr=lambda pd, df, kind=_kind: getattr(
+            df.assign(tag=df["value"].mod(3).astype(str).astype("category")).groupby("key")["tag"],
+            kind,
+        )(),
+        in_process=True,
+        note="a category column picked from answers categories rather than the codes it is "
+        "stored as",
+    )
+case(
+    "groupby/max-ordered-category",
+    "GroupBy.max",
+    level="L3",
+    frames=SMALL,
+    expr=lambda pd, df: (
+        df.assign(tag=df["value"].mod(3).astype(str).astype("category").cat.as_ordered())
+        .groupby("key")["tag"]
+        .max()
+    ),
+    in_process=True,
+    note="the largest of an ordered category is read through the category's own order",
+)
+
 for _kind in ("std", "var", "sem"):
     case(
         f"groupby/{_kind}-options",
