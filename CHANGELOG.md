@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- A case for a MultiIndex level of whole numbers with a gap, sorted with a direction per level.
+- Board after firepanda #1428: 5464 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for `DataFrame.corr` with a callable method and `min_periods`.
 - Board after firepanda #1427: 5463 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `groupby` with a `Grouper` with a frequency beside a column, and with a level name in a list of keys.

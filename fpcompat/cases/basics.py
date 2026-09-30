@@ -6132,3 +6132,19 @@ case(
     in_process=True,
     note="a callable is handed the rows each pair shares, 1 on the diagonal",
 )
+
+case(
+    "basics/multiindex-whole-level-gap",
+    "DataFrame.sort_index",
+    level="L3",
+    covers=("ascending",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"v": [1, 2, 3, 4, 5]},
+        index=pd.MultiIndex.from_tuples(
+            [("b", 2), ("a", 1), ("b", 1), ("a", 3), ("a", None)], names=["p", "q"]
+        ),
+    ).sort_index(ascending=[True, False]),
+    in_process=True,
+    note="a level of whole numbers with a gap stays whole",
+)
