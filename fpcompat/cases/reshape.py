@@ -433,6 +433,37 @@ case(
     in_process=True,
 )
 case(
+    "reshape/concat-keys-columns",
+    "pandas.concat",
+    level="L3",
+    covers=("objs", "keys", "axis", "names"),
+    frames=("two",),
+    expr=lambda pd, df: repr(pd.concat([df, df], axis=1, keys=["first", "second"], names=["n"])),
+    note="across the columns each key goes in front of every one of the part's column labels, "
+    "a MultiIndex over the columns named from the front by `names`",
+    in_process=True,
+)
+case(
+    "reshape/concat-keys-series-columns",
+    "pandas.concat",
+    level="L3",
+    covers=("objs", "keys", "axis"),
+    frames=("two",),
+    expr=lambda pd, df: pd.concat([df.iloc[:, 0], df.iloc[:, 1]], axis=1, keys=["p", "q"]),
+    note="series side by side take their keys as their column names",
+    in_process=True,
+)
+case(
+    "reshape/transform-list",
+    "DataFrame.transform",
+    level="L3",
+    covers=("func",),
+    frames=("two",),
+    expr=lambda pd, df: repr(df.select_dtypes("number").transform(["abs", "cumsum"])),
+    note="a list of functions answers each column under each function, a level apiece",
+    in_process=True,
+)
+case(
     "reshape/concat-empty",
     "pandas.concat",
     level="L3",

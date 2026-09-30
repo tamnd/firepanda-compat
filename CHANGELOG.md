@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Three cases for keys across the columns: `reshape/concat-keys-columns`, `reshape/concat-keys-series-columns` and `reshape/transform-list`, as firepanda #1390 labels the columns of `concat(keys=, axis=1)` as pandas does.
+- Board after firepanda #1390: 5374 pass, 0 unimplemented, 65 divergent, 2 fail.
 - A `reshape/crosstab-flag-heads` case: a crosstab over a flag prints its boolean column names flush left to one width, as firepanda #1389 prints them as pandas does.
 - Board after firepanda #1389: 5371 pass, 0 unimplemented, 65 divergent, 2 fail.
 - Three `basics/frame-dropna-*` cases: `thresh` with `subset`, `axis=1` with `how`, and `ignore_index`, as firepanda #1388 counts values to drop rows and columns as pandas does.
