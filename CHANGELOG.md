@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `interval_range` of instants and spans, read into a Series from the IntervalIndex it answers.
+- Board after firepanda #1477: 5533 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `cut` and `qcut` of instants and spans, which bin into intervals of instants or spans, and for `cut` of a list, which answers a Categorical.
 - Board after firepanda #1475: 5531 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `nunique` over a float column holding NaN, kept and dropped, and for reductions and `idxmax` keeping the names of the column levels.

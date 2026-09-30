@@ -7074,3 +7074,27 @@ case(
     in_process=True,
     note="a list is binned into a Categorical",
 )
+
+case(
+    "basics/interval-range-days",
+    "pandas.interval_range",
+    level="L3",
+    covers=("start", "periods"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(pd.interval_range(pd.Timestamp("2024-01-01"), periods=3)),
+    in_process=True,
+    note="instants step by a day when no freq is given",
+)
+
+case(
+    "basics/interval-range-spans-freq",
+    "pandas.interval_range",
+    level="L3",
+    covers=("start", "end", "freq"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        pd.interval_range(pd.Timedelta("1h"), pd.Timedelta("3h"), freq="30min")
+    ),
+    in_process=True,
+    note="spans step by freq between the ends",
+)
