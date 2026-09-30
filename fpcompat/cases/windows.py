@@ -388,6 +388,48 @@ case(
     rules=SPREAD,
 )
 
+
+def _uneven_times(pd, df):
+    """Instants that drift further apart down the frame, so every step decays differently."""
+    return pd.to_datetime([row * row for row in range(len(df))], unit="s")
+
+
+case(
+    "windows/ewm-times-mean",
+    "DataFrame.ewm",
+    level="L3",
+    covers=("halflife", "times"),
+    frames=("float64_no_nulls", "tall"),
+    expr=lambda pd, df: df["value"].ewm(halflife="30s", times=_uneven_times(pd, df)).mean(),
+    in_process=True,
+    rules=RUNNING,
+    note="with times the decay between two rows is the time between them in half lives, "
+    "so rows far apart forget more than rows close together",
+)
+case(
+    "windows/ewm-times-gaps",
+    "DataFrame.ewm",
+    level="L3",
+    covers=("halflife", "times", "adjust"),
+    frames=NULLY,
+    expr=lambda pd, df: (
+        df["value"].ewm(halflife="30s", times=_uneven_times(pd, df), adjust=False).mean()
+    ),
+    in_process=True,
+    rules=RUNNING,
+    note="pandas' kernel gives a value after a gap what the decayed old weight left over "
+    "when adjust is off and the centre of mass is one, which it always is with times",
+)
+case(
+    "windows/ewm-times-sum-refused",
+    "DataFrame.ewm",
+    level="L4",
+    covers=("halflife", "times"),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df["value"].ewm(halflife="30s", times=_uneven_times(pd, df)).sum(),
+    raises=("NotImplementedError", "sum is not implemented with times"),
+)
+
 # ---------------------------------------------------------------------------
 # Windows inside groups, which is where the two features meet
 # ---------------------------------------------------------------------------
