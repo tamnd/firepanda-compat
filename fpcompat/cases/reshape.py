@@ -813,3 +813,90 @@ case(
     in_process=True,
     note="a reduction's labels are the columns, so they take the axis name. " + AXIS_NAME,
 )
+
+LEVELS = (
+    "Several values or functions put the key's columns under each, so the columns have "
+    "two levels, the outer one unnamed and the inner one named after the key. " + AXIS_NAME
+)
+
+case(
+    "reshape/pivot-table-funcs",
+    "DataFrame.pivot_table",
+    level="L3",
+    covers=("index", "columns", "values", "aggfunc"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(
+        df.pivot_table(index="left", columns="right", values="value", aggfunc=["sum", "max"])
+    ),
+    in_process=True,
+    note="a list of functions, one block of columns per function in the order given. " + LEVELS,
+)
+case(
+    "reshape/pivot-table-values",
+    "DataFrame.pivot_table",
+    level="L3",
+    covers=("index", "columns", "values"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(
+        df.assign(half=df["value"] * 0.5).pivot_table(
+            index="left", columns="right", values=["value", "half"]
+        )
+    ),
+    in_process=True,
+    note="a list of values, with the blocks sorted by value name. " + LEVELS,
+)
+case(
+    "reshape/pivot-table-dict",
+    "DataFrame.pivot_table",
+    level="L3",
+    covers=("index", "columns", "aggfunc"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(
+        df.assign(half=df["value"] * 0.5).pivot_table(
+            index="left", columns="right", aggfunc={"value": "sum", "half": ["min", "max"]}
+        )
+    ),
+    in_process=True,
+    note="a function per value, and a list for one of them adds a third level. " + LEVELS,
+)
+case(
+    "reshape/pivot-table-margins-funcs",
+    "DataFrame.pivot_table",
+    level="L3",
+    covers=("index", "columns", "values", "aggfunc", "margins"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(
+        df.assign(key=df["right"].astype(str)).pivot_table(
+            index="left", columns="key", values="value", aggfunc=["sum", "mean"], margins=True
+        )
+    ),
+    in_process=True,
+    note="totals beside each function's block, under a column key of text. " + LEVELS,
+)
+case(
+    "reshape/pivot-values",
+    "DataFrame.pivot",
+    level="L3",
+    covers=("index", "columns", "values"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(
+        df.drop_duplicates(subset=["left", "right"])
+        .assign(half=df["value"] * 0.5)
+        .pivot(index="left", columns="right", values=["value", "half"])
+    ),
+    in_process=True,
+    note="pivot with a list of values keeps their order and reads the integers as floats, "
+    "since pandas holds the answer in one float block. " + LEVELS,
+)
+case(
+    "reshape/pivot-no-values",
+    "DataFrame.pivot",
+    level="L3",
+    covers=("index", "columns"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(
+        df.drop_duplicates(subset=["left", "right"]).pivot(index="left", columns="right")
+    ),
+    in_process=True,
+    note="pivot with no values spreads every other column. " + LEVELS,
+)
