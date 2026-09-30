@@ -6014,3 +6014,17 @@ case(
     in_process=True,
     note="a mask of flags that can be missing reads a missing flag as false",
 )
+case(
+    "basics/frame-from-records-index-levels",
+    "DataFrame.from_records",
+    level="L3",
+    covers=("index", "exclude"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame.from_records(
+        [{"k": "a", "n": 1, "v": 2.5, "w": 0}, {"k": "b", "n": 2, "v": 3.5, "w": 1}],
+        index=["k", "n"],
+        exclude=["w"],
+    ),
+    in_process=True,
+    note="several index columns label the rows by a level each",
+)
