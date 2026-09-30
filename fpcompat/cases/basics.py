@@ -1951,12 +1951,9 @@ case(
     in_process=True,
     note="the method called with nothing but the condition, which is what makes this "
     "the L2 case of the four. With no other side named the rows that were not kept "
-    "hold nothing, and what can be compared about that is which rows they are. The "
-    "values cannot be, because pandas widens the column and puts a nan in it where "
-    "this keeps the column's type and puts a null in it, which is the divergence spec "
-    "48 section 5 argues is the right one and which the harness is right to call a "
-    "difference. The integer frame is here because that is where pandas' widening is "
-    "visible. Python layer",
+    "hold nothing, and this compares which rows they are. The values are compared by "
+    "`basics/where-widens`, since firepanda #1352 widens a column of whole numbers to "
+    "float64 and puts a NaN in it as pandas does. Python layer",
 )
 case(
     "basics/mask-leaves-missing",
@@ -1966,6 +1963,42 @@ case(
     in_process=True,
     note="the same call with the condition turned over, on the frames with no nulls "
     "for the reason the mask case above gives. Python layer, see spec 48",
+)
+case(
+    "basics/where-widens",
+    "Series.where",
+    frames=("int64_no_nulls", "float64_half_null"),
+    expr=lambda pd, df: df["value"].where(df["value"] % 2 == 0),
+    in_process=True,
+    note="the values themselves this time. A gap in a column of whole numbers moves it "
+    "to float64 on both sides since firepanda #1352, which widens the way pandas does "
+    "because a numpy column has nowhere to keep a gap. Python layer",
+)
+case(
+    "basics/mask-widens-frame",
+    "DataFrame.mask",
+    frames=("int64_no_nulls", "float64_half_null"),
+    expr=lambda pd, df: df[["value"]].mask(df[["value"]] > 0),
+    in_process=True,
+    note="the frame's mask on the same columns, which widens column by column. Python layer",
+)
+case(
+    "basics/shift-flags",
+    "Series.shift",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: repr((df["value"] > 0).head(4).shift(1)),
+    in_process=True,
+    note="a column of flags shifted along, which pandas makes object so the opened row "
+    "can hold NaN, compared as printed. Python layer",
+)
+case(
+    "basics/dtypes-printed",
+    "DataFrame.dtypes",
+    frames=("int64_no_nulls", "float64_half_null"),
+    expr=lambda pd, df: repr(df.dtypes),
+    in_process=True,
+    note="the types as printed, where pandas' answer is an object column and so ends in "
+    "`dtype: object`. Python layer",
 )
 case(
     "basics/frame-where-leaves-missing",

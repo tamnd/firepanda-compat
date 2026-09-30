@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Parameter cases for the group by reductions `sum`, `prod`, `min`, `max`, `mean`, `median`, `skew`, `std`, `var` and `sem` with skipna, min_count, numeric_only and ddof, and cases for `where` and `mask` widening a column of whole numbers to float64, `shift` on a column of flags and the printed `DataFrame.dtypes`.
+- Board after firepanda #1352: 5246 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Parameter cases for the apply family: `DataFrame.apply` with raw, result_type, by_row and engine, `transform` and `agg` across rows with arguments, `DataFrame.map`, and `pipe`, `agg`, `apply` and `map` on a column.
 - Board after firepanda #1349: 5219 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Parameter cases for Series and DataFrame `to_csv`, `Series.to_string`, `sample`, `sort_index` with a key and `na_position`, the cumulative reductions, `product` across rows, `reindex_like` and `str.wrap`.

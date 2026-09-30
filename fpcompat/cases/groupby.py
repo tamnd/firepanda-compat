@@ -873,3 +873,83 @@ case(
     note="the first, highest, lowest and last value of each group as four columns, "
     "labelled by the key, which firepanda #1230 builds from four grouped reductions",
 )
+
+# ---------------------------------------------------------------------------
+# the options on the grouped reductions
+# ---------------------------------------------------------------------------
+
+
+def _gappy(df):
+    """The keyed frame with a column that has a gap in every third row, and a text column."""
+    return df.assign(gap=df["value"].where(df["value"] % 3 != 0), word="w")
+
+
+REDUCE_OPTIONS = (
+    "In process because the driver has no entry for the options, which firepanda reads in "
+    "its Python layer: skipna off blanks a group with a gap, min_count blanks a group with "
+    "too few values, and numeric_only drops the text column"
+)
+
+for _kind in ("sum", "prod", "min", "max"):
+    case(
+        f"groupby/{_kind}-options",
+        f"GroupBy.{_kind}",
+        level="L3",
+        covers=("numeric_only", "min_count", "skipna"),
+        frames=SMALL,
+        expr=lambda pd, df, kind=_kind: pd.concat(
+            [
+                getattr(_gappy(df).groupby("key")[["value", "gap"]], kind)(skipna=False).add_prefix(
+                    "plain_"
+                ),
+                getattr(_gappy(df).groupby("key"), kind)(numeric_only=True, min_count=2).add_prefix(
+                    "counted_"
+                ),
+            ],
+            axis=1,
+        ),
+        in_process=True,
+        note=REDUCE_OPTIONS,
+    )
+
+for _kind in ("mean", "median", "skew"):
+    case(
+        f"groupby/{_kind}-options",
+        f"GroupBy.{_kind}",
+        level="L3",
+        covers=("numeric_only", "skipna"),
+        frames=SMALL,
+        expr=lambda pd, df, kind=_kind: pd.concat(
+            [
+                getattr(_gappy(df).groupby("key"), kind)(numeric_only=True).add_prefix("on_"),
+                getattr(_gappy(df).groupby("key")[["value", "gap"]], kind)(skipna=False).add_prefix(
+                    "off_"
+                ),
+            ],
+            axis=1,
+        ),
+        in_process=True,
+        note=REDUCE_OPTIONS,
+    )
+
+for _kind in ("std", "var", "sem"):
+    case(
+        f"groupby/{_kind}-options",
+        f"GroupBy.{_kind}",
+        level="L3",
+        covers=("ddof", "numeric_only", "skipna"),
+        frames=SMALL,
+        expr=lambda pd, df, kind=_kind: pd.concat(
+            [
+                getattr(_gappy(df).groupby("key"), kind)(ddof=0, numeric_only=True).add_prefix(
+                    "on_"
+                ),
+                getattr(_gappy(df).groupby("key")[["value", "gap"]], kind)(skipna=False).add_prefix(
+                    "off_"
+                ),
+            ],
+            axis=1,
+        ),
+        in_process=True,
+        note=REDUCE_OPTIONS,
+    )
