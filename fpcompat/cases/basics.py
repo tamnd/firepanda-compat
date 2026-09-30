@@ -6507,3 +6507,16 @@ case(
     in_process=True,
     note="only the text column is described, by count, unique, top and freq",
 )
+case(
+    "basics/groupby-value-counts-bins",
+    "GroupBy.value_counts",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "b", "a", "b", "a"], "v": [1.0, 2.0, 3.0, 10.0, 9.0]})
+        .groupby("k")["v"]
+        .value_counts(bins=[0, 2, 5, 10])
+    ),
+    in_process=True,
+    note="every group lists every bin, the empty ones too, most common first",
+)

@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/groupby-value-counts-bins: a column group by value_counts with bins lists every bin in every group.
+- Board after firepanda #1449: 5489 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/groupby-describe-include-object: a group by describe with include="object" describes only the text column.
 - Board after firepanda #1447: 5488 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/pct-change-freq: a Series pct_change with a freq matches values by label.
