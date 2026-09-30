@@ -6599,3 +6599,19 @@ case(
     in_process=True,
     note="Julian days are moved to days from 1970 before they are read",
 )
+
+case(
+    "basics/to-datetime-exact-false",
+    "pandas.to_datetime",
+    level="L3",
+    covers=("exact", "format"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.to_datetime(
+        pd.Series(["on 2020-01-15 ok", "x 2021-02-16", "none"]),
+        format="%Y-%m-%d",
+        exact=False,
+        errors="coerce",
+    ),
+    in_process=True,
+    note="exact=False searches each row for the format and passes over the rest",
+)
