@@ -5991,3 +5991,26 @@ case(
     in_process=True,
     note="the two sides take turns down the rows under the label and the side",
 )
+case(
+    "basics/frame-mode-along-rows",
+    "DataFrame.mode",
+    level="L3",
+    covers=("axis", "dropna"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"a": [1.5, None, 2.0], "b": [1.5, None, 3.0], "c": [None, None, 3.0]}
+    ).mode(axis=1, dropna=False),
+    in_process=True,
+    note="the most common values of each row, a column per place",
+)
+case(
+    "basics/series-getitem-nullable-mask",
+    "Series.__getitem__",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1, 2, 3], index=["a", "b", "c"])[
+        pd.Series([True, None, False], index=["a", "b", "c"], dtype="boolean")
+    ],
+    in_process=True,
+    note="a mask of flags that can be missing reads a missing flag as false",
+)

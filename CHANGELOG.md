@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `DataFrame.mode(axis=1)` and a nullable flag mask on `Series.__getitem__`, which firepanda #1422 answers as pandas does.
+- Board after firepanda #1422: 5456 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for `Series.compare` with `align_axis=0`, which firepanda #1421 answers with the sides taking turns down the rows as pandas does.
 - Board after firepanda #1421: 5454 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `DataFrame.at` and `Series.at` on a repeated label, which firepanda #1420 answers with a series as pandas does.
