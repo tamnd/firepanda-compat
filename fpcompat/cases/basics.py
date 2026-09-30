@@ -6695,3 +6695,26 @@ case(
     in_process=True,
     note="with no clash the flag changes nothing, and index falls back to level_0",
 )
+
+case(
+    "basics/index-view-cls",
+    "Index.view",
+    level="L3",
+    covers=("cls",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(pd.Index([1.5, 2.0, -3.0]).view("int64").tolist()),
+    in_process=True,
+    note="the labels' bytes read as another type",
+)
+
+case(
+    "basics/pct-change-fill-method",
+    "Series.pct_change",
+    level="L4",
+    covers=("fill_method",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1.0, float("nan"), 3.0]).pct_change(fill_method="ffill"),
+    raises=("ValueError", "fill_method must be None"),
+    in_process=True,
+    note="pandas 3 took the fill away and refuses any method",
+)

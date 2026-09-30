@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/index-view-cls` and `basics/pct-change-fill-method` check that `Index.view` with a type reads the labels' bytes as that type and that `pct_change` refuses a `fill_method` with pandas' ValueError, which firepanda #1463 added.
+- Board after firepanda #1463: 5504 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/reset-index-allow-duplicates` checks that `allow_duplicates=True` with no clash answers as pandas does and that `index` falls back to `level_0`, which firepanda #1462 added.
 - Board after firepanda #1462: 5502 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/category-quantile-nearest` checks that an ordered categorical's quantile picks categories through their codes, which firepanda #1461 added.
