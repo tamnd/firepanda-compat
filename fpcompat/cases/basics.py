@@ -7098,3 +7098,29 @@ case(
     in_process=True,
     note="spans step by freq between the ends",
 )
+
+case(
+    "basics/interpolate-index-unsorted",
+    "Series.interpolate",
+    level="L3",
+    covers=("method",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        [1.0, float("nan"), 3.0, float("nan"), 10.0], index=[0, 4, 1, 3, 2]
+    ).interpolate(method="index"),
+    in_process=True,
+    note="gaps are filled along the labels sorted, not along the rows",
+)
+
+case(
+    "basics/interpolate-index-unsorted-limit",
+    "Series.interpolate",
+    level="L3",
+    covers=("method", "limit_direction", "limit_area"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        [float("nan"), 1.0, float("nan"), 4.0, float("nan")], index=[5.0, 4.0, 3.0, 1.0, 0.5]
+    ).interpolate(method="index", limit_direction="both", limit_area="inside"),
+    in_process=True,
+    note="the limits are still counted by position",
+)
