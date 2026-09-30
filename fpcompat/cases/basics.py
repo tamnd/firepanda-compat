@@ -6435,3 +6435,33 @@ case(
     in_process=True,
     note="the text column is left out and the flags are summed as whole numbers",
 )
+
+
+case(
+    "basics/groupby-shift-fill",
+    "GroupBy.shift",
+    level="L3",
+    covers=("periods", "fill_value"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "b", "a", "a", "b"], "i": [1, 2, 3, 4, 5]})
+        .groupby("k")
+        .shift(1, fill_value=0)
+    ),
+    in_process=True,
+    note="each group's first row takes the fill and the column stays whole numbers",
+)
+
+
+case(
+    "basics/groupby-cumcount-descending",
+    "GroupBy.cumcount",
+    level="L3",
+    covers=("ascending",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "b", "a", "a", "b"]}).groupby("k").cumcount(ascending=False)
+    ),
+    in_process=True,
+    note="each group's rows are numbered from its last row",
+)

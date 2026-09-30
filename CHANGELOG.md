@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases basics/groupby-shift-fill and basics/groupby-cumcount-descending: `GroupBy.shift(fill_value=0)` fills each group's opened rows and keeps whole numbers whole, and `GroupBy.cumcount(ascending=False)` numbers each group from its last row.
+- Board after firepanda #1443: 5485 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/groupby-cumsum-numeric-only: `GroupBy.cumsum(numeric_only=True)` leaves the text column out and sums the flags as whole numbers.
 - Board after firepanda #1442: 5483 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/shift-freq-columns: `DataFrame.shift(freq="D", axis=1)` moves the column labels of a frame with dates for columns.
