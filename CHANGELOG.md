@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- A case for `GroupBy.nth` with a slice from the back and a step.
+- Board after firepanda #1414: 5444 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `GroupBy.quantile` at a list of quantiles and under `interpolation="nearest"`.
 - Board after firepanda #1413: 5443 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `Series.value_counts(bins=)` and `DataFrame.set_index(verify_integrity=True)`, both the passing check and the refused repeated label, plus the `engine/interval-row-labels` divergence: firepanda holds interval row labels as a CategoricalIndex of intervals rather than an IntervalIndex.

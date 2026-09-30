@@ -5848,3 +5848,16 @@ case(
     in_process=True,
     note="a picking rule keeps whole numbers whole",
 )
+case(
+    "basics/groupby-nth-slice",
+    "GroupBy.nth",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "b", "a", "a", "b", "a"], "v": [1, 2, 3, 4, 5, 6]})
+        .groupby("k")
+        .nth(slice(-3, None, 2))
+    ),
+    in_process=True,
+    note="a slice from the back with a step keeps the rows pandas' mask keeps",
+)
