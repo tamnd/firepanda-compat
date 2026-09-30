@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- engine/interval-row-labels is retired, since `value_counts(bins=)` labels its counts by an IntervalIndex now that firepanda's IntervalIndex is an index of interval labels, and basics/series-value-counts-bins matches pandas exactly.
+- Board after firepanda #1484: 5547 pass, 0 unimplemented, 67 divergent, 0 fail.
 - windows/rolling-apply leaves engine/window-infinity-dense, since it now matches pandas exactly on the frame with no nulls, and signature/pandas.index passes now that `Index` shows pandas' parameters.
 - Board after firepanda #1482: 5546 pass, 0 unimplemented, 68 divergent, 0 fail.
 - Cases for `xs` with `level=` across columns of two levels, with and without `drop_level`, and for `loc` by a first level column label.

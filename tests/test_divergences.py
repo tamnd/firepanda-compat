@@ -631,9 +631,13 @@ def test_the_committed_registry_loads():
 
     `engine/interval-row-labels` is added, which makes sixteen. Row labels that are
     intervals are held as categories of intervals, so `value_counts(bins=)` answers
-    pandas' counts under a CategoricalIndex rather than an IntervalIndex."""
+    pandas' counts under a CategoricalIndex rather than an IntervalIndex.
+
+    `engine/interval-row-labels` is retired, which leaves fifteen. An interval index is
+    an index of interval labels now, so `value_counts(bins=)` answers its counts under
+    an IntervalIndex as pandas does."""
     entries = divergences.registry()
-    assert len(entries) == 16
+    assert len(entries) == 15
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
