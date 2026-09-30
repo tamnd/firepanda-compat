@@ -6028,3 +6028,16 @@ case(
     in_process=True,
     note="several index columns label the rows by a level each",
 )
+case(
+    "basics/groupby-idxmax-keys-as-columns",
+    "GroupBy.idxmax",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "b", "a", "b"], "v": [3, 1, 5, 2]}, index=["p", "q", "r", "s"])
+        .groupby("k", as_index=False)
+        .idxmax()
+    ),
+    in_process=True,
+    note="with as_index=False the keys come back as columns before the labels found",
+)
