@@ -1933,6 +1933,45 @@ case(
     in_process=True,
     note="text read from labels with a gap keeps the gap as NaN, and the time of a gap is NaT",
 )
+case(
+    "temporal/timestamp-localize-skipped-hour",
+    "Timestamp.tz_localize",
+    level="L3",
+    covers=("tz", "nonexistent"),
+    frames=RANGE,
+    expr=lambda pd, df: [
+        str(pd.Timestamp("2024-03-10 02:30").tz_localize("US/Eastern", nonexistent=policy))
+        for policy in ("shift_forward", "shift_backward", "NaT")
+    ],
+    in_process=True,
+    note="a moment in the hour the clocks skip moves to either edge of the gap or becomes "
+    "NaT. firepanda reads the transitions by localizing an index of the one moment",
+)
+case(
+    "temporal/timestamp-localize-repeated-hour",
+    "Timestamp.tz_localize",
+    level="L3",
+    covers=("tz", "ambiguous"),
+    frames=RANGE,
+    expr=lambda pd, df: [
+        str(pd.Timestamp("2024-11-03 01:30").tz_localize("US/Eastern", ambiguous=policy))
+        for policy in (True, False, "NaT")
+    ],
+    in_process=True,
+    note="the hour the clocks go back happens twice; True picks the first, the one still "
+    "in daylight saving time, and False the second",
+)
+case(
+    "temporal/timestamp-localize-refused",
+    "Timestamp.tz_localize",
+    level="L4",
+    covers=("tz",),
+    frames=RANGE,
+    expr=lambda pd, df: pd.Timestamp("2024-11-03 01:30").tz_localize("US/Eastern"),
+    raises=("ValueError", "Cannot infer dst time from 2024-11-03 01:30:00"),
+    in_process=True,
+    note="an hour that happens twice is refused unless told which, in pandas' words",
+)
 
 
 def _days(pd):

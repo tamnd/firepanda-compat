@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `Timestamp.tz_localize` on the hours a daylight saving change skips or repeats (`temporal/timestamp-localize-skipped-hour`, `temporal/timestamp-localize-repeated-hour`), with each `nonexistent` and `ambiguous` policy, and an L4 case for the refusal in pandas' words (`temporal/timestamp-localize-refused`).
+- Board after firepanda #1398: 5397 pass, 0 unimplemented, 65 divergent, 2 fail.
 - A case for dropping a row label that is not there (`basics/drop-missing-label`), an L4 case that checks the `KeyError` names the missing labels as they were given, as pandas does, including a text label dropped from integer row labels.
 - Board after firepanda #1397: 5394 pass, 0 unimplemented, 65 divergent, 2 fail.
 - Cases for CategoricalIndex as a class: looking up the categories among the labels seen once, dropping a label, renaming the categories and mapping them (`categorical/index-lookups`, `categorical/index-drop`, `categorical/index-rename-categories`, `categorical/index-map`), each on both category frames.
