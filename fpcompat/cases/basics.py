@@ -7303,3 +7303,50 @@ case(
     in_process=True,
     note="weeks do not divide months, so a reduction between them is refused",
 )
+
+
+def _quarter_hours(pd):
+    """Six rows twenty five minutes apart, the rows of the resample apply cases."""
+    index = pd.date_range("2024-01-01", periods=6, freq="25min")
+    return pd.DataFrame({"v": [0, 1, 2, 3, 4, 5], "w": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]}, index=index)
+
+
+def _first_two(x):
+    return x.head(2)
+
+
+def _doubled(x):
+    return x * 2
+
+
+case(
+    "basics/resample-apply-keyed",
+    "Series.resample",
+    level="L3",
+    covers=("group_keys",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _quarter_hours(pd)["v"].resample("h", group_keys=True).apply(_first_two),
+    in_process=True,
+    note="an apply answering pieces puts each under the label of its bin",
+)
+
+case(
+    "basics/resample-apply-transform-keyed",
+    "DataFrame.resample",
+    level="L3",
+    covers=("group_keys",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _quarter_hours(pd).resample("h", group_keys=True).apply(_doubled),
+    in_process=True,
+    note="a piece the size of its bin is still keyed when group_keys is set",
+)
+
+case(
+    "basics/resample-apply-columns-first",
+    "DataFrame.resample",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _quarter_hours(pd).resample("h").apply(lambda x: x.head(1)),
+    in_process=True,
+    note="a function answering one row a bin is an aggregate on each column",
+)

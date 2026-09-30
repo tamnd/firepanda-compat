@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Resample apply cases after firepanda #1487: a function answering pieces is keyed by bin under `group_keys=True`, a transform-like piece is keyed too, and a one-row answer over a frame is aggregated per column.
+- Board after firepanda #1487: 5553 pass, 0 unimplemented, 68 divergent, 0 fail.
 - basics/resample-periods-down, basics/resample-periods-convention and basics/resample-periods-ffill resample a series labelled by months to quarters and to weeks, covering `convention`, and basics/resample-periods-incompatible joins engine/pandas-exception-classes for the IncompatibleFrequency a reduction from months to weeks raises.
 - Board after firepanda #1486: 5550 pass, 0 unimplemented, 68 divergent, 0 fail.
 - engine/interval-row-labels is retired, since `value_counts(bins=)` labels its counts by an IntervalIndex now that firepanda's IntervalIndex is an index of interval labels, and basics/series-value-counts-bins matches pandas exactly.
