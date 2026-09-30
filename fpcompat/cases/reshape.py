@@ -900,3 +900,36 @@ case(
     in_process=True,
     note="pivot with no values spreads every other column. " + LEVELS,
 )
+case(
+    "reshape/pivot-table-margins-values",
+    "DataFrame.pivot_table",
+    level="L3",
+    covers=("index", "columns", "values", "aggfunc", "margins"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(
+        df.assign(key=df["right"].astype(str), half=df["value"] * 0.5).pivot_table(
+            index="left", columns="key", values=["value", "half"], aggfunc="sum", margins=True
+        )
+    ),
+    in_process=True,
+    note="totals beside several values, each block ending with its own total, and the "
+    "integers beside a float read as floats while the totals keep their type. " + LEVELS,
+)
+case(
+    "reshape/pivot-table-margins-dict",
+    "DataFrame.pivot_table",
+    level="L3",
+    covers=("index", "columns", "aggfunc", "margins", "margins_name"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(
+        df.assign(right=df["right"].astype(str), half=df["value"] * 0.5).pivot_table(
+            index="left",
+            columns="right",
+            aggfunc={"value": "sum", "half": "max"},
+            margins=True,
+            margins_name="Total",
+        )
+    ),
+    in_process=True,
+    note="totals beside a function per value, named by the caller. " + LEVELS,
+)

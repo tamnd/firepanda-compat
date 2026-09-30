@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cover pivot_table totals beside several values and beside a dict of functions with a custom totals name (two reshape cases).
+- Board after firepanda #1384: 5353 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cover pivot and pivot_table into columns of several levels: a list or dict of functions, several values, pivot with a list of values or none, and totals beside a list of functions (six reshape cases).
 - Board after firepanda #1383: 5351 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for the name of the column axis: set by `rename_axis(columns=)` and `axis=1`, named by `pivot` and `crosstab`, printed in the header, the default `var_name` of `melt`, the row name after a transpose, and the labels' name of a reduction.
