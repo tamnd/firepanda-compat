@@ -7686,3 +7686,470 @@ case(
     in_process=True,
     note="both sides matched on their row labels",
 )
+
+
+def _hourly(pd):
+    return pd.Series(range(1, 7), index=pd.date_range("2024-01-01", periods=6, freq="h"))
+
+
+def _pair_keyed(pd):
+    labels = pd.MultiIndex.from_arrays([list("abab"), [1, 1, 2, 2]], names=["x", "y"])
+    return pd.Series([1, 2, 3, 4], index=labels)
+
+
+def _pivot_source(pd):
+    return pd.DataFrame(
+        {
+            "k": pd.Categorical(["x", "x", "y", "y"], categories=["x", "y", "z"]),
+            "c": ["p", "q", "p", "p"],
+            "v": [1.0, 2.0, 3.0, float("nan")],
+        }
+    )
+
+
+case(
+    "basics/resample-closed-label",
+    "Series.resample",
+    level="L3",
+    covers=("closed", "label"),
+    frames=("single",),
+    expr=lambda pd, df: _hourly(pd).resample("2h", closed="right", label="right").sum(),
+    in_process=True,
+    note="bins closed and labelled on their right edge",
+)
+
+case(
+    "basics/resample-origin-offset",
+    "Series.resample",
+    level="L3",
+    covers=("origin", "offset"),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [
+            _hourly(pd).resample("4h", origin="2023-12-31 23:00").sum(),
+            _hourly(pd).resample("4h", offset="1h").sum(),
+        ]
+    ),
+    in_process=True,
+    note="bins laid from a given origin and moved by an offset",
+)
+
+case(
+    "basics/resample-by-level",
+    "Series.resample",
+    level="L3",
+    covers=("level",),
+    frames=("single",),
+    expr=lambda pd, df: (
+        pd.Series(
+            range(6),
+            index=pd.MultiIndex.from_arrays(
+                [pd.date_range("2024-01-01", periods=6, freq="h"), list("aabbcc")], names=["t", "k"]
+            ),
+        )
+        .resample("2h", level="t")
+        .sum()
+    ),
+    in_process=True,
+    note="the instants read off one level of the row labels",
+)
+
+case(
+    "basics/series-group-level",
+    "Series.groupby",
+    level="L3",
+    covers=("level", "as_index"),
+    frames=("single",),
+    expr=lambda pd, df: _pair_keyed(pd).groupby(level="x", as_index=True).sum(),
+    in_process=True,
+    note="groups read off a named level of the row labels",
+)
+
+case(
+    "basics/series-group-sort-dropna",
+    "Series.groupby",
+    level="L3",
+    covers=("sort", "dropna"),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [
+            pd.Series([1, 2, 3]).groupby(["b", "a", "b"], sort=False).sum(),
+            pd.Series([1.0, 2, 3]).groupby(pd.Series(["a", float("nan"), "a"]), dropna=False).sum(),
+        ]
+    ),
+    in_process=True,
+    note="groups in first seen order, and a missing key kept as a group",
+)
+
+case(
+    "basics/series-group-keys-observed",
+    "Series.groupby",
+    level="L3",
+    covers=("group_keys", "observed"),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [
+            pd.Series([1, 2, 3]).groupby(["b", "a", "b"], group_keys=False).apply(_doubled),
+            pd.Series([1, 2])
+            .groupby(pd.Series(pd.Categorical(["a", "a"], categories=["a", "b"])), observed=False)
+            .sum(),
+        ]
+    ),
+    in_process=True,
+    note="apply without the group keys, and an unobserved category kept",
+)
+
+case(
+    "basics/query-parser-dicts",
+    "DataFrame.query",
+    level="L3",
+    covers=("parser", "engine", "local_dict", "global_dict", "resolvers", "level"),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [
+            pd.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1]}).query(
+                "a > b", parser="python", engine="python"
+            ),
+            pd.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1]}).query("a > @x", local_dict={"x": 1}),
+            pd.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1]}).query("a > @x", global_dict={"x": 1}),
+            pd.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1]}).query("a > z", resolvers=[{"z": 2}]),
+            pd.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1]}).query("a > 1", level=0),
+        ]
+    ),
+    in_process=True,
+    note="the parser, engine and names given to a query",
+)
+
+case(
+    "basics/pivot-table-margins-name",
+    "pandas.pivot_table",
+    level="L3",
+    covers=("margins_name", "dropna"),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [
+            pd.pivot_table(
+                _pivot_source(pd).astype({"k": str}),
+                values="v",
+                index="k",
+                columns="c",
+                aggfunc="sum",
+                margins=True,
+                margins_name="Total",
+            ),
+            pd.pivot_table(
+                _pivot_source(pd).astype({"k": str}),
+                values="v",
+                index="k",
+                columns="c",
+                aggfunc="count",
+                dropna=False,
+            ),
+        ]
+    ),
+    in_process=True,
+    note="a named margin, and a count keeping the empty cells",
+)
+
+case(
+    "basics/pivot-table-unobserved",
+    "pandas.pivot_table",
+    level="L3",
+    covers=("observed", "sort"),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [
+            pd.pivot_table(_pivot_source(pd), values="v", index="k", aggfunc="sum", observed=False),
+            pd.pivot_table(
+                _pivot_source(pd).iloc[::-1].astype({"k": str}),
+                values="v",
+                index="k",
+                aggfunc="sum",
+                sort=False,
+            ),
+        ]
+    ),
+    in_process=True,
+    note="an unobserved category kept, and keys in first seen order",
+)
+
+case(
+    "basics/pivot-table-unobserved-columns",
+    "DataFrame.pivot_table",
+    level="L3",
+    covers=("observed",),
+    frames=("single",),
+    expr=lambda pd, df: (
+        _pivot_source(pd)
+        .fillna({"v": 4.0})
+        .pivot_table(values="v", index="k", columns="c", aggfunc="sum", observed=False)
+    ),
+    in_process=True,
+    note="every category of the row key a row, an empty cell holding nought",
+)
+
+case(
+    "basics/merge-ordered-sides",
+    "pandas.merge_ordered",
+    level="L3",
+    covers=("left_on", "right_on", "suffixes", "right_by"),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [
+            pd.merge_ordered(
+                pd.DataFrame({"lk": [1, 3, 5], "g": ["a", "a", "b"], "lv": [1, 2, 3]}),
+                pd.DataFrame({"rk": [2, 3], "g": ["a", "a"], "rv": [9, 8]}),
+                left_on="lk",
+                right_on="rk",
+                suffixes=("_l", "_r"),
+            ),
+            pd.merge_ordered(
+                pd.DataFrame({"rk": [2, 3], "g": ["a", "a"], "rv": [9, 8]}),
+                pd.DataFrame({"lk": [1, 3, 5], "g": ["a", "a", "b"], "lv": [1, 2, 3]}),
+                left_on="rk",
+                right_on="lk",
+                right_by="g",
+            ),
+        ]
+    ),
+    in_process=True,
+    note="keys named on each side, suffixes, and groups of the right side",
+)
+
+case(
+    "basics/bdate-range-zoned",
+    "pandas.bdate_range",
+    level="L3",
+    covers=("tz", "normalize", "name", "inclusive"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            str(pd.bdate_range("2024-01-05 10:00", periods=3, tz="UTC", normalize=True, name="d")),
+            str(pd.bdate_range("2024-01-01", "2024-01-05", inclusive="neither")),
+        ]
+    ),
+    in_process=True,
+    note="business days in a zone at midnight, and the ends left out",
+)
+
+case(
+    "basics/series-xs-level",
+    "Series.xs",
+    level="L3",
+    covers=("key", "axis", "level", "drop_level"),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [
+            _pair_keyed(pd).xs(1, level="y", drop_level=False),
+            _pair_keyed(pd)
+            .xs("a", axis=0)
+            .set_axis(pd.MultiIndex.from_tuples([("a", 1), ("a", 2)])),
+        ]
+    ),
+    in_process=True,
+    note="a cross section on a named level, its level kept or dropped",
+)
+
+case(
+    "basics/tz-localize-ambiguous",
+    "Series.tz_localize",
+    level="L3",
+    covers=("ambiguous", "nonexistent", "axis"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            str(
+                pd.Series([1], index=pd.DatetimeIndex(["2024-11-03 01:30"]))
+                .tz_localize("America/New_York", ambiguous=[True])
+                .index[0]
+            ),
+            str(
+                pd.Series([2], index=pd.DatetimeIndex(["2024-03-10 02:30"]))
+                .tz_localize("America/New_York", nonexistent="shift_forward", axis=0)
+                .index[0]
+            ),
+        ]
+    ),
+    in_process=True,
+    note="an ambiguous wall time read as daylight time, and a missing one moved forward",
+)
+
+case(
+    "basics/convert-dtypes-float-kept",
+    "Series.convert_dtypes",
+    level="L3",
+    covers=(
+        "infer_objects",
+        "convert_string",
+        "convert_integer",
+        "convert_floating",
+        "dtype_backend",
+    ),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            str(
+                pd.Series([1.0, 2.0])
+                .convert_dtypes(
+                    infer_objects=True,
+                    convert_string=True,
+                    convert_integer=False,
+                    convert_floating=True,
+                    dtype_backend="numpy_nullable",
+                )
+                .dtype
+            ),
+            str(pd.Series(["a", "b"]).convert_dtypes(convert_string=False).dtype),
+        ]
+    ),
+    in_process=True,
+    note="whole floats kept as floats, and text left as it was",
+)
+
+case(
+    "basics/reindex-like-filled",
+    "Series.reindex_like",
+    level="L3",
+    covers=("other", "method", "limit", "tolerance"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2, 3], index=[1, 3, 5]).reindex_like(
+        pd.Series([0, 0, 0, 0], index=[1, 2, 4, 6]), method="ffill", limit=1, tolerance=2
+    ),
+    in_process=True,
+    note="labels taken from another series and filled forward within bounds",
+)
+
+case(
+    "basics/category-built-ordered",
+    "pandas.Categorical",
+    level="L3",
+    covers=("values", "categories", "ordered", "dtype"),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [
+            pd.Series(pd.Categorical(["b", "a"], categories=["b", "a"], ordered=True)),
+            pd.Series(pd.Categorical(["b", "a"], dtype=pd.CategoricalDtype(["a", "b", "c"]))),
+        ]
+    ),
+    in_process=True,
+    note="categories in a given order, and a dtype handed over whole",
+)
+
+case(
+    "basics/period-range-end",
+    "pandas.period_range",
+    level="L3",
+    covers=("end", "periods", "freq", "name"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [str(pd.period_range(end="2024-03", periods=3, freq="M", name="p"))]
+    ),
+    in_process=True,
+    note="months counted back from the last",
+)
+
+case(
+    "basics/timestamp-parts-unit",
+    "pandas.Timestamp",
+    level="L3",
+    covers=("ts_input", "microsecond", "nanosecond", "tzinfo", "unit"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            str(pd.Timestamp(2024, 1, 2, 3, 4, 5, microsecond=6, nanosecond=7, tzinfo=None)),
+            str(pd.Timestamp(1_700_000_000, unit="s")),
+        ]
+    ),
+    in_process=True,
+    note="an instant from its parts down to the nanosecond, and from a count of seconds",
+)
+
+case(
+    "basics/period-index-built",
+    "pandas.PeriodIndex",
+    level="L3",
+    covers=("data", "freq", "dtype", "name"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            str(pd.PeriodIndex(["2024-01", "2024-02"], freq="M", name="p")),
+            str(pd.PeriodIndex(["2024-01"], dtype="period[M]")),
+        ]
+    ),
+    in_process=True,
+    note="periods from text with a frequency or a dtype",
+)
+
+case(
+    "basics/datetime-index-dayfirst",
+    "pandas.DatetimeIndex",
+    level="L3",
+    covers=("data", "dayfirst", "yearfirst", "name"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            str(pd.DatetimeIndex(["01/02/2024"], dayfirst=True, name="d")),
+            str(pd.DatetimeIndex(["24/01/02"], yearfirst=True)),
+        ]
+    ),
+    in_process=True,
+    note="dates read day first and year first",
+)
+
+case(
+    "basics/interval-index-built",
+    "pandas.IntervalIndex",
+    level="L3",
+    covers=("data", "closed", "name", "verify_integrity"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            str(
+                pd.IntervalIndex(
+                    [pd.Interval(0, 1), pd.Interval(1, 2)],
+                    closed="right",
+                    name="i",
+                    verify_integrity=True,
+                )
+            )
+        ]
+    ),
+    in_process=True,
+    note="intervals gathered into an index with a name",
+)
+
+case(
+    "basics/multiindex-built-codes",
+    "pandas.MultiIndex",
+    level="L3",
+    covers=("levels", "codes", "names", "verify_integrity", "sortorder"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [1, 2],
+        index=pd.MultiIndex(
+            levels=[["a", "b"], [1, 2]],
+            codes=[[0, 1], [1, 0]],
+            names=["x", "y"],
+            verify_integrity=True,
+            sortorder=None,
+        ),
+    ),
+    in_process=True,
+    note="labels built from levels and the codes into them",
+)
+
+case(
+    "basics/pivot-wide",
+    "pandas.pivot",
+    level="L3",
+    covers=("data", "index", "columns", "values"),
+    frames=("single",),
+    expr=lambda pd, df: pd.pivot(
+        pd.DataFrame({"k": ["x", "x", "y"], "c": ["p", "q", "p"], "v": [1.0, 2.0, 3.0]}),
+        index="k",
+        columns="c",
+        values="v",
+    ),
+    in_process=True,
+    note="one value per pair of keys spread into columns",
+)
