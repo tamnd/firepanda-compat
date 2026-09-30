@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- A case for dropping a row label that is not there (`basics/drop-missing-label`), an L4 case that checks the `KeyError` names the missing labels as they were given, as pandas does, including a text label dropped from integer row labels.
+- Board after firepanda #1397: 5394 pass, 0 unimplemented, 65 divergent, 2 fail.
 - Cases for CategoricalIndex as a class: looking up the categories among the labels seen once, dropping a label, renaming the categories and mapping them (`categorical/index-lookups`, `categorical/index-drop`, `categorical/index-rename-categories`, `categorical/index-map`), each on both category frames.
 - Board after firepanda #1395: 5393 pass, 0 unimplemented, 65 divergent, 2 fail.
 - `basics/drop-repeated-labels` and `basics/assign-categorical` score dropping a row label that repeats and putting in a Categorical whole.

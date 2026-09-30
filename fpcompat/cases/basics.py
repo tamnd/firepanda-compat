@@ -1833,6 +1833,18 @@ case(
     "Python layer",
 )
 case(
+    "basics/drop-missing-label",
+    "DataFrame.drop",
+    level="L4",
+    covers=("index",),
+    frames=("two",),
+    expr=lambda pd, df: df.drop(index=["not_a_label"]),
+    raises=("KeyError", "['not_a_label'] not found in axis"),
+    in_process=True,
+    note="the message lists the missing labels as they were given, quotes and all, which "
+    "firepanda's Python layer writes because the core prints them as bare text",
+)
+case(
     "basics/assign-categorical",
     "DataFrame.assign",
     level="L2",
