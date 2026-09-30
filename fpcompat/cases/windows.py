@@ -501,3 +501,37 @@ case(
     "so the case runs in process",
     in_process=True,
 )
+case(
+    "windows/rolling-list-over-frame",
+    "Rolling.aggregate",
+    level="L3",
+    covers=("func",),
+    frames=("float64_no_nulls", "int64_no_nulls"),
+    expr=lambda pd, df: df.rolling(3).agg(["sum", "mean"]),
+    rules=RUNNING,
+    note="a list over a frame answers under the column and then the reduction, two levels "
+    "of column labels, which is firepanda's Python layer, so the case runs in process",
+    in_process=True,
+)
+case(
+    "windows/expanding-dict-of-lists",
+    "Expanding.aggregate",
+    level="L3",
+    covers=("func",),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df.expanding().agg({df.columns[0]: ["sum", "max"]}),
+    rules=RUNNING,
+    note="a dict holding a list reduces that column under two levels of column labels",
+    in_process=True,
+)
+case(
+    "windows/ewm-list-over-frame",
+    "ExponentialMovingWindow.aggregate",
+    level="L3",
+    covers=("func",),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df.ewm(com=1).agg(["mean", "std"]),
+    rules=RUNNING,
+    note="a list over a decayed window of a frame answers under two levels of column labels",
+    in_process=True,
+)

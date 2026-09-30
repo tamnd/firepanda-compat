@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `windows/rolling-list-over-frame`, `windows/expanding-dict-of-lists` and `windows/ewm-list-over-frame` cover a list of reductions over a window of a frame, which firepanda #1400 answers under two levels of column labels as pandas does. The rolling and ewm cases join `engine/window-infinity-dense` on the frame with infinities in it.
+- Board after firepanda #1400: 5401 pass, 0 unimplemented, 67 divergent, 2 fail.
 - `temporal/localize-one-level` and `temporal/localize-level-without-dates` cover `tz_localize` and `tz_convert` with `level=` on a MultiIndex, which firepanda #1399 answers as pandas does, and the refusal of a level without dates.
 - Board after firepanda #1399: 5399 pass, 0 unimplemented, 65 divergent, 2 fail.
 - Cases for `Timestamp.tz_localize` on the hours a daylight saving change skips or repeats (`temporal/timestamp-localize-skipped-hour`, `temporal/timestamp-localize-repeated-hour`), with each `nonexistent` and `ambiguous` policy, and an L4 case for the refusal in pandas' words (`temporal/timestamp-localize-refused`).
