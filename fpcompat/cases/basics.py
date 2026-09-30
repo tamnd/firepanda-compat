@@ -5067,3 +5067,64 @@ case(
     in_process=True,
     note="each value through a function with a keyword. " + PARAMETER_IN_PROCESS,
 )
+case(
+    "basics/index-dtype",
+    "pandas.Index",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Index(df["value"].head(5).tolist(), dtype="float64"),
+    in_process=True,
+    note="the labels are read as a series of the asked type reads them. Since firepanda #1363",
+)
+case(
+    "basics/index-dtype-dates",
+    "pandas.Index",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Index(["2026-01-01", "2026-03-01"], dtype="datetime64[s]"),
+    in_process=True,
+    note="text asked for as instants is parsed, and the index is a DatetimeIndex. Since "
+    "firepanda #1363",
+)
+case(
+    "basics/series-dtype-dates",
+    "pandas.Series",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(["2026-01-01", None, "2026-01-03 10:00"], dtype="datetime64[ms]"),
+    in_process=True,
+    note="each value parsed on its own and given the unit, not cast from counts. Since "
+    "firepanda #1364",
+)
+case(
+    "basics/series-dtype-spans",
+    "pandas.Series",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(["1D", None, "90s"], dtype="timedelta64[ns]"),
+    in_process=True,
+    note="parsed as to_timedelta parses. Since firepanda #1363",
+)
+case(
+    "basics/series-dtype-fraction",
+    "pandas.Series",
+    level="L4",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1.5, 2.0], dtype="int64"),
+    raises=("ValueError", "Trying to coerce float values to integers"),
+    in_process=True,
+    note="a list is refused rather than truncated when it does not fit a whole number type. "
+    "Since firepanda #1363",
+)
+case(
+    "basics/series-dtype-too-big",
+    "pandas.Series",
+    level="L4",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([300], dtype="uint8"),
+    raises=("OverflowError", "cannot all be casted to the dtype uint8"),
+    in_process=True,
+    note="a number outside the type's range is refused rather than wrapped. Since firepanda #1363",
+)

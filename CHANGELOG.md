@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cover `dtype=` on the Index and Series constructors: an index of floats and of instants, instants and spans parsed from text by dtype, and a list refused for a fraction or a number too big for the whole number type.
+- Board after firepanda #1364: 5285 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cover a group by's `value_counts` with a `dropna` of its own, keeping a missing value where the group by drops a missing key and the other way round. The unsorted case groups with `sort=False` because pandas orders equal counts and the rows within a key with an unstable sort.
 - Board after firepanda #1362: 5279 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for flags beside a gap, which pandas holds as objects in a series and in a frame and turns into boolean with convert_dtypes, and for flags written as text.
