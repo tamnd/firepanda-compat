@@ -5861,3 +5861,29 @@ case(
     in_process=True,
     note="a slice from the back with a step keeps the rows pandas' mask keeps",
 )
+case(
+    "basics/frame-sort-index-directions",
+    "DataFrame.sort_index",
+    level="L3",
+    covers=("ascending",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"v": [1, 2, 3, 4]},
+        index=pd.MultiIndex.from_tuples([("b", 1), ("a", 2), ("b", 3), ("a", 1)]),
+    ).sort_index(ascending=[True, False]),
+    in_process=True,
+    note="each level sorted in the direction given for it",
+)
+case(
+    "basics/frame-sort-index-level-directions",
+    "DataFrame.sort_index",
+    level="L3",
+    covers=("level", "ascending"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"v": [1, 2, 3, 4]},
+        index=pd.MultiIndex.from_tuples([("b", 1), ("a", 2), ("b", 3), ("a", 1)]),
+    ).sort_index(level=1, ascending=[False]),
+    in_process=True,
+    note="a direction for the level asked for leaves the other level in the order it came in",
+)

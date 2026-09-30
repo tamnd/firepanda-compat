@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `DataFrame.sort_index` with a direction per level, with and without `level=`.
+- Board after firepanda #1415: 5446 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for `GroupBy.nth` with a slice from the back and a step.
 - Board after firepanda #1414: 5444 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `GroupBy.quantile` at a list of quantiles and under `interpolation="nearest"`.
