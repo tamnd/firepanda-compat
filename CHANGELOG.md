@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for text and number arithmetic refused with pandas' TypeError, by a column and by a frame, and for `df.a = [...]` writing an existing column.
+- Board after firepanda #1375: 5320 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for a list of tuples read as levels, `tupleize_cols=False` and tuple keyed mappings (firepanda #1373), and for assigning to `columns`, `index`, `name` and an index's name, with the length refusal (firepanda #1374).
 - Board after firepanda #1374: 5317 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Five basics cases: `astype` from text to instants with mixed formats and to spans, `dtype=` with an instant type on the `DataFrame` constructor, `Index.map` on an `Int32` index giving `Float64`, and the `TypeError` pandas raises for a gap in a list condition to `mask`. They pass after firepanda #1371 and #1372.

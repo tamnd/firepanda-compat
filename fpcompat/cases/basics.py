@@ -5376,3 +5376,31 @@ case(
     in_process=True,
     note="labels of another length are refused. Since firepanda #1374",
 )
+case(
+    "basics/number-plus-text-refused",
+    "Series.add",
+    level="L4",
+    frames=("strings_ascii",),
+    expr=lambda pd, df: pd.Series([1, 2, 3], index=df.head(3).index) + df.head(3)["value"],
+    raises=("TypeError", "operation 'radd' not supported for dtype 'str'"),
+    in_process=True,
+    note="a number on the left hands the text its reflected operator. Since firepanda #1375",
+)
+case(
+    "basics/frame-plus-number-text-refused",
+    "DataFrame.add",
+    level="L4",
+    frames=("strings_ascii",),
+    expr=lambda pd, df: df.head(3) + 1,
+    raises=("TypeError", "operation 'add' not supported for dtype 'str'"),
+    in_process=True,
+    note="the text column refuses the number as it would alone. Since firepanda #1375",
+)
+case(
+    "basics/attribute-writes-column",
+    "DataFrame.columns",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _assigned(df.head(3), "value", [7, 8, 9]),
+    in_process=True,
+    note="an attribute that names a column writes the column. Since firepanda #1375",
+)
