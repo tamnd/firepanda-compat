@@ -6217,3 +6217,38 @@ case(
     in_process=True,
     note="a reduction by name takes its arguments and spreads over the group",
 )
+
+case(
+    "basics/resample-aggregate-function",
+    "Resampler.aggregate",
+    level="L3",
+    covers=("func",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {"a": [1, 2, 3, 4], "b": [1.5, 2.5, 3.5, 4.5]},
+            index=pd.to_datetime(["2024-01-01", "2024-01-02", "2024-01-07", "2024-01-08"]),
+        )
+        .resample("2D")
+        .agg(lambda x: x.sum() if len(x) else -1)
+    ),
+    in_process=True,
+    note="a function runs on every bin, the empty ones too, and on each column",
+)
+
+case(
+    "basics/resample-ohlc-frame",
+    "Resampler.ohlc",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {"a": [1, 2, 3, 4], "b": [1.5, 2.5, 3.5, 4.5]},
+            index=pd.to_datetime(["2024-01-01", "2024-01-02", "2024-01-07", "2024-01-08"]),
+        )
+        .resample("2D")
+        .ohlc()
+    ),
+    in_process=True,
+    note="over a frame each column gets its four under two levels of column labels",
+)

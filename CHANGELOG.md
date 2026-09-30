@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/resample-aggregate-function` and `basics/resample-ohlc-frame`: a function handed to `Resampler.aggregate` runs on every bin and each column, and `ohlc` over a frame gives two levels of column labels, as firepanda #1433 does.
+- Board after firepanda #1433: 5471 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/groupby-transform-name-with-args`: `GroupBy.transform("quantile", 0.25)` hands its arguments to the named reduction and spreads the answer over each group, as firepanda #1432 does.
 - Board after firepanda #1432: 5469 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for `GroupBy.apply` answering one value a group with `as_index=False`.
