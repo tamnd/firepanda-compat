@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `Rolling.sum(numeric_only=True)` over a frame with text, `GroupBy.filter(dropna=False)` and `GroupBy.nth(dropna=)`, all passing on firepanda.
+- Board after firepanda #1437: 5479 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `DatetimeIndex.tz_localize(ambiguous="infer")` and `DataFrame.align` by a level of a MultiIndex, both passing on firepanda.
 - Board after firepanda #1436: 5476 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/multiindex-to-frame-labelled` and `basics/multiindex-value-counts`: `MultiIndex.to_frame()` labels its rows with the index and `value_counts` counts each row, as firepanda #1435 does.

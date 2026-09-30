@@ -6335,3 +6335,45 @@ case(
     in_process=True,
     note="a flat index lined up with one level of a MultiIndex",
 )
+
+case(
+    "basics/rolling-numeric-only",
+    "Rolling.sum",
+    level="L3",
+    covers=("numeric_only",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"a": [1, 2, 3], "s": ["x", "y", "z"]}).rolling(2).sum(numeric_only=True)
+    ),
+    in_process=True,
+    note="the text column dropped rather than refused",
+)
+
+case(
+    "basics/groupby-filter-blanked",
+    "GroupBy.filter",
+    level="L3",
+    covers=("dropna",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "b", "a"], "v": [1, 2, 3]})
+        .groupby("k")
+        .filter(lambda g: len(g) > 1, dropna=False)
+    ),
+    in_process=True,
+    note="the rows of a dropped group kept as blanks",
+)
+
+case(
+    "basics/groupby-nth-dropna",
+    "GroupBy.nth",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "a", "b"], "v": [None, 1.0, 2.0]})
+        .groupby("k")
+        .nth(0, dropna="any")
+    ),
+    in_process=True,
+    note="only the rows without a gap counted",
+)
