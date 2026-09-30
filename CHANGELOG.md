@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Parameter cases for ddof, min_count, cut, get_dummies, melt, to_datetime units and coerce, interpolate limits, align, compare, concat sort, crosstab values, ewm, rolling, reindex, sort_index, merge keys and indicator, pivot_table margins, convert_dtypes flags, corrwith, Timestamp parts and Timestamp.replace, 52 records in all.
+- Board after firepanda #1344: 5174 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Basics parameter cases: periods on diff and pct_change for a series and a frame, fill_value on a frame shift, skipna on cumsum for a series and a frame, n on head and tail, skipna on any and all, bool_only on a frame, numeric_only on idxmax, subset, normalize, ascending, sort and dropna on a frame value_counts, sort_index descending and on the columns, keep on drop_duplicates, errors on astype, regex on replace, ascending and pct on rank, limit on fillna, and a negative round.
 - Board after firepanda #1341: 5122 pass, 0 unimplemented, 63 divergent, 2 fail.
 - String parameter cases: the fill character of center, ljust and rjust, regex flags on contains, count, findall, extract, extractall and replace, na on startswith and endswith, regex on split, partition and rpartition with expand=False, and cat with a join.

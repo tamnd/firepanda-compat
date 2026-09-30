@@ -4153,3 +4153,425 @@ case(
     in_process=True,
     note="a negative count rounds to thousands. " + PARAMETER_IN_PROCESS,
 )
+
+for name in ("std", "var", "sem"):
+    case(
+        f"basics/{name}-ddof",
+        f"Series.{name}",
+        level="L3",
+        covers=("ddof", "skipna"),
+        frames=("float64_half_null", "float64_no_nulls", "int64_no_nulls"),
+        expr=(lambda how: lambda pd, df: getattr(df["value"], how)(ddof=0, skipna=True))(name),
+        in_process=True,
+        note="the population spread rather than the sample one. " + PARAMETER_IN_PROCESS,
+    )
+    case(
+        f"basics/frame-{name}-ddof",
+        f"DataFrame.{name}",
+        level="L3",
+        covers=("ddof", "numeric_only"),
+        frames=("tall", "two"),
+        expr=(lambda how: lambda pd, df: getattr(df, how)(ddof=0, numeric_only=True))(name),
+        in_process=True,
+        note="each numeric column's population spread. " + PARAMETER_IN_PROCESS,
+    )
+for owner in ("Series", "DataFrame"):
+    case(
+        f"basics/{owner.lower()}-prod-min-count",
+        f"{owner}.prod",
+        level="L3",
+        covers=("skipna", "min_count"),
+        frames=("float64_all_null", "float64_half_null"),
+        expr=(
+            (lambda pd, df: df["value"].prod(min_count=1))
+            if owner == "Series"
+            else (lambda pd, df: df[["value"]].prod(min_count=1))
+        ),
+        in_process=True,
+        note="a product of nothing is missing once a count is asked for. " + PARAMETER_IN_PROCESS,
+    )
+case(
+    "basics/cut-right-false",
+    "pandas.cut",
+    level="L3",
+    covers=("x", "bins", "right", "labels"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.cut(df["value"], [-100, 0, 10, 100], right=False, labels=False),
+    in_process=True,
+    note="bins closed on the left. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/cut-include-lowest",
+    "pandas.cut",
+    level="L3",
+    covers=("x", "bins", "include_lowest", "labels"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.cut(
+        df["value"], [0, 10, 100, 1000], include_lowest=True, labels=["a", "b", "c"]
+    ).astype(str),
+    in_process=True,
+    note="the lowest edge belongs to the first bin. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/get-dummies-prefix",
+    "pandas.get_dummies",
+    level="L3",
+    covers=("data", "prefix", "prefix_sep", "drop_first", "dtype"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: pd.get_dummies(
+        df[["left"]], prefix="k", prefix_sep="-", drop_first=True, dtype=int
+    ),
+    in_process=True,
+    note="named columns of whole numbers with the first value dropped. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/get-dummies-dummy-na",
+    "pandas.get_dummies",
+    level="L3",
+    covers=("data", "dummy_na", "columns"),
+    frames=("keys_awkward",),
+    expr=lambda pd, df: pd.get_dummies(df, columns=["key"], dummy_na=True),
+    in_process=True,
+    note="a column for the missing value too. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/melt-names",
+    "pandas.melt",
+    level="L3",
+    covers=("frame", "id_vars", "value_vars", "var_name", "value_name"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: pd.melt(
+        df, id_vars=["left"], value_vars=["right", "value"], var_name="what", value_name="n"
+    ),
+    in_process=True,
+    note="the two new columns named by the caller. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/melt-ignore-index",
+    "pandas.melt",
+    level="L3",
+    covers=("frame", "id_vars", "ignore_index"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: pd.melt(df, id_vars=["left"], value_name="n", ignore_index=False),
+    in_process=True,
+    note="the row labels repeat rather than being numbered again. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/to-datetime-unit",
+    "pandas.to_datetime",
+    level="L3",
+    covers=("arg", "unit", "utc"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.to_datetime(df["value"].abs() % 1000, unit="D", utc=True),
+    in_process=True,
+    note="whole numbers read as days since the epoch, in UTC. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/to-datetime-errors-coerce",
+    "pandas.to_datetime",
+    level="L3",
+    covers=("arg", "errors", "format"),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: pd.to_datetime(df["value"], errors="coerce", format="%Y-%m-%d"),
+    in_process=True,
+    note="text that is not a date becomes a missing instant. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/interpolate-limit",
+    "Series.interpolate",
+    level="L3",
+    covers=("method", "limit", "limit_direction"),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].interpolate(limit=1, limit_direction="both"),
+    in_process=True,
+    note="one gap filled on each side of a run. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/align-join",
+    "Series.align",
+    level="L3",
+    covers=("other", "join", "fill_value"),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: (
+        lambda pair: pd.concat([pair[0].rename("l"), pair[1].rename("r")], axis=1)
+    )(df["value"].head(5).align(df["value"].iloc[3:8], join="outer", fill_value=0.0)),
+    in_process=True,
+    note="both sides over the labels of either, with a fill. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/compare-keep-shape",
+    "Series.compare",
+    level="L3",
+    covers=("other", "keep_shape", "keep_equal"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].compare(df["value"].where(df["value"] > 0, 0), keep_shape=True),
+    in_process=True,
+    note="every row kept, with the equal ones missing. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/concat-sort",
+    "pandas.concat",
+    level="L3",
+    covers=("objs", "sort", "names", "keys"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: pd.concat(
+        [df[["value", "left"]], df[["right", "value"]]],
+        sort=True,
+        keys=["a", "b"],
+        names=["k", "i"],
+    ),
+    in_process=True,
+    note="the union of the columns in sorted order under named keys. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/crosstab-values",
+    "pandas.crosstab",
+    level="L3",
+    covers=("index", "columns", "values", "aggfunc", "rownames", "colnames"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: pd.crosstab(
+        df["left"], df["right"], values=df["value"], aggfunc="sum", rownames=["l"], colnames=["r"]
+    ),
+    in_process=True,
+    note="a sum per pair rather than a count. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/ewm-com-adjust",
+    "Series.ewm",
+    level="L3",
+    covers=("com", "min_periods", "adjust", "ignore_na"),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: (
+        df["value"]
+        .mask(df["value"].abs() == float("inf"))
+        .ewm(com=1.5, min_periods=2, adjust=False, ignore_na=True)
+        .mean()
+    ),
+    in_process=True,
+    note="a recursive mean that steps over the gaps, with the infinities left to the window"
+    " cases. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/ewm-span-halflife-alpha",
+    "Series.ewm",
+    level="L3",
+    covers=("span", "halflife", "alpha"),
+    frames=("tall",),
+    expr=lambda pd, df: pd.concat(
+        [
+            df["value"].ewm(span=4).mean().rename("s"),
+            df["value"].ewm(halflife=2).mean().rename("h"),
+            df["value"].ewm(alpha=0.3).mean().rename("a"),
+        ],
+        axis=1,
+    ),
+    in_process=True,
+    note="the three other ways to say how fast the weights decay. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/rolling-center",
+    "Series.rolling",
+    level="L3",
+    covers=("window", "min_periods", "center"),
+    frames=("tall",),
+    expr=lambda pd, df: df["value"].rolling(window=5, min_periods=2, center=True).sum(),
+    in_process=True,
+    note="a centred window that answers from two rows on. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/rolling-closed",
+    "Series.rolling",
+    level="L3",
+    covers=("closed", "step"),
+    frames=("tall",),
+    expr=lambda pd, df: pd.concat(
+        [
+            df["value"].rolling(3, closed="left").mean().rename("left"),
+            df["value"].rolling(3, step=2).mean().rename("step"),
+        ],
+        axis=1,
+    ).dropna(how="all"),
+    in_process=True,
+    note="a window that leaves its own row out, and one that answers every other row. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-reindex-fill",
+    "Series.reindex",
+    level="L3",
+    covers=("index", "fill_value"),
+    frames=("float64_no_nulls",),
+    expr=lambda pd, df: df["value"].reindex([5, 3, 100, 1], fill_value=0.0),
+    in_process=True,
+    note="labels in a new order with a fill for the one that is not there. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-reindex-method",
+    "Series.reindex",
+    level="L3",
+    covers=("method", "limit"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].head(5).reindex(range(8), method="ffill", limit=1),
+    in_process=True,
+    note="new labels carried forward one step and no further. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-sort-index-ignore",
+    "Series.sort_index",
+    level="L3",
+    covers=("ascending", "ignore_index"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: df["value"].iloc[::-3].sort_index(ascending=False, ignore_index=True),
+    in_process=True,
+    note="labels sorted high to low and then thrown away. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-sort-index-columns",
+    "DataFrame.sort_index",
+    level="L3",
+    covers=("axis", "ascending"),
+    frames=("two", "tall"),
+    expr=lambda pd, df: df.sort_index(axis=1, ascending=False),
+    in_process=True,
+    note="the column names sorted high to low. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/merge-left-on-right-on",
+    "DataFrame.merge",
+    level="L3",
+    covers=("left_on", "right_on", "suffixes", "sort"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.merge(
+        df.rename(columns={"left": "other"}),
+        left_on="left",
+        right_on="other",
+        suffixes=("_l", "_r"),
+        sort=True,
+    ),
+    in_process=True,
+    note="keys under different names on each side, sorted. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/merge-index-indicator",
+    "DataFrame.merge",
+    level="L3",
+    covers=("left_index", "right_index", "indicator", "validate"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.merge(
+        df[["value"]].iloc[2:],
+        how="left",
+        left_index=True,
+        right_index=True,
+        suffixes=("", "_r"),
+        indicator=True,
+        validate="one_to_one",
+    ),
+    in_process=True,
+    note="both sides on their labels, with the column that says where each row came from. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/pivot-table-margins",
+    "pandas.pivot_table",
+    level="L3",
+    covers=("data", "values", "index", "columns", "aggfunc", "fill_value", "margins"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: pd.pivot_table(
+        df.assign(right=df["right"].astype(str)),
+        values="value",
+        index="left",
+        columns="right",
+        aggfunc="sum",
+        fill_value=0,
+        margins=True,
+    ),
+    in_process=True,
+    note="a sum per pair with the totals on the edges. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-pivot-table-margins-name",
+    "DataFrame.pivot_table",
+    level="L3",
+    covers=("margins", "margins_name", "dropna", "sort"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.pivot_table(
+        values="value", index="left", aggfunc="mean", margins=True, margins_name="all", sort=False
+    ),
+    in_process=True,
+    note="a mean per key with the total named and the keys in the order they came. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/convert-dtypes-flags",
+    "DataFrame.convert_dtypes",
+    level="L3",
+    covers=("infer_objects", "convert_string", "convert_integer", "convert_floating"),
+    frames=("two", "single"),
+    expr=lambda pd, df: df.convert_dtypes(
+        convert_string=False, convert_integer=False
+    ).dtypes.astype(str),
+    in_process=True,
+    note="the nullable dtypes with the text and integer conversions turned off. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/corrwith-method",
+    "DataFrame.corrwith",
+    level="L3",
+    covers=("other", "method", "drop"),
+    frames=("tall",),
+    expr=lambda pd, df: df[["key", "value"]].corrwith(
+        df[["key", "value"]].iloc[::-1].reset_index(drop=True), method="pearson", drop=True
+    ),
+    in_process=True,
+    note="a correlation of each column with the same column reversed. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-interpolate-area",
+    "DataFrame.interpolate",
+    level="L3",
+    covers=("method", "limit_direction", "limit_area"),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df[["value"]].interpolate(
+        method="linear", limit_direction="both", limit_area="inside"
+    ),
+    in_process=True,
+    note="only the gaps with a value on both sides filled. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/get-dummies-columns",
+    "pandas.get_dummies",
+    level="L3",
+    covers=("columns", "prefix_sep", "drop_first", "dtype"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: pd.get_dummies(
+        df, columns=["left"], prefix_sep=":", drop_first=True, dtype=int
+    ),
+    in_process=True,
+    note="one text column spread into integer columns with the first dropped. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/timestamp-parts",
+    "pandas.Timestamp",
+    level="L3",
+    covers=("year", "month", "day", "hour", "minute", "second"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [pd.Timestamp(year=2024, month=3, day=10, hour=5, minute=6, second=7)]
+    ),
+    in_process=True,
+    note="an instant built from its parts. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/timestamp-replace",
+    "Timestamp.replace",
+    level="L3",
+    covers=("year", "month", "day", "hour", "minute", "second"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [pd.Timestamp("2024-03-10 05:06:07").replace(year=2020, month=1, day=31, hour=0)]
+    ),
+    in_process=True,
+    note="an instant with some of its parts swapped. " + PARAMETER_IN_PROCESS,
+)
