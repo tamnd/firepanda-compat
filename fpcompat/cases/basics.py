@@ -1821,6 +1821,30 @@ case(
     "The labels are read against the default index this frame came with. " + A_POINTER,
 )
 case(
+    "basics/drop-repeated-labels",
+    "DataFrame.drop",
+    level="L3",
+    covers=("index",),
+    frames=("two",),
+    expr=lambda pd, df: df.set_axis([i % 3 for i in range(len(df))]).drop(index=[1]),
+    in_process=True,
+    note="row labels that repeat, where dropping one label drops every row holding it. "
+    "reindex refuses a repeated label, so these rows are dropped by position in the "
+    "Python layer",
+)
+case(
+    "basics/assign-categorical",
+    "DataFrame.assign",
+    level="L2",
+    frames=("two",),
+    expr=lambda pd, df: df.assign(
+        extra=pd.Categorical([["x", "y", "z"][i % 3] for i in range(len(df))])
+    )["extra"],
+    in_process=True,
+    note="a Categorical put in whole keeps its categories rather than being read back as "
+    "its values",
+)
+case(
     "basics/assign",
     "DataFrame.assign",
     frames=("two", "tall"),

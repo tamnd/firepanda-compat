@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/drop-repeated-labels` and `basics/assign-categorical` score dropping a row label that repeats and putting in a Categorical whole.
+- Board after firepanda #1393: 5385 pass, 0 unimplemented, 65 divergent, 2 fail.
 - `temporal/datetime-index-tz`, `-ambiguous`, `-dtype` and `temporal/timedelta-index-dtype` score the clock and type arguments of the temporal index constructors.
 - Board after firepanda #1392: 5383 pass, 0 unimplemented, 65 divergent, 2 fail.
 - `stats/describe-moments`, `-spans`, `-moments-frame`, `-include` and `-exclude` score describe on datetime and timedelta columns and a frame's include and exclude types.
