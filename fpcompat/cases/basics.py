@@ -6119,3 +6119,16 @@ case(
     in_process=True,
     note="a level name in a list of keys groups by that level",
 )
+
+case(
+    "basics/corr-callable-method",
+    "DataFrame.corr",
+    level="L3",
+    covers=("method", "min_periods"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"a": [1, 2, 3, 4, 7], "b": [2.0, None, 1.0, 8.0, 3.0], "c": [3, 3, 3, 3, 3]}
+    ).corr(method=lambda x, y: float(sum(x * y)), min_periods=4),
+    in_process=True,
+    note="a callable is handed the rows each pair shares, 1 on the diagonal",
+)

@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- A case for `DataFrame.corr` with a callable method and `min_periods`.
+- Board after firepanda #1427: 5463 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `groupby` with a `Grouper` with a frequency beside a column, and with a level name in a list of keys.
 - Board after firepanda #1426: 5462 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `groupby(level=...)` on a MultiIndex and a `Grouper` with a frequency and no key, which firepanda #1425 answers as pandas does.
