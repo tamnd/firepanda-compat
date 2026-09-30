@@ -6868,3 +6868,27 @@ case(
     in_process=True,
     note="the uniques of a categorical column are a categorical index in category order",
 )
+
+case(
+    "basics/replace-regex-list",
+    "Series.replace",
+    level="L3",
+    covers=("to_replace", "value", "regex"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(["a", "ab", "cd"]).replace(["a", "b"], ["b", "c"], regex=True),
+    in_process=True,
+    note="each pattern rewrites only the rows it matched in the column as it arrived",
+)
+
+case(
+    "basics/replace-regex-by-column",
+    "DataFrame.replace",
+    level="L3",
+    covers=("to_replace", "regex"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"x": ["a", "ab"], "y": ["cd", "b"]}).replace(
+        {"x": {"a": "X"}, "y": {"b": "Y", "c": "C"}}, regex=True
+    ),
+    in_process=True,
+    note="a mapping of column names to mappings gives each column its own patterns",
+)

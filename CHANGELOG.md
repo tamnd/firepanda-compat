@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `replace` with several patterns: a run of patterns rewriting only the rows each matched in the original column, and a frame reading a mapping of column names to mappings.
+- Board after firepanda #1471: 5518 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/bitwise-and-integers`, `basics/str-replace-callable` and `basics/factorize-categorical-sort`: bitwise `&` on integers, a callable `str.replace`, and `factorize` on a categorical column (firepanda #1469).
 - Board after firepanda #1469: 5516 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/isin-aligned-frame`, `basics/str-get-dummies-float`, `basics/concat-keys-verify-integrity` and `basics/squeeze-row-axis`: aligned `isin`, numeric `get_dummies` types, keyed `concat` under `verify_integrity`, and a row squeeze (firepanda #1468).
