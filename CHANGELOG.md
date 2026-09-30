@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for interpolating zoned instants, with and without a limit, and for describing an interval column.
+- Board after firepanda #1479: 5538 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `interpolate(method="index")` over labels that do not rise, with and without limits.
 - Board after firepanda #1478: 5535 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `interval_range` of instants and spans, read into a Series from the IntervalIndex it answers.

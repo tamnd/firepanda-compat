@@ -7124,3 +7124,47 @@ case(
     in_process=True,
     note="the limits are still counted by position",
 )
+
+
+case(
+    "basics/interpolate-zoned-instants",
+    "Series.interpolate",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.Series(
+            pd.to_datetime(
+                ["2024-01-01", "NaT", "2024-01-04", "NaT", "NaT", "2024-01-10"], utc=True
+            )
+        )
+        .dt.tz_convert("Asia/Tokyo")
+        .interpolate()
+    ),
+    in_process=True,
+    note="the line runs through the UTC instants and the answer keeps the zone",
+)
+
+case(
+    "basics/interpolate-zoned-instants-limit",
+    "Series.interpolate",
+    level="L3",
+    covers=("limit", "limit_direction"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        pd.to_datetime(["2024-01-01", "NaT", "2024-01-04", "NaT", "NaT", "2024-01-10"], utc=True)
+    ).interpolate(limit=1, limit_direction="backward"),
+    in_process=True,
+    note="the limit is counted by position on the zoned column",
+)
+
+case(
+    "basics/describe-intervals",
+    "Series.describe",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        pd.IntervalIndex.from_arrays([0.0, float("nan"), 2.0, 0.0], [1.0, float("nan"), 3.0, 1.0])
+    ).describe(),
+    in_process=True,
+    note="an interval column is counted the way text is",
+)
