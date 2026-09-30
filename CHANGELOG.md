@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `groupby(level=...)` on a MultiIndex and a `Grouper` with a frequency and no key, which firepanda #1425 answers as pandas does.
+- Board after firepanda #1425: 5460 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for `GroupBy.idxmax` with `as_index=False`, which firepanda #1424 answers with the keys as columns as pandas does.
 - Board after firepanda #1424: 5458 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for `DataFrame.from_records` with several index columns, which firepanda #1423 labels by a level each as pandas does.

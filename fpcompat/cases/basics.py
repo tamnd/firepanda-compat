@@ -6041,3 +6041,38 @@ case(
     in_process=True,
     note="with as_index=False the keys come back as columns before the labels found",
 )
+case(
+    "basics/groupby-multiindex-levels",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("level", "sort"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {"v": [1, 2, 3, 4]},
+            index=pd.MultiIndex.from_tuples(
+                [("x", 1), ("y", 1), ("x", 2), ("y", 2)], names=["p", "q"]
+            ),
+        )
+        .groupby(level=["q", "p"], sort=False)
+        .sum()
+    ),
+    in_process=True,
+    note="the levels of a MultiIndex named in level= are the keys",
+)
+case(
+    "basics/groupby-grouper-freq-no-key",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("by",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {"v": [1, 2, 3, 4, 5]}, index=pd.date_range("2024-01-01", periods=5, freq="12h")
+        )
+        .groupby(pd.Grouper(freq="D"))
+        .sum()
+    ),
+    in_process=True,
+    note="a Grouper with a frequency and no key bins the row labels",
+)
