@@ -6967,3 +6967,56 @@ case(
     in_process=True,
     note="aggregates over every key are unstacked by the columns keys and filled",
 )
+
+case(
+    "basics/nunique-float-nan",
+    "Series.nunique",
+    level="L3",
+    covers=("dropna",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1.0, float("nan"), 2.0, 1.0]).nunique(),
+    in_process=True,
+    note="a NaN is a missing entry, never a distinct value of its own",
+)
+
+case(
+    "basics/nunique-frame-float-nan-kept",
+    "DataFrame.nunique",
+    level="L3",
+    covers=("dropna",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"p": [1.0, float("nan"), float("nan")], "q": [1, 2, 2]}
+    ).nunique(dropna=False),
+    in_process=True,
+    note="every NaN counts once as a single missing value when kept",
+)
+
+case(
+    "basics/reduction-keeps-column-level-names",
+    "DataFrame.sum",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"a": ["x", "y"], "b": ["p", "q"], "v": [1, 2]})
+        .pivot(index="a", columns="b", values=["v"])
+        .sum()
+    ),
+    in_process=True,
+    note="the answer's index keeps the names of the column levels",
+)
+
+case(
+    "basics/idxmax-column-levels",
+    "DataFrame.idxmax",
+    level="L3",
+    covers=("axis",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"a": ["x", "y"], "b": ["p", "q"], "v": [1, 2]})
+        .pivot(index="a", columns="b", values=["v"])
+        .idxmax(axis=0)
+    ),
+    in_process=True,
+    note="labels of several levels answer a MultiIndex that keeps the level names",
+)

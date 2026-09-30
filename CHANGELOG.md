@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `nunique` over a float column holding NaN, kept and dropped, and for reductions and `idxmax` keeping the names of the column levels.
+- Board after firepanda #1474: 5527 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `pivot` and `pivot_table` over several columns keys, which label the answer's columns with a MultiIndex.
 - Board after firepanda #1473: 5523 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for repeated row labels: `align` joining a repeated label with every row of it on the other side, a frame's `combine_first` aligning with an outer join, and a column's `combine_first` raising pandas' reindex ValueError.
