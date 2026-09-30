@@ -171,11 +171,12 @@ case(
 # The two pass moments
 # ---------------------------------------------------------------------------
 
-# The only entry in this registry where firepanda is closer to the truth than pandas
-# is, which is why it takes a column of its own rather than riding on a corpus frame.
-# Both sides ignore the frame they are handed and build the same five values, because
-# the divergence needs a column where the mean cannot be represented exactly and no
-# corpus frame is shaped that way. Two to the fifty second is where the gap between
+# This used to be the only entry in the registry where firepanda was closer to the truth
+# than pandas, and it is retired now that a series adds up its moments in pandas' order.
+# The cases stay as ordinary ones and run in process, where that order lives. Both
+# sides ignore the frame they are handed and build the same five values, because the
+# difference needs a column where the mean cannot be represented exactly and no corpus
+# frame is shaped that way. Two to the fifty second is where the gap between
 # neighbouring float64 values is exactly one, so every input here is exact and the
 # rounded centre is the only thing either engine can get wrong.
 
@@ -187,9 +188,10 @@ case(
     level="L2",
     frames=("two",),
     expr=lambda pd, df: float(pd.Series(SHIFTED).skew()),
+    in_process=True,
     note="pandas answers 1.4863469519931585 and the true value is 1.3253147098134046, "
     "so this is twelve percent rather than a rounding difference. firepanda answers "
-    "the true value",
+    "pandas' value, adding in numpy's order",
 )
 case(
     "divergences/moment-precision/var",
@@ -197,8 +199,10 @@ case(
     level="L2",
     frames=("two",),
     expr=lambda pd, df: float(pd.Series(SHIFTED).var()),
+    in_process=True,
     note="the same column and the same cause, smaller because the second moment is "
-    "squared rather than cubed. pandas answers 37.25 and the true value is 37.2",
+    "squared rather than cubed. pandas answers 37.25 and the true value is 37.2, and "
+    "firepanda answers 37.25",
 )
 
 # ---------------------------------------------------------------------------

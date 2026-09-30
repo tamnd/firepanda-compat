@@ -617,9 +617,14 @@ def test_the_committed_registry_loads():
 
     `engine/integer-moments` is retired, which leaves seventeen. firepanda casts whole
     numbers to float64 before a skewness, as pandas does, so it answers pandas' rounded
-    value rather than the exact one, and `stats/skew` runs in process to reach it."""
+    value rather than the exact one, and `stats/skew` runs in process to reach it.
+
+    `engine/moment-precision` is retired, which leaves sixteen. A series takes its
+    variance, deviation, standard error and skewness in pandas' order now, from the
+    mean numpy sums and with no correction for its error, so the two shifted cases
+    answer pandas' floats and run in process."""
     entries = divergences.registry()
-    assert len(entries) == 17
+    assert len(entries) == 16
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
