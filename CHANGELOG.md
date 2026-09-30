@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Five basics cases: `astype` from text to instants with mixed formats and to spans, `dtype=` with an instant type on the `DataFrame` constructor, `Index.map` on an `Int32` index giving `Float64`, and the `TypeError` pandas raises for a gap in a list condition to `mask`. They pass after firepanda #1371 and #1372.
+- Board after firepanda #1372: 5309 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Five groupby cases for group reductions over masked columns: `sum` keeps `Int32` and counts flags as `Int64`, `mean` is `Float64`, `count` is `Int64`, `agg` with a dict gives each column the type its function gives, and `cumsum` keeps the masked type and its `NA`. They pass after firepanda #1369 and #1370, the second of which exports a masked column to Arrow at its own width.
 - Board after firepanda #1370: 5304 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Three cases for masked keys: `groupby` on an `Int64` key with `dropna=False`, the key column with `as_index=False`, and `value_counts` on an `Int64` column.

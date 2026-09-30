@@ -5238,3 +5238,56 @@ case(
     in_process=True,
     note="masked labels sort by value with NA last. Since firepanda #1367",
 )
+case(
+    "basics/astype-text-dates",
+    "Series.astype",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(["2026-01-01", None, "2026-03-04 10:00"]).astype(
+        "datetime64[ms]"
+    ),
+    in_process=True,
+    note="text parses to instants at the unit asked for. Since firepanda #1371 and #1372",
+)
+case(
+    "basics/astype-text-spans",
+    "Series.astype",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(["1D", "2h", None]).astype("timedelta64[s]"),
+    in_process=True,
+    note="text parses to spans at the unit asked for. Since firepanda #1371",
+)
+case(
+    "basics/frame-dtype-dates",
+    "pandas.DataFrame",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"a": ["2026-01-01", "2026-01-02"], "b": ["2026-02-01", None]}, dtype="datetime64[ns]"
+    ),
+    in_process=True,
+    note="dtype= with an instant type parses each column. Since firepanda #1371",
+)
+case(
+    "basics/index-masked-map",
+    "Index.map",
+    covers=("mapper",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        [1, 2, 3], index=pd.Index([1, None, 3], dtype="Int32").map(lambda x: x * 1.5)
+    ),
+    in_process=True,
+    note="a masked index maps to a masked type. Since firepanda #1371",
+)
+case(
+    "basics/mask-gap-refused",
+    "Series.mask",
+    level="L4",
+    covers=("cond",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1, 2, 3]).mask([True, None, False]),
+    raises=("TypeError", "bad operand type for unary ~"),
+    in_process=True,
+    note="a gap in a list condition cannot be turned over. Since firepanda #1371",
+)
