@@ -7168,3 +7168,44 @@ case(
     in_process=True,
     note="an interval column is counted the way text is",
 )
+
+
+case(
+    "basics/corr-frame-instants",
+    "DataFrame.corr",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {
+            "d": pd.to_datetime(["2024-01-01", "2024-01-03", "NaT", "2024-01-08", "2024-01-02"]),
+            "v": [1.0, 3.0, 2.0, 9.0, 4.0],
+        }
+    ).corr(),
+    in_process=True,
+    note="a frame reads the instants as counts and NaT as missing",
+)
+
+case(
+    "basics/corr-series-instants-nat",
+    "Series.corr",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        pd.to_datetime(["2024-01-01", "2024-01-03", "NaT", "2024-01-08", "2024-01-02"])
+    ).corr(pd.Series([1.0, 3.0, 2.0, 9.0, 4.0])),
+    in_process=True,
+    note="a column against a column counts NaT as the smallest int64",
+)
+
+case(
+    "basics/cov-frame-instants-refused",
+    "DataFrame.cov",
+    level="L4",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"d": pd.to_datetime(["2024-01-01", "2024-01-03"]), "v": [1.0, 3.0]}
+    ).cov(),
+    raises=("TypeError", "not supported for cov"),
+    in_process=True,
+    note="a frame's covariance refuses instants and spans",
+)

@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for correlating instants in a frame and in a column with NaT, and for a frame's covariance refusing instants.
+- Board after firepanda #1480: 5541 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for interpolating zoned instants, with and without a limit, and for describing an interval column.
 - Board after firepanda #1479: 5538 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `interpolate(method="index")` over labels that do not rise, with and without limits.
