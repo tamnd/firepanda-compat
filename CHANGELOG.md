@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/multiindex-to-frame-labelled` and `basics/multiindex-value-counts`: `MultiIndex.to_frame()` labels its rows with the index and `value_counts` counts each row, as firepanda #1435 does.
+- Board after firepanda #1435: 5474 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/resample-zoned-day`: `Series.resample("D")` over timestamps with a zone lays days on the zone's own clock, as firepanda #1434 does.
 - Board after firepanda #1434: 5472 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/resample-aggregate-function` and `basics/resample-ohlc-frame`: a function handed to `Resampler.aggregate` runs on every bin and each column, and `ohlc` over a frame gives two levels of column labels, as firepanda #1433 does.

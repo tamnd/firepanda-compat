@@ -6270,3 +6270,28 @@ case(
     in_process=True,
     note="days on the zone's own clock, one of them 25 hours long",
 )
+
+case(
+    "basics/multiindex-to-frame-labelled",
+    "MultiIndex.to_frame",
+    level="L3",
+    covers=("index", "name"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.MultiIndex.from_arrays(
+        [["a", "a", "b"], [1, 2, 1]], names=["k", "n"]
+    ).to_frame(index=True, name=["x", "y"]),
+    in_process=True,
+    note="the frame's rows are labelled by the index itself",
+)
+
+case(
+    "basics/multiindex-value-counts",
+    "MultiIndex.value_counts",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.MultiIndex.from_arrays(
+        [["a", "b", "a"], [1, 2, 1]], names=["k", "n"]
+    ).value_counts(),
+    in_process=True,
+    note="each row counted, labelled by the rows",
+)
