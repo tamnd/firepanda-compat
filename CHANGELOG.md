@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- String parameter cases: the fill character of center, ljust and rjust, regex flags on contains, count, findall, extract, extractall and replace, na on startswith and endswith, regex on split, partition and rpartition with expand=False, and cat with a join.
+- Board after firepanda #1340: 5072 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Merge parameter cases: cross and anti joins, a one sided suffix, sort, the indicator on a cross and a right anti join, a merge on both row labels, join with how="cross", lsuffix and rsuffix and sort, and the MergeError for a key on a cross join, which joins the pandas-exception-classes entry.
 - Board after firepanda #1338: 5020 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Retired `engine/nbytes`: firepanda #1336 counts bytes the way pandas does, from the numpy or Arrow arrays pandas would hold the data in, so the column, text column, index, frame and column usage cases match pandas.

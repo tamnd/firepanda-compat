@@ -1587,3 +1587,155 @@ case(
     in_process=True,
     note="text times a whole number repeats every row. " + TEXT_OPERATORS,
 )
+
+PARAMETER_IN_PROCESS = (
+    "the driver has an entry for the plain spelling of this name and not for this "
+    "parameter, so it is run in process"
+)
+IGNORECASE = 2
+"""`re.IGNORECASE`, spelled as its value so the expressions need no import."""
+
+for name, method in (("center", "center"), ("ljust", "ljust"), ("rjust", "rjust")):
+    case(
+        f"strings/{name}-fillchar",
+        f"str.{method}",
+        level="L3",
+        covers=("width", "fillchar"),
+        frames=PLAIN + NULLS,
+        expr=(lambda how: lambda pd, df: getattr(df["value"].str, how)(11, fillchar="*"))(method),
+        in_process=True,
+        note="the padding character is a parameter of its own, and a missing row stays "
+        "missing rather than becoming a row of stars. " + PARAMETER_IN_PROCESS,
+    )
+case(
+    "strings/contains-flags",
+    "str.contains",
+    level="L3",
+    covers=("pat", "flags"),
+    frames=CASED,
+    expr=lambda pd, df: df["value"].str.contains("a", flags=IGNORECASE),
+    in_process=True,
+    note="a regex flag folds case the way case=False does, through the pattern rather "
+    "than the parameter. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "strings/count-flags",
+    "str.count",
+    level="L3",
+    covers=("pat", "flags"),
+    frames=("strings_ascii", "strings_pattern", "strings_folding"),
+    expr=lambda pd, df: df["value"].str.count("a", flags=IGNORECASE),
+    in_process=True,
+    note="counted with the case folded, on frames with no missing row, since a missing "
+    "row's count is its own entry. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "strings/findall-flags",
+    "str.findall",
+    level="L3",
+    covers=("pat", "flags"),
+    frames=CASED,
+    expr=lambda pd, df: df["value"].str.findall("a", flags=IGNORECASE),
+    in_process=True,
+    note="every match with the case folded, so an upper case letter is found as it is "
+    "written. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "strings/extract-flags",
+    "str.extract",
+    level="L3",
+    covers=("pat", "flags", "expand"),
+    frames=CASED,
+    expr=lambda pd, df: df["value"].str.extract("(a.)", flags=IGNORECASE, expand=True),
+    in_process=True,
+    note="the first match with the case folded, as a frame of one column. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "strings/extractall-flags",
+    "str.extractall",
+    level="L3",
+    covers=("pat", "flags"),
+    frames=("strings_ascii", "strings_pattern"),
+    expr=lambda pd, df: df["value"].str.extractall("(a)", flags=IGNORECASE),
+    in_process=True,
+    note="every match with the case folded, one row each under the match number. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "strings/replace-flags",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl", "regex", "flags"),
+    frames=CASED,
+    expr=lambda pd, df: df["value"].str.replace("a", "_", regex=True, flags=IGNORECASE),
+    in_process=True,
+    note="a regex replacement with the case folded by a flag rather than by case=False. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "strings/startswith-na",
+    "str.startswith",
+    level="L3",
+    covers=("pat", "na"),
+    frames=ALL,
+    expr=lambda pd, df: df["value"].str.startswith("a", na=False),
+    in_process=True,
+    note="na is what a missing row answers, and False makes the column all flags. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "strings/endswith-na",
+    "str.endswith",
+    level="L3",
+    covers=("pat", "na"),
+    frames=ALL,
+    expr=lambda pd, df: df["value"].str.endswith(("a", "e"), na=True),
+    in_process=True,
+    note="a tuple of endings, any of which will do, with a missing row answering True. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "strings/split-regex",
+    "str.split",
+    level="L3",
+    covers=("pat", "regex", "expand"),
+    frames=("strings_pattern", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.split(r"[-\s]", regex=True, expand=True),
+    in_process=True,
+    note="a pattern read as a regex rather than as text, spread into columns. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "strings/split-not-regex",
+    "str.split",
+    level="L3",
+    covers=("pat", "regex", "n"),
+    frames=("strings_pattern", "strings_ascii"),
+    expr=lambda pd, df: df["value"].str.split(".", regex=False, n=1),
+    in_process=True,
+    note="a dot read as a dot, which as a regex would match every character. "
+    + PARAMETER_IN_PROCESS,
+)
+for name in ("partition", "rpartition"):
+    case(
+        f"strings/{name}-no-expand",
+        f"str.{name}",
+        level="L3",
+        covers=("sep", "expand"),
+        frames=("strings_ascii", "strings_pattern"),
+        expr=(lambda how: lambda pd, df: getattr(df["value"].str, how)(" ", expand=False))(name),
+        in_process=True,
+        note="without expand the three parts are a tuple in each row of one column. "
+        + PARAMETER_IN_PROCESS,
+    )
+case(
+    "strings/cat-join",
+    "str.cat",
+    level="L3",
+    covers=("others", "sep", "join"),
+    frames=PLAIN,
+    expr=lambda pd, df: df["value"].str.cat(df["value"].iloc[::2], sep="|", join="left"),
+    in_process=True,
+    note="the other column is lined up on the row labels first, so the rows it lacks "
+    "are missing. " + PARAMETER_IN_PROCESS,
+)
