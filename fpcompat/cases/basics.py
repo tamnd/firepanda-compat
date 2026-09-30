@@ -5551,3 +5551,20 @@ case(
     in_process=True,
     note="errors='raise' lists the keys that are not labels",
 )
+for whole in ("mean", "median", "std", "var", "sem", "skew", "kurt"):
+    case(
+        f"basics/frame-whole-{whole}",
+        f"DataFrame.{whole}",
+        level="L3",
+        covers=("axis",),
+        frames=("wide", "int64_no_nulls"),
+        expr=(lambda method: lambda pd, df: getattr(df, method)(axis=None))(whole),
+        rules=Rules(
+            tolerance=Tolerance.STATISTICAL,
+            reason="every cell is read in one pass, and the spreads and shapes are sums "
+            "of powers that each library adds up in its own order",
+        ),
+        in_process=True,
+        note="axis=None reads every cell of the frame at once, since a mean of means is "
+        "not a mean. Since firepanda #1403",
+    )

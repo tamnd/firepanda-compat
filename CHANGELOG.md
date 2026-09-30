@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/frame-whole-mean`, `-median`, `-std`, `-var`, `-sem`, `-skew` and `-kurt` cover these reductions with `axis=None` on a frame, which firepanda #1403 answers as one number read from every cell, as pandas does.
+- Board after firepanda #1403: 5421 pass, 0 unimplemented, 67 divergent, 2 fail.
 - `basics/rename-rows-and-columns`, `basics/rename-one-level`, `basics/series-rename-labels` and `basics/rename-missing-label` cover `rename` of the row labels, which firepanda #1402 answers as pandas does, `level=` and `errors="raise"` included.
 - Board after firepanda #1402: 5407 pass, 0 unimplemented, 67 divergent, 2 fail.
 - `windows/rolling-corr-every-pair` and `windows/ewm-cov-every-pair` cover `corr` and `cov` of every pair of columns over a window of a frame, which firepanda #1401 answers under a second level of row labels as pandas does.
