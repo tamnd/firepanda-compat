@@ -5717,3 +5717,71 @@ case(
     in_process=True,
     note="flags beside numbers turn into objects scanned in Python",
 )
+case(
+    "basics/frame-rank-across-rows",
+    "DataFrame.rank",
+    level="L3",
+    covers=("axis", "pct"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2], "b": [3, 1], "c": [5, 6]}).rank(
+        axis=1, pct=True
+    ),
+    in_process=True,
+    note="ranked across each row, as pandas ranks the frame turned on its side",
+)
+case(
+    "basics/frame-shift-columns",
+    "DataFrame.shift",
+    level="L3",
+    covers=("periods", "axis"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2], "b": [3, 1], "c": [5, 6]}).shift(1, axis=1),
+    in_process=True,
+    note="whole columns move along, each keeping its type",
+)
+case(
+    "basics/frame-diff-across-rows",
+    "DataFrame.diff",
+    level="L3",
+    covers=("periods", "axis"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2], "b": [3, 1], "c": [5, 6]}).diff(-1, axis=1),
+    in_process=True,
+    note="the frame less its columns shifted along keeps whole numbers whole",
+)
+case(
+    "basics/frame-pct-change-across-rows",
+    "DataFrame.pct_change",
+    level="L3",
+    covers=("periods",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2], "b": [3, 1], "c": [5, 6]}).pct_change(
+        periods=1, axis=1
+    ),
+    in_process=True,
+    note="each column over the one before it, less one",
+)
+case(
+    "basics/frame-ffill-across-rows",
+    "DataFrame.ffill",
+    level="L3",
+    covers=("axis",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1.0, None], "b": [3.0, 4.0], "c": [None, 6.0]}).ffill(
+        axis=1
+    ),
+    in_process=True,
+    note="a gap takes the value to its left",
+)
+case(
+    "basics/frame-interpolate-across-rows",
+    "DataFrame.interpolate",
+    level="L3",
+    covers=("axis",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"a": [1.0, None], "b": [None, 4.0], "c": [5.0, 6.0]}
+    ).interpolate(axis=1),
+    in_process=True,
+    note="a gap across a row is on the line between its neighbours",
+)

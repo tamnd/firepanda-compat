@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for transforms across the rows of a frame: rank, shift, diff, pct_change, ffill and interpolate with `axis=1`.
+- Board after firepanda #1411: 5439 pass, 0 unimplemented, 67 divergent, 2 fail.
 - Cases for running scans across the rows of a frame: a cumsum of whole numbers, a cummax over gaps, and a cumsum over flags beside numbers.
 - Board after firepanda #1410: 5433 pass, 0 unimplemented, 67 divergent, 2 fail.
 - Cases for row reductions over flags beside numbers, a sum and a mean with a gap, which pandas answers as objects.
