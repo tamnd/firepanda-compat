@@ -5923,3 +5923,41 @@ case(
     in_process=True,
     note="a quantile across each row is one down the frame turned on its side",
 )
+case(
+    "basics/series-unstack-level-list",
+    "Series.unstack",
+    level="L3",
+    covers=("level", "fill_value"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        [1, 2, 3, 4, 5],
+        index=pd.MultiIndex.from_tuples(
+            [
+                ("r1", "b", "x"),
+                ("r1", "a", "y"),
+                ("r2", "b", "y"),
+                ("r2", "a", "x"),
+                ("r1", "b", "y"),
+            ],
+            names=["r", "p", "q"],
+        ),
+    ).unstack(["p", "q"], fill_value=0),
+    in_process=True,
+    note="several levels unstacked at once spread their pairs across the columns",
+)
+case(
+    "basics/frame-unstack-level-list",
+    "DataFrame.unstack",
+    level="L3",
+    covers=("level",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"v": [1, 2, 3, 4]},
+        index=pd.MultiIndex.from_tuples(
+            [("r1", "b", "x"), ("r1", "a", "y"), ("r2", "b", "y"), ("r2", "a", "x")],
+            names=["r", "p", "q"],
+        ),
+    ).unstack([1, 2]),
+    in_process=True,
+    note="a frame unstacks several levels under its own column names",
+)
