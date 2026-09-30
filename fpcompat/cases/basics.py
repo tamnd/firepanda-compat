@@ -6076,3 +6076,46 @@ case(
     in_process=True,
     note="a Grouper with a frequency and no key bins the row labels",
 )
+
+case(
+    "basics/groupby-grouper-freq-in-list",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("by",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {
+                "t": pd.to_datetime(
+                    ["2024-01-01 03:00", "2024-01-01 20:00", "2024-01-02 05:00", "2024-01-03 01:00"]
+                ),
+                "k": ["a", "b", "a", "b"],
+                "v": [1, 2, 3, 4],
+            }
+        )
+        .groupby([pd.Grouper(key="t", freq="D"), "k"])
+        .sum()
+    ),
+    in_process=True,
+    note="a Grouper with a frequency beside a column bins each row",
+)
+
+case(
+    "basics/groupby-level-name-in-list",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("by",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {"v": [1, 2, 3, 4], "k": ["a", "b", "a", "b"]},
+            index=pd.MultiIndex.from_tuples(
+                [("x", 1), ("y", 1), ("x", 2), ("y", 2)], names=["p", "q"]
+            ),
+        )
+        .groupby(["p", "k"])
+        .sum()
+    ),
+    in_process=True,
+    note="a level name in a list of keys groups by that level",
+)
