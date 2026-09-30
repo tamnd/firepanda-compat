@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/groupby-transform-name-with-args`: `GroupBy.transform("quantile", 0.25)` hands its arguments to the named reduction and spreads the answer over each group, as firepanda #1432 does.
+- Board after firepanda #1432: 5469 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for `GroupBy.apply` answering one value a group with `as_index=False`.
 - Board after firepanda #1431: 5468 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for `groupby` selecting a key column with `as_index=False`.

@@ -6202,3 +6202,18 @@ case(
     in_process=True,
     note="one value a group goes beside the keys in a column named None",
 )
+
+case(
+    "basics/groupby-transform-name-with-args",
+    "GroupBy.transform",
+    level="L3",
+    covers=("func",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "b", "a", "b"], "v": [1.0, 2.0, 3.0, 5.0]})
+        .groupby("k")["v"]
+        .transform("quantile", 0.25)
+    ),
+    in_process=True,
+    note="a reduction by name takes its arguments and spreads over the group",
+)
