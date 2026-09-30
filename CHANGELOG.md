@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- windows/rolling-apply leaves engine/window-infinity-dense, since it now matches pandas exactly on the frame with no nulls, and signature/pandas.index passes now that `Index` shows pandas' parameters.
+- Board after firepanda #1482: 5546 pass, 0 unimplemented, 68 divergent, 0 fail.
 - Cases for `xs` with `level=` across columns of two levels, with and without `drop_level`, and for `loc` by a first level column label.
 - Board after firepanda #1481: 5544 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for correlating instants in a frame and in a column with NaT, and for a frame's covariance refusing instants.
