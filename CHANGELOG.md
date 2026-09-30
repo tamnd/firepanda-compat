@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/melt-col-level: DataFrame.melt with col_level naming one level of columns, which firepanda now answers (firepanda #1452).
+- Board after firepanda #1452: 5492 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/sort-index-columns-key: DataFrame.sort_index(axis=1) with a key over the column labels, which firepanda now answers (firepanda #1451).
 - Board after firepanda #1451: 5491 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/index-get-indexer-nearest: Index.get_indexer with method="nearest" and a tolerance, which firepanda now answers (firepanda #1450).

@@ -6547,3 +6547,18 @@ case(
     in_process=True,
     note="the column labels sort through the key, so A goes before b",
 )
+case(
+    "basics/melt-col-level",
+    "DataFrame.melt",
+    level="L3",
+    covers=("col_level",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        [[1, 2, 3], [4, 5, 6]],
+        columns=pd.MultiIndex.from_tuples(
+            [("A", "a"), ("B", "b"), ("C", "c")], names=["up", "low"]
+        ),
+    ).melt(col_level="low", id_vars=["a"]),
+    in_process=True,
+    note="the lower level of columns is melted as if it were the only one",
+)
