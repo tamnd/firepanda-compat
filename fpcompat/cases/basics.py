@@ -6187,3 +6187,18 @@ case(
     in_process=True,
     note="a reduced key shows its value alone with as_index=False",
 )
+
+case(
+    "basics/groupby-apply-scalar-as-index-false",
+    "GroupBy.apply",
+    level="L3",
+    covers=("func",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: repr(
+        pd.DataFrame({"k": ["a", "b", "a"], "v": [1.0, 2.0, 3.0]})
+        .groupby("k", as_index=False)
+        .apply(lambda g: g["v"].sum())
+    ),
+    in_process=True,
+    note="one value a group goes beside the keys in a column named None",
+)
