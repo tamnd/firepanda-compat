@@ -6682,3 +6682,16 @@ case(
     in_process=True,
     note="an ordered categorical's quantile picks categories through their codes",
 )
+
+case(
+    "basics/reset-index-allow-duplicates",
+    "DataFrame.reset_index",
+    level="L3",
+    covers=("allow_duplicates",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"index": [1, 2], "v": [3, 4]}).reset_index(
+        allow_duplicates=True
+    ),
+    in_process=True,
+    note="with no clash the flag changes nothing, and index falls back to level_0",
+)

@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/reset-index-allow-duplicates` checks that `allow_duplicates=True` with no clash answers as pandas does and that `index` falls back to `level_0`, which firepanda #1462 added.
+- Board after firepanda #1462: 5502 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/category-quantile-nearest` checks that an ordered categorical's quantile picks categories through their codes, which firepanda #1461 added.
 - Board after firepanda #1461: 5501 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/rank-axis-none, `DataFrame.rank(axis=None)` raising pandas' "No axis named None" ValueError, after firepanda #1460 stopped reading a None axis as the default on 26 methods.
