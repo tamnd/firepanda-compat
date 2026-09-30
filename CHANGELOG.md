@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Merge parameter cases: cross and anti joins, a one sided suffix, sort, the indicator on a cross and a right anti join, a merge on both row labels, join with how="cross", lsuffix and rsuffix and sort, and the MergeError for a key on a cross join, which joins the pandas-exception-classes entry.
+- Board after firepanda #1338: 5020 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Retired `engine/nbytes`: firepanda #1336 counts bytes the way pandas does, from the numpy or Arrow arrays pandas would hold the data in, so the column, text column, index, frame and column usage cases match pandas.
 - Board after firepanda #1336: 5003 pass, 0 unimplemented, 62 divergent, 2 fail.
 - `engine/moment-precision` is retired: firepanda #1335 takes a series' variance, deviation and standard error in pandas' order, and its skewness after #1334, so the two shifted cases answer pandas' floats and run in process.

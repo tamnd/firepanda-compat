@@ -143,6 +143,16 @@ case(
     "not make it raise is not testing it",
 )
 case(
+    "errors/merge-cross-with-key",
+    "pandas.merge",
+    level="L4",
+    frames=("keys_10",),
+    expr=lambda pd, df: pd.merge(df, df, on="key", how="cross"),
+    raises=("MergeError", "Can not pass on, right_on, left_on"),
+    note="a cross join has no key, and naming one is a MergeError rather than a key "
+    "that is quietly ignored",
+)
+case(
     "errors/merge-suffix-collision",
     "pandas.merge",
     level="L4",

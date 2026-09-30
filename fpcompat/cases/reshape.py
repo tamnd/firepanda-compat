@@ -177,6 +177,130 @@ case(
     in_process=True,
 )
 case(
+    "reshape/merge-cross",
+    "pandas.merge",
+    level="L3",
+    covers=("left", "right", "how"),
+    frames=("keys_10", "keys_awkward"),
+    expr=lambda pd, df: pd.merge(df.head(12), _right(df).head(7), how="cross"),
+    note="every left row beside every right row, left order first, which pandas does "
+    "promise, so the order is compared as it is. " + MERGE_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/merge-cross-suffixes",
+    "pandas.merge",
+    level="L3",
+    covers=("left", "right", "how", "suffixes", "indicator"),
+    frames=("keys_10",),
+    expr=lambda pd, df: pd.merge(
+        df.head(6), df.head(5), how="cross", suffixes=("_l", "_r"), indicator=True
+    ),
+    note="both sides have both columns, so both get a suffix, and every row of a cross "
+    "join is on both sides. " + MERGE_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/merge-left-anti",
+    "pandas.merge",
+    level="L3",
+    covers=("left", "right", "on", "how"),
+    frames=("keys_1000", "keys_unique", "keys_awkward"),
+    expr=lambda pd, df: pd.merge(df, _right(df).iloc[::3], on="key", how="left_anti"),
+    note="the left rows with no partner, labelled as the left join labels them, with "
+    "the right columns there and empty. " + MERGE_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/merge-right-anti",
+    "pandas.merge",
+    level="L3",
+    covers=("left", "right", "on", "how", "indicator"),
+    frames=("keys_1000", "keys_awkward"),
+    expr=lambda pd, df: pd.merge(
+        df.iloc[::3], _right(df), on="key", how="right_anti", indicator="side"
+    ),
+    note="the mirror of the left anti join, with the indicator named, where every row "
+    "reads right_only. " + MERGE_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/merge-sort",
+    "pandas.merge",
+    level="L3",
+    covers=("left", "right", "on", "how", "sort"),
+    frames=("keys_unique",),
+    expr=lambda pd, df: pd.merge(
+        df.iloc[::-1], _right(df).iloc[::2], on="key", how="left", sort=True
+    ),
+    note="the keys are unique, so the sort decides the whole order and the order is "
+    "compared as it is. " + MERGE_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/merge-one-suffix",
+    "pandas.merge",
+    level="L3",
+    covers=("left", "right", "on", "suffixes"),
+    frames=("keys_unique", "keys_awkward"),
+    expr=lambda pd, df: pd.merge(df, df, on="key", suffixes=(None, "_r")),
+    rules=JOIN_ORDER,
+    note="a None suffix leaves that side's name alone. " + MERGE_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/merge-left-index-right-index",
+    "pandas.merge",
+    level="L3",
+    covers=("left", "right", "left_index", "right_index", "how", "indicator"),
+    frames=("keys_unique",),
+    expr=lambda pd, df: pd.merge(
+        df.iloc[::2],
+        _right(df).iloc[::3],
+        left_index=True,
+        right_index=True,
+        how="outer",
+        indicator=True,
+    ),
+    note="both sides joined on their row labels, where an outer join sorts them. " + MERGE_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/join-cross",
+    "DataFrame.join",
+    level="L3",
+    covers=("other", "how", "rsuffix"),
+    frames=("keys_10", "keys_awkward"),
+    expr=lambda pd, df: df.head(6).join(_right(df).head(4), how="cross", rsuffix="_r"),
+    note="the method spelling of a cross join. " + JOIN_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/join-suffixes",
+    "DataFrame.join",
+    level="L3",
+    covers=("other", "lsuffix", "rsuffix"),
+    frames=("keys_10", "keys_awkward"),
+    expr=lambda pd, df: df.join(df.head(5), lsuffix="_l", rsuffix="_r"),
+    note="the same columns on both sides, told apart by the two suffixes, with the "
+    "rows past the fifth finding nothing. " + JOIN_NOTE,
+    in_process=True,
+)
+case(
+    "reshape/join-sort",
+    "DataFrame.join",
+    level="L3",
+    covers=("other", "how", "sort"),
+    frames=("keys_unique",),
+    expr=lambda pd, df: (
+        df.iloc[::-1]
+        .set_index("key")
+        .join(_right(df).iloc[::2].set_index("key"), how="left", sort=True)
+    ),
+    note="the labels are unique, so the sort decides the whole order. " + JOIN_NOTE,
+    in_process=True,
+)
+case(
     "reshape/join",
     "DataFrame.join",
     level="L3",
