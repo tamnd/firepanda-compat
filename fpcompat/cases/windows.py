@@ -535,3 +535,31 @@ case(
     note="a list over a decayed window of a frame answers under two levels of column labels",
     in_process=True,
 )
+case(
+    "windows/rolling-corr-every-pair",
+    "Rolling.corr",
+    level="L3",
+    covers=("pairwise",),
+    frames=("tall",),
+    expr=lambda pd, df: df[["value", "key"]].astype("float64").rolling(20).corr(),
+    in_process=True,
+    note="with no other frame every pair of columns is answered, each row label once a "
+    "column under a second level of row labels",
+    rules=SPREAD,
+)
+case(
+    "windows/ewm-cov-every-pair",
+    "ExponentialMovingWindow.cov",
+    level="L3",
+    covers=("other", "pairwise"),
+    frames=("tall",),
+    expr=lambda pd, df: (
+        df[["value", "key"]]
+        .astype("float64")
+        .ewm(span=10)
+        .cov(df[["key"]].astype("float64"), pairwise=True)
+    ),
+    in_process=True,
+    note="against another frame the second level of row labels is the other frame's columns",
+    rules=SPREAD,
+)
