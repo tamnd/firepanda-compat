@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `engine/integer-moments` is retired: firepanda #1334 casts whole numbers to float64 before a skewness or kurtosis as pandas does, and `stats/skew` runs in process so it reaches that Python layer.
+- Board after firepanda #1334: 4988 pass, 0 unimplemented, 77 divergent, 2 fail.
 - `engine/dtype-spelling` is retired: firepanda #1333 spells text `str` as pandas 3 does, and the date column already agreed, so `divergences/dtype-spelling/text-column`, `divergences/dtype-spelling/text-frame` and `basics/dtypes` on every frame score against pandas.
 - Board after firepanda #1333: 4986 pass, 0 unimplemented, 79 divergent, 2 fail.
 - `signature/rolling.max` scores against pandas: firepanda #1332 declares `Rolling.max` with pandas' ignored `*args` and `**kwargs`, so `engine/rolling-max-varargs` is retired.

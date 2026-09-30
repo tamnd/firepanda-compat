@@ -613,9 +613,13 @@ def test_the_committed_registry_loads():
     `engine/dtype-spelling` is retired, which leaves eighteen. firepanda spells text `str`
     now, pandas' `StringDtype` with NaN for a gap, so the text cases and the whole frame
     member agree. The date case had already agreed, because a date column read from
-    Arrow is a column of date objects on both sides and both call it `object`."""
+    Arrow is a column of date objects on both sides and both call it `object`.
+
+    `engine/integer-moments` is retired, which leaves seventeen. firepanda casts whole
+    numbers to float64 before a skewness, as pandas does, so it answers pandas' rounded
+    value rather than the exact one, and `stats/skew` runs in process to reach it."""
     entries = divergences.registry()
-    assert len(entries) == 18
+    assert len(entries) == 17
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

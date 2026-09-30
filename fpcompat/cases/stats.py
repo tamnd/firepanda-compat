@@ -126,9 +126,13 @@ for name in ("std", "var", "sem", "skew", "kurt"):
             "order of adding moves the answer by 2e-7 and pandas is itself 1.2e-7 off the "
             "exact answer over the same floats, so firepanda adds in numpy's order too"
             if name == "kurt"
+            else ". In process because firepanda casts whole numbers to float64 in its Python "
+            "layer before the moments, as pandas' nanskew does, and the driver calls the "
+            "kernel, which measures a whole number exactly"
+            if name == "skew"
             else ""
         ),
-        in_process=name == "kurt",
+        in_process=name in ("skew", "kurt"),
     )
 
 case(
