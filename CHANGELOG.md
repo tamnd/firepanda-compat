@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/groupby-cumsum-numeric-only: `GroupBy.cumsum(numeric_only=True)` leaves the text column out and sums the flags as whole numbers.
+- Board after firepanda #1442: 5483 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/shift-freq-columns: `DataFrame.shift(freq="D", axis=1)` moves the column labels of a frame with dates for columns.
 - Board after firepanda #1441: 5482 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/ffill-limit-area: `Series.ffill(limit_area="inside")` fills only the gaps between two present values.

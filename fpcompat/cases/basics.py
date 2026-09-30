@@ -6417,3 +6417,21 @@ case(
     in_process=True,
     note="the column labels move a day on and the values stay put",
 )
+
+
+case(
+    "basics/groupby-cumsum-numeric-only",
+    "GroupBy.cumsum",
+    level="L3",
+    covers=("numeric_only",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {"k": ["a", "b", "a"], "v": [1, 5, 3], "s": ["x", "y", "z"], "b": [True, False, True]}
+        )
+        .groupby("k")
+        .cumsum(numeric_only=True)
+    ),
+    in_process=True,
+    note="the text column is left out and the flags are summed as whole numbers",
+)
