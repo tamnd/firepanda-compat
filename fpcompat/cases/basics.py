@@ -6403,3 +6403,17 @@ case(
     in_process=True,
     note="only the gap between two present values is filled",
 )
+
+
+case(
+    "basics/shift-freq-columns",
+    "DataFrame.shift",
+    level="L3",
+    covers=("freq", "axis"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        [[1, 2]], columns=pd.date_range("2024-01-01", periods=2)
+    ).shift(1, freq="D", axis=1),
+    in_process=True,
+    note="the column labels move a day on and the values stay put",
+)
