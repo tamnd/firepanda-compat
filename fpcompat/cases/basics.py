@@ -6535,3 +6535,15 @@ case(
     in_process=True,
     note="a missing label reads from the nearest label within the tolerance, -1 past it",
 )
+case(
+    "basics/sort-index-columns-key",
+    "DataFrame.sort_index",
+    level="L3",
+    covers=("axis", "key"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"b": [1, 2], "A": [3.0, 4.0], "c": ["x", "y"]}).sort_index(
+        axis=1, key=lambda labels: labels.str.lower()
+    ),
+    in_process=True,
+    note="the column labels sort through the key, so A goes before b",
+)

@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/sort-index-columns-key: DataFrame.sort_index(axis=1) with a key over the column labels, which firepanda now answers (firepanda #1451).
+- Board after firepanda #1451: 5491 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/index-get-indexer-nearest: Index.get_indexer with method="nearest" and a tolerance, which firepanda now answers (firepanda #1450).
 - Board after firepanda #1450: 5490 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/groupby-value-counts-bins: a column group by value_counts with bins lists every bin in every group.
