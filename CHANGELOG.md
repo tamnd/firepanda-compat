@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `cut` and `qcut` of instants and spans, which bin into intervals of instants or spans, and for `cut` of a list, which answers a Categorical.
+- Board after firepanda #1475: 5531 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `nunique` over a float column holding NaN, kept and dropped, and for reductions and `idxmax` keeping the names of the column levels.
 - Board after firepanda #1474: 5527 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `pivot` and `pivot_table` over several columns keys, which label the answer's columns with a MultiIndex.

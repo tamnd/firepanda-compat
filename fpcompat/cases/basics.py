@@ -7020,3 +7020,57 @@ case(
     in_process=True,
     note="labels of several levels answer a MultiIndex that keeps the level names",
 )
+
+case(
+    "basics/cut-instants-count",
+    "pandas.cut",
+    level="L3",
+    covers=("x", "bins"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.cut(
+        pd.Series(pd.to_datetime(["2024-01-01", "2024-01-05", "2024-01-10"]), name="d"), 3
+    ),
+    in_process=True,
+    note="bins of instants are intervals of instants, widened by a thousandth of the range",
+)
+
+case(
+    "basics/cut-spans-edges",
+    "pandas.cut",
+    level="L3",
+    covers=("bins", "retbins"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.cut(
+        pd.Series(pd.to_timedelta(["1h", "3h", "10h"])),
+        pd.to_timedelta(["0h", "2h", "12h"]),
+        retbins=True,
+    )[0],
+    in_process=True,
+    note="edges of spans bin spans into intervals of spans",
+)
+
+case(
+    "basics/qcut-instants",
+    "pandas.qcut",
+    level="L3",
+    covers=("x", "q", "labels"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.qcut(
+        pd.Series(pd.to_datetime(["2024-01-01", "2024-01-05", "2024-01-10", "2024-01-20"])),
+        2,
+        labels=False,
+    ),
+    in_process=True,
+    note="quantiles of instants are taken over their counts",
+)
+
+case(
+    "basics/cut-list-categorical",
+    "pandas.cut",
+    level="L3",
+    covers=("x", "labels"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(pd.cut([1, 5, 9, 3], 2, labels=["lo", "hi"])),
+    in_process=True,
+    note="a list is binned into a Categorical",
+)
