@@ -6835,3 +6835,36 @@ case(
     in_process=True,
     note="dropping the row axis answers the one row as a series named by its label",
 )
+
+case(
+    "basics/bitwise-and-integers",
+    "Series.__and__",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([12, 10, 7]) & pd.Series([10, 6, 1]),
+    in_process=True,
+    note="two integer columns answer the bitwise and",
+)
+
+case(
+    "basics/str-replace-callable",
+    "str.replace",
+    level="L3",
+    covers=("pat", "repl", "regex"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(["foo 12", "bar 3"]).str.replace(
+        r"\d+", lambda m: str(int(m.group(0)) * 2), regex=True
+    ),
+    in_process=True,
+    note="a callable replacement is handed each match",
+)
+
+case(
+    "basics/factorize-categorical-sort",
+    "Series.factorize",
+    level="L3",
+    covers=("sort",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(["b", "a", "b", "c"], dtype="category").factorize(sort=True)[1],
+    in_process=True,
+    note="the uniques of a categorical column are a categorical index in category order",
+)
