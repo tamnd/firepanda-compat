@@ -5820,3 +5820,31 @@ case(
     in_process=True,
     note="a repeated label is refused",
 )
+case(
+    "basics/groupby-quantile-list",
+    "GroupBy.quantile",
+    level="L3",
+    covers=("q",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["b", "a", "b", "a", "b"], "v": [1.0, 2.0, 3.0, 4.0, 5.0]})
+        .groupby("k")
+        .quantile([0.25, 0.75])
+    ),
+    in_process=True,
+    note="a list of quantiles is a level after the keys",
+)
+case(
+    "basics/groupby-quantile-picked",
+    "GroupBy.quantile",
+    level="L3",
+    covers=("q", "interpolation"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["b", "a", "b", "a", "b"], "w": [5, 4, 3, 2, 1]})
+        .groupby("k")["w"]
+        .quantile([0.3, 0.6], interpolation="nearest")
+    ),
+    in_process=True,
+    note="a picking rule keeps whole numbers whole",
+)
