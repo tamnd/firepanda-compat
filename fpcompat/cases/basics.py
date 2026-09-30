@@ -6377,3 +6377,17 @@ case(
     in_process=True,
     note="only the rows without a gap counted",
 )
+
+case(
+    "basics/crosstab-several-keys",
+    "pandas.crosstab",
+    level="L3",
+    covers=("index", "columns"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.crosstab(
+        [pd.Series(["x", "x", "y"], name="a"), pd.Series(["p", "q", "p"], name="b")],
+        [pd.Series(["u", "v", "u"], name="c"), pd.Series(["m", "m", "n"], name="d")],
+    ),
+    in_process=True,
+    note="both axes labelled by the pairs of keys seen",
+)
