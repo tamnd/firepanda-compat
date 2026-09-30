@@ -6643,3 +6643,17 @@ case(
     in_process=True,
     note="whole rows are taken from the frame sorted by every column at once",
 )
+
+case(
+    "basics/groupby-cummax-skipna-false",
+    "GroupBy.cummax",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "a", "b", "a", "b"], "v": [1.0, float("nan"), 2.0, 5.0, 3.0]})
+        .groupby("k")
+        .cummax(skipna=False)
+    ),
+    in_process=True,
+    note="a gap that may not be skipped leaves the rest of its group missing",
+)

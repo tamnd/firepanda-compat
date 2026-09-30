@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/groupby-cummax-skipna-false, a group by's `cummax(skipna=False)` leaving the rest of a group missing after a gap, lifted from a refusal in firepanda #1459.
+- Board after firepanda #1459: 5499 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/quantile-method-table, `DataFrame.quantile(method="table")` taking whole rows at each quantile, lifted from a refusal in firepanda #1458.
 - Board after firepanda #1458: 5498 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/reset-index-col-level, `DataFrame.reset_index(col_level=..., col_fill=...)` on MultiIndex columns, lifted from a refusal in firepanda #1457.
