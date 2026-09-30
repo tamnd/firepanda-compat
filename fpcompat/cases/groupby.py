@@ -1060,3 +1060,98 @@ case(
     in_process=True,
     note="the counts are labelled in the column's masked type. Since firepanda #1368",
 )
+case(
+    "groupby/masked-values-sum",
+    "GroupBy.sum",
+    covers=(),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {
+                "g": ["a", "a", "b", "b"],
+                "i": pd.Series([1, None, 3, 4], dtype="Int32"),
+                "b": pd.Series([True, None, False, True], dtype="boolean"),
+            }
+        )
+        .groupby("g")
+        .sum()
+    ),
+    in_process=True,
+    note="a sum keeps the masked type and counts flags as Int64. Since firepanda #1369 and #1370",
+)
+case(
+    "groupby/masked-values-mean",
+    "GroupBy.mean",
+    covers=(),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {
+                "g": ["a", "a", "b", "b"],
+                "i": pd.Series([1, None, 3, 4], dtype="Int32"),
+                "b": pd.Series([True, None, False, True], dtype="boolean"),
+            }
+        )
+        .groupby("g")
+        .i.mean()
+    ),
+    in_process=True,
+    note="a mean over a masked column is Float64. Since firepanda #1369 and #1370",
+)
+case(
+    "groupby/masked-values-count",
+    "GroupBy.count",
+    covers=(),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {
+                "g": ["a", "a", "b", "b"],
+                "i": pd.Series([1, None, 3, 4], dtype="Int32"),
+                "b": pd.Series([True, None, False, True], dtype="boolean"),
+            }
+        )
+        .groupby("g")
+        .count()
+    ),
+    in_process=True,
+    note="counts over masked columns are Int64. Since firepanda #1369 and #1370",
+)
+case(
+    "groupby/masked-values-agg",
+    "GroupBy.agg",
+    covers=("func",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {
+                "g": ["a", "a", "b", "b"],
+                "i": pd.Series([1, None, 3, 4], dtype="Int32"),
+                "b": pd.Series([True, None, False, True], dtype="boolean"),
+            }
+        )
+        .groupby("g")
+        .agg({"i": ["sum", "mean"], "b": "any"})
+    ),
+    in_process=True,
+    note="each agg column takes the type its function gives. Since firepanda #1369 and #1370",
+)
+case(
+    "groupby/masked-values-cumsum",
+    "GroupBy.cumsum",
+    covers=(),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {
+                "g": ["a", "a", "b", "b"],
+                "i": pd.Series([1, None, 3, 4], dtype="Int32"),
+                "b": pd.Series([True, None, False, True], dtype="boolean"),
+            }
+        )
+        .groupby("g")
+        .cumsum()
+    ),
+    in_process=True,
+    note="a running total keeps the masked type and its NA. Since firepanda #1369 and #1370",
+)
