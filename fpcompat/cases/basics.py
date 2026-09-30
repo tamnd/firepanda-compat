@@ -5568,3 +5568,48 @@ for whole in ("mean", "median", "std", "var", "sem", "skew", "kurt"):
         note="axis=None reads every cell of the frame at once, since a mean of means is "
         "not a mean. Since firepanda #1403",
     )
+case(
+    "basics/series-add-on-level",
+    "Series.add",
+    level="L3",
+    covers=("other", "level"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        [1.0, 2.0, 4.0, 8.0],
+        index=pd.MultiIndex.from_arrays(
+            [["p", "p", "q", "r"], ["x", "y", "z", "x"]], names=["o", "i"]
+        ),
+    ).add(pd.Series([10.0, 20.0], index=["p", "q"]), level="o"),
+    in_process=True,
+    note="level reads the flat side once for every row by its label on that level",
+)
+case(
+    "basics/series-mul-on-level-filled",
+    "Series.mul",
+    level="L3",
+    covers=("other", "level", "fill_value"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        [1.0, 2.0, 4.0, 8.0],
+        index=pd.MultiIndex.from_arrays(
+            [["p", "p", "q", "r"], ["x", "y", "z", "x"]], names=["o", "i"]
+        ),
+    ).mul(pd.Series([10.0, 20.0], index=["p", "q"]), level=0, fill_value=1),
+    in_process=True,
+    note="a row whose label the flat side lacks takes fill_value",
+)
+case(
+    "basics/frame-mul-on-level",
+    "DataFrame.mul",
+    level="L3",
+    covers=("other", "axis", "level"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"a": [1.0, 2.0, 4.0, 8.0], "b": [1, 2, 3, 4]},
+        index=pd.MultiIndex.from_arrays(
+            [["p", "p", "q", "r"], ["x", "y", "z", "x"]], names=["o", "i"]
+        ),
+    ).mul(pd.Series([100, 200, 300], index=["x", "y", "z"]), axis=0, level="i"),
+    in_process=True,
+    note="a frame's rows read a Series on flat labels by the inner level",
+)

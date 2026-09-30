@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for arithmetic on one level of a MultiIndex: `Series.add` and `Series.mul` with `level=` and `fill_value`, and `DataFrame.mul` on the inner level of the rows.
+- Board after firepanda #1404: 5424 pass, 0 unimplemented, 67 divergent, 2 fail.
 - `basics/frame-whole-mean`, `-median`, `-std`, `-var`, `-sem`, `-skew` and `-kurt` cover these reductions with `axis=None` on a frame, which firepanda #1403 answers as one number read from every cell, as pandas does.
 - Board after firepanda #1403: 5421 pass, 0 unimplemented, 67 divergent, 2 fail.
 - `basics/rename-rows-and-columns`, `basics/rename-one-level`, `basics/series-rename-labels` and `basics/rename-missing-label` cover `rename` of the row labels, which firepanda #1402 answers as pandas does, `level=` and `errors="raise"` included.
