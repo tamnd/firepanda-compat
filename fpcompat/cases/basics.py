@@ -7350,3 +7350,59 @@ case(
     in_process=True,
     note="a function answering one row a bin is an aggregate on each column",
 )
+
+
+def _repeated_hour():
+    """Half past one on the night New York leaves summer time, which happens twice."""
+    import datetime
+
+    return datetime.datetime(2024, 11, 3, 1, 30)
+
+
+case(
+    "basics/timestamp-fold-second",
+    "pandas.Timestamp",
+    level="L3",
+    covers=("fold", "tz"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [pd.Timestamp(_repeated_hour(), tz="US/Eastern", fold=1).isoformat()]
+    ),
+    in_process=True,
+    note="a fold of one puts a repeated wall clock on its second, winter, side",
+)
+
+case(
+    "basics/timestamp-fold-unambiguous",
+    "pandas.Timestamp",
+    level="L4",
+    raises=("ValueError", "Cannot pass fold with possibly unambiguous input"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Timestamp("2024-11-03 01:30", tz="US/Eastern", fold=1),
+    in_process=True,
+    note="text says its own moment, so a fold beside it is refused",
+)
+
+case(
+    "basics/multiindex-sortorder-kept",
+    "MultiIndex.from_arrays",
+    level="L3",
+    covers=("sortorder",),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [pd.MultiIndex.from_arrays([["a", "a", "b"], [2, 1, 3]], sortorder=1)[:2].sortorder]
+    ),
+    in_process=True,
+    note="the sortorder given is kept, and a forward slice carries it",
+)
+
+case(
+    "basics/multiindex-sortorder-too-deep",
+    "MultiIndex.from_product",
+    level="L4",
+    raises=("ValueError", "must be inferior or equal to actual lexsort_depth"),
+    frames=("single",),
+    expr=lambda pd, df: pd.MultiIndex.from_product([["b", "a"], [1, 2]], sortorder=2),
+    in_process=True,
+    note="a sortorder deeper than the sorted levels is refused",
+)
