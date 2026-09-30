@@ -947,6 +947,42 @@ case(
     in_process=True,
     note="infer takes the frequency the labels keep. " + HELD_IN_PROCESS,
 )
+INDEX_TYPES = {
+    "datetime-index-tz": (
+        "pandas.DatetimeIndex",
+        ("tz",),
+        lambda pd: pd.DatetimeIndex(
+            ["2024-01-01 10:00", "2024-01-02 10:00"], tz="America/New_York"
+        ),
+    ),
+    "datetime-index-ambiguous": (
+        "pandas.DatetimeIndex",
+        ("tz", "ambiguous"),
+        lambda pd: pd.DatetimeIndex(["2024-11-03 01:30"], tz="America/New_York", ambiguous=True),
+    ),
+    "datetime-index-dtype": (
+        "pandas.DatetimeIndex",
+        ("dtype",),
+        lambda pd: pd.DatetimeIndex(["2024-01-01"], dtype="datetime64[ns, UTC]"),
+    ),
+    "timedelta-index-dtype": (
+        "pandas.TimedeltaIndex",
+        ("dtype",),
+        lambda pd: pd.TimedeltaIndex(["1D", "2h"], dtype="timedelta64[s]"),
+    ),
+}
+for _name, (_api, _covers, _build) in INDEX_TYPES.items():
+    case(
+        f"temporal/{_name}",
+        _api,
+        level="L3",
+        covers=_covers,
+        frames=RANGE,
+        expr=lambda pd, df, _build=_build: _build(pd),
+        in_process=True,
+        note="the constructor puts freshly read labels on the clock tz names as tz_localize "
+        "would, and dtype names the unit, and for instants the clock",
+    )
 case(
     "temporal/timedelta-range-freqstr",
     "pandas.timedelta_range",
