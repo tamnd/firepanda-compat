@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for sparsify and layout in to_string, stack by a named level, rename_axis with a mapping, reindex by level, asfreq over periods, info without memory usage, Period fields, eval dicts, resolvers and target, wide_to_long sep and suffix, a CategoricalIndex given as index=, and merge_asof by and on the index.
+- Board after firepanda #1490: 5575 pass, 0 unimplemented, 68 divergent, 0 fail.
 - Timestamp fold and MultiIndex sortorder cases after firepanda #1488: a fold picks the second side of a repeated hour and is refused beside text, and a sortorder is kept through a slice and refused past the sorted levels.
 - Board after firepanda #1488: 5557 pass, 0 unimplemented, 68 divergent, 0 fail.
 - Resample apply cases after firepanda #1487: a function answering pieces is keyed by bin under `group_keys=True`, a transform-like piece is keyed too, and a one-row answer over a frame is aggregated per column.

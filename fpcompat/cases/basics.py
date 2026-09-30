@@ -7406,3 +7406,283 @@ case(
     in_process=True,
     note="a sortorder deeper than the sorted levels is refused",
 )
+
+
+def _two_level(pd):
+    """Four rows under two levels, the labels of the level name and reindex cases."""
+    return pd.MultiIndex.from_tuples([("a", 1), ("a", 2), ("b", 1), ("c", 3)], names=["k", "n"])
+
+
+def _small_text_frame(pd):
+    """A float column and a text column, the frame of the text layout cases."""
+    return pd.DataFrame({"a": [1.5, 22.25, 3.0], "b": ["x", "yyyyyy", "z"]})
+
+
+def _angled(v):
+    return f"<{v}>"
+
+
+def _info_text(pd):
+    import io
+
+    buf = io.StringIO()
+    pd.Series([1, 2], name="x").info(verbose=True, buf=buf, memory_usage=False, show_counts=True)
+    return buf.getvalue().replace(pd.__name__, "")
+
+
+case(
+    "basics/to-string-unsparsified",
+    "DataFrame.to_string",
+    level="L3",
+    covers=("sparsify",),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [pd.DataFrame({"v": [1, 2, 3, 4]}, index=_two_level(pd)).to_string(sparsify=False)]
+    ),
+    in_process=True,
+    note="with sparsify off every level label prints whole",
+)
+
+case(
+    "basics/to-string-layout",
+    "DataFrame.to_string",
+    level="L3",
+    covers=("col_space", "formatters", "justify"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            _small_text_frame(pd).to_string(
+                col_space={"a": 9}, formatters={"b": _angled}, justify="left"
+            )
+        ]
+    ),
+    in_process=True,
+    note="a width for one column, a formatter for another and left headers",
+)
+
+case(
+    "basics/to-string-decimal-width",
+    "DataFrame.to_string",
+    level="L3",
+    covers=("decimal", "max_colwidth", "index_names"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            _small_text_frame(pd)
+            .rename_axis("i")
+            .to_string(decimal=",", max_colwidth=4, index_names=False)
+        ]
+    ),
+    in_process=True,
+    note="a comma for the point, text cut to four and the index name left off",
+)
+
+case(
+    "basics/stack-named-level",
+    "DataFrame.stack",
+    level="L3",
+    covers=("level",),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame([[1, 5]], columns=_two_level(pd)[:2]).stack(level="n"),
+    in_process=True,
+    note="a column level asked for by name moves with its name to the rows",
+)
+
+case(
+    "basics/rename-axis-mapping",
+    "Series.rename_axis",
+    level="L3",
+    covers=("index",),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2, 3, 4], index=_two_level(pd)).rename_axis(index={"k": "K"}),
+    in_process=True,
+    note="a mapping given as index renames the level names it has keys for",
+)
+
+case(
+    "basics/reindex-onto-level",
+    "Series.reindex",
+    level="L3",
+    covers=("level", "fill_value"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2], index=["a", "b"]).reindex(
+        _two_level(pd), level="k", fill_value=0
+    ),
+    in_process=True,
+    note="flat labels are read against one level, a label missing there filled",
+)
+
+case(
+    "basics/reindex-from-level",
+    "Series.reindex",
+    level="L3",
+    covers=("level",),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1.0, 2.0, 3.0, 4.0], index=_two_level(pd)).reindex(
+        ["b", "a", "z"], level=0
+    ),
+    in_process=True,
+    note="rows whose label on the level is asked for are kept in the order asked",
+)
+
+case(
+    "basics/asfreq-filled",
+    "Series.asfreq",
+    level="L3",
+    covers=("method",),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [0, 1, 2, 3], index=pd.date_range("2024-01-01 00:07", periods=4, freq="17min")
+    ).asfreq("10min", method="ffill"),
+    in_process=True,
+    note="a forward filled asfreq keeps the step of its range",
+)
+
+case(
+    "basics/asfreq-periods-start",
+    "Series.asfreq",
+    level="L3",
+    covers=("how",),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2], index=pd.PeriodIndex(["2024", "2025"], freq="Y")).asfreq(
+        "M", how="start"
+    ),
+    in_process=True,
+    note="each year moves to its first month",
+)
+
+case(
+    "basics/info-without-memory",
+    "Series.info",
+    level="L3",
+    covers=("buf", "memory_usage", "show_counts", "verbose"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([_info_text(pd)]),
+    in_process=True,
+    note="the report without its memory line ends on its last line",
+)
+
+case(
+    "basics/period-fields",
+    "pandas.Period",
+    level="L3",
+    covers=("year", "month", "day", "hour", "minute", "second", "freq"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [str(pd.Period(year=2024, month=1, day=1, hour=5, minute=7, second=9, freq="s"))]
+    ),
+    in_process=True,
+    note="a period of a second built from its fields",
+)
+
+case(
+    "basics/period-quarter-ordinal",
+    "pandas.Period",
+    level="L3",
+    covers=("quarter", "ordinal", "value"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            str(pd.Period(year=2024, quarter=2, freq="Q")),
+            str(pd.Period(ordinal=100, freq="M")),
+            str(pd.Period(value="2024-05", freq="M")),
+        ]
+    ),
+    in_process=True,
+    note="a period by quarter, by ordinal and by text",
+)
+
+case(
+    "basics/eval-dicts",
+    "pandas.eval",
+    level="L3",
+    covers=("local_dict", "global_dict", "parser", "engine", "resolvers"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            int(pd.eval("x + y", global_dict={"x": 2}, local_dict={"y": 3})),
+            int(pd.eval("1 + 2", parser="python", engine="python")),
+            int(pd.eval("a + 1", resolvers=[{"a": 5}])),
+        ]
+    ),
+    in_process=True,
+    note="names read from the dicts and resolvers given, and the python parser and engine",
+)
+
+case(
+    "basics/eval-target",
+    "pandas.eval",
+    level="L3",
+    covers=("target",),
+    frames=("single",),
+    expr=lambda pd, df: pd.eval("c = 2 * 3", target=pd.DataFrame({"a": [1, 2]})),
+    in_process=True,
+    note="an assignment into the target frame",
+)
+
+case(
+    "basics/wide-to-long-sep-suffix",
+    "pandas.wide_to_long",
+    level="L3",
+    covers=("sep", "suffix"),
+    frames=("single",),
+    expr=lambda pd, df: pd.wide_to_long(
+        pd.DataFrame({"id": [1, 2], "A-x": [1, 2], "A-y": [3, 4]}),
+        ["A"],
+        i="id",
+        j="n",
+        sep="-",
+        suffix=r"\w",
+    ),
+    in_process=True,
+    note="stubs split from their suffix by a dash, the suffix a letter",
+)
+
+case(
+    "basics/category-index-built",
+    "pandas.CategoricalIndex",
+    level="L3",
+    covers=("categories", "ordered", "name", "copy"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [1, 2],
+        index=pd.CategoricalIndex(
+            ["a", "b"], categories=["b", "a", "c"], ordered=True, name="n", copy=True
+        ),
+    ),
+    in_process=True,
+    note="an ordered category index with categories of its own",
+)
+
+case(
+    "basics/merge-asof-by",
+    "pandas.merge_asof",
+    level="L3",
+    covers=("left_on", "right_on", "by"),
+    frames=("single",),
+    expr=lambda pd, df: pd.merge_asof(
+        pd.DataFrame({"t": [1, 5, 10], "k": ["a", "b", "a"], "l": [1, 2, 3]}),
+        pd.DataFrame({"u": [2, 6, 9], "k": ["a", "a", "b"], "r": [7, 8, 9]}),
+        left_on="t",
+        right_on="u",
+        by="k",
+    ),
+    in_process=True,
+    note="each row takes the last earlier row of its own key",
+)
+
+case(
+    "basics/merge-asof-index",
+    "pandas.merge_asof",
+    level="L3",
+    covers=("left_index", "right_index"),
+    frames=("single",),
+    expr=lambda pd, df: pd.merge_asof(
+        pd.DataFrame({"l": [1, 2, 3]}, index=[1, 5, 10]),
+        pd.DataFrame({"r": [7, 8, 9]}, index=[2, 6, 9]),
+        left_index=True,
+        right_index=True,
+    ),
+    in_process=True,
+    note="both sides matched on their row labels",
+)
