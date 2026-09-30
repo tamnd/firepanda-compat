@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for column reductions over flags beside numbers or text: an int64 sum over flags and integers, and object answers from max and min.
+- Board after firepanda #1406: 5428 pass, 0 unimplemented, 67 divergent, 2 fail.
 - Case for a frame with MultiIndex columns times an int Series that covers every column, which keeps int64.
 - Board after firepanda #1405: 5425 pass, 0 unimplemented, 67 divergent, 2 fail.
 - Cases for arithmetic on one level of a MultiIndex: `Series.add` and `Series.mul` with `level=` and `fill_value`, and `DataFrame.mul` on the inner level of the rows.

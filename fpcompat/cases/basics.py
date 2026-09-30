@@ -5630,3 +5630,30 @@ case(
     in_process=True,
     note="an int Series with a label for every column keeps the answer int64",
 )
+case(
+    "basics/frame-sum-flags-and-ints",
+    "DataFrame.sum",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2], "b": [True, False]}).sum(),
+    in_process=True,
+    note="flags add up as whole numbers, so the answer stays int64",
+)
+case(
+    "basics/frame-max-flags-and-ints",
+    "DataFrame.max",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2], "b": [True, False]}).max(),
+    in_process=True,
+    note="answers that share no type are held as they are in an object answer",
+)
+case(
+    "basics/frame-min-text-and-ints",
+    "DataFrame.min",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2], "b": ["x", "y"]}).min(),
+    in_process=True,
+    note="a number and a string side by side in an object answer",
+)
