@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/to-datetime-origin-julian: pandas.to_datetime reading Julian days with origin="julian", which firepanda now answers (firepanda #1455).
+- Board after firepanda #1455: 5495 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/dt-as-unit-round-ok-false: dt.as_unit with round_ok=False raising pandas' error for an instant that would be rounded, which firepanda now answers (firepanda #1454).
 - Board after firepanda #1454: 5494 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/reset-index-names-flat: DataFrame.reset_index with names on a one-level index, which firepanda now answers (firepanda #1453).

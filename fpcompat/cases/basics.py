@@ -6587,3 +6587,15 @@ case(
     in_process=True,
     note="the first instant a coarser unit would round is named by its count in microseconds",
 )
+case(
+    "basics/to-datetime-origin-julian",
+    "pandas.to_datetime",
+    level="L3",
+    covers=("origin", "unit"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.to_datetime(
+        pd.Series([2451544.5, 2451545.0]), unit="D", origin="julian"
+    ),
+    in_process=True,
+    note="Julian days are moved to days from 1970 before they are read",
+)
