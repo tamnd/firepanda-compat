@@ -1945,6 +1945,53 @@ for _name, (_given, _build) in RESAMPLE_ANCHOR.items():
     )
 
 
+def _monthly(pd):
+    times = [
+        "2026-01-01 00:00",
+        "2026-01-15 10:00",
+        "2026-02-01 00:00",
+        "2026-03-31 23:00",
+        "2026-06-30 00:00",
+    ]
+    return pd.Series([1.0, 2.0, 3.0, 4.0, 5.0], index=pd.to_datetime(times), name="v")
+
+
+RESAMPLE_CALENDAR = {
+    "month-end": ({}, lambda pd: _monthly(pd).resample("ME").sum()),
+    "month-start": ({}, lambda pd: _monthly(pd).resample("MS").mean()),
+    "week-left": (
+        {"closed": "left"},
+        lambda pd: _monthly(pd).resample("W-MON", closed="left").sum(),
+    ),
+    "quarter-label-left": (
+        {"closed": "right", "label": "left"},
+        lambda pd: _monthly(pd).resample("QE", closed="right", label="left").sum(),
+    ),
+    "year-list": ({}, lambda pd: _monthly(pd).resample("YS").agg(["sum", "count"])),
+    "on": (
+        {"on": "d"},
+        lambda pd: (
+            pd.DataFrame({"d": _monthly(pd).index, "v": [1, 2, 3, 4, 5]})
+            .resample("2ME", on="d")
+            .max()
+        ),
+    ),
+}
+for _name, (_given, _build) in RESAMPLE_CALENDAR.items():
+    case(
+        f"temporal/resample-calendar-{_name}",
+        "DataFrame.resample",
+        level="L3",
+        covers=("rule", *_given),
+        frames=RANGE,
+        expr=lambda pd, df, _build=_build: _build(pd),
+        in_process=True,
+        note="a calendar offset's bins are laid from the first day rolled back onto the "
+        "offset to a step past the last, and an offset that lands on the end of a period "
+        "closes and names its bins on the right, holding every moment of its end day. " + RESAMPLE,
+    )
+
+
 ROW_FREQ = {
     "head": lambda pd: _days(pd).head(3),
     "every-other": lambda pd: _days(pd).iloc[::2],
