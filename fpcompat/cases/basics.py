@@ -6295,3 +6295,43 @@ case(
     in_process=True,
     note="each row counted, labelled by the rows",
 )
+
+case(
+    "basics/tz-localize-infer",
+    "DatetimeIndex.tz_localize",
+    level="L3",
+    covers=("ambiguous",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DatetimeIndex(
+        pd.to_datetime(
+            [
+                "2024-11-03 00:30",
+                "2024-11-03 01:00",
+                "2024-11-03 01:30",
+                "2024-11-03 01:00",
+                "2024-11-03 01:30",
+                "2024-11-03 02:30",
+            ]
+        )
+    ).tz_localize("US/Eastern", ambiguous="infer"),
+    in_process=True,
+    note="the repeated hour told apart by where the readings go back",
+)
+
+case(
+    "basics/align-by-level",
+    "DataFrame.align",
+    level="L3",
+    covers=("join", "level"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"v": [1, 2, 3, 4]},
+        index=pd.MultiIndex.from_arrays([["b", "a", "b", "c"], [1, 2, 2, 1]], names=["k", "n"]),
+    ).align(
+        pd.DataFrame({"w": [10, 20, 30]}, index=pd.Index(["a", "b", "z"], name="k")),
+        join="outer",
+        level="k",
+    )[1],
+    in_process=True,
+    note="a flat index lined up with one level of a MultiIndex",
+)

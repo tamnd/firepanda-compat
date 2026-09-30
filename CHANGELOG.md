@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `DatetimeIndex.tz_localize(ambiguous="infer")` and `DataFrame.align` by a level of a MultiIndex, both passing on firepanda.
+- Board after firepanda #1436: 5476 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/multiindex-to-frame-labelled` and `basics/multiindex-value-counts`: `MultiIndex.to_frame()` labels its rows with the index and `value_counts` counts each row, as firepanda #1435 does.
 - Board after firepanda #1435: 5474 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/resample-zoned-day`: `Series.resample("D")` over timestamps with a zone lays days on the zone's own clock, as firepanda #1434 does.
