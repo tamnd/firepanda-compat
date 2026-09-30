@@ -5961,3 +5961,21 @@ case(
     in_process=True,
     note="a frame unstacks several levels under its own column names",
 )
+case(
+    "basics/frame-at-repeated-label",
+    "DataFrame.at",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"v": [1, 2, 3]}, index=["x", "y", "x"]).at["x", "v"],
+    in_process=True,
+    note="at on a label there twice answers every value under it, as loc does",
+)
+case(
+    "basics/series-at-repeated-label",
+    "Series.at",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1.5, 2.5, 3.5], index=["x", "y", "x"]).at["x"],
+    in_process=True,
+    note="a series answers a label there twice with both values",
+)

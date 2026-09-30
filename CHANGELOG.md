@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `DataFrame.at` and `Series.at` on a repeated label, which firepanda #1420 answers with a series as pandas does.
+- Board after firepanda #1420: 5453 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `Series.unstack` and `DataFrame.unstack` with a list of levels, which firepanda #1419 spreads across columns of several levels as pandas does.
 - Board after firepanda #1419: 5451 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for `DataFrame.quantile` across the rows at a list of quantiles under `interpolation="nearest"`.
