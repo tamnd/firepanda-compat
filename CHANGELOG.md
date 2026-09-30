@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Six cases for pandas' index of objects: an index of mixed labels, lookup of an object label by its value, sorting object labels, pandas' TypeError on labels Python cannot order, `Series(values, dtype=object)` keeping integers, and `concat` of parts whose labels are of two kinds.
+- Board after firepanda #1366: 5291 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cover `dtype=` on the Index and Series constructors: an index of floats and of instants, instants and spans parsed from text by dtype, and a list refused for a fraction or a number too big for the whole number type.
 - Board after firepanda #1364: 5285 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cover a group by's `value_counts` with a `dropna` of its own, keeping a missing value where the group by drops a missing key and the other way round. The unsorted case groups with `sort=False` because pandas orders equal counts and the rows within a key with an unstable sort.

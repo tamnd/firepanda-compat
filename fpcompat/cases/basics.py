@@ -5128,3 +5128,62 @@ case(
     in_process=True,
     note="a number outside the type's range is refused rather than wrapped. Since firepanda #1363",
 )
+case(
+    "basics/index-objects",
+    "pandas.Index",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Index(["a", 1, None, 2.5]),
+    in_process=True,
+    note="labels of no one type are an index of objects, each label as written. Since "
+    "firepanda #1366",
+)
+case(
+    "basics/index-objects-lookup",
+    "pandas.Series.loc",
+    covers=(),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([10, 20, 30], index=pd.Index(["a", 1, 2.5])).loc[[1, "a"]],
+    in_process=True,
+    note="an object label is found by its value. Since firepanda #1366",
+)
+case(
+    "basics/index-objects-sort",
+    "pandas.Series.sort_index",
+    covers=(),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        [1, 2, 3], index=pd.Index([3, 1, 2.5], dtype=object)
+    ).sort_index(),
+    in_process=True,
+    note="object labels sort the way Python sorts them. Since firepanda #1366",
+)
+case(
+    "basics/index-objects-unorderable",
+    "pandas.Index.sort_values",
+    level="L4",
+    covers=(),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Index([3, "b"]).sort_values(),
+    raises=("TypeError", "'<' not supported between instances of"),
+    in_process=True,
+    note="a mix Python cannot order raises as pandas raises. Since firepanda #1366",
+)
+case(
+    "basics/series-object-keeps-ints",
+    "pandas.Series",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([3, 1, 2.5], dtype=object),
+    in_process=True,
+    note="an integer asked for as an object stays an integer. Since firepanda #1366",
+)
+case(
+    "basics/concat-label-kinds",
+    "pandas.concat",
+    covers=("objs",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.concat([pd.Series([1], index=["a"]), pd.Series([2], index=[1])]),
+    in_process=True,
+    note="labels of two kinds meet as an index of objects. Since firepanda #1366",
+)
