@@ -6148,3 +6148,27 @@ case(
     in_process=True,
     note="a level of whole numbers with a gap stays whole",
 )
+
+case(
+    "basics/multiindex-levels-frozen",
+    "MultiIndex.levels",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: repr(
+        pd.MultiIndex.from_tuples([("b", 2), ("a", 1)], names=["p", "q"]).levels
+    ),
+    in_process=True,
+    note="levels is a FrozenList printing each level's values",
+)
+
+case(
+    "basics/multiindex-names-frozen",
+    "MultiIndex.names",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: repr(
+        pd.MultiIndex.from_tuples([("b", 2), ("a", 1)], names=["p", "q"]).names
+    ),
+    in_process=True,
+    note="names is a FrozenList",
+)

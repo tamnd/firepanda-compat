@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `MultiIndex.levels` and `MultiIndex.names` printed as a `FrozenList`.
+- Board after firepanda #1429: 5466 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for a MultiIndex level of whole numbers with a gap, sorted with a direction per level.
 - Board after firepanda #1428: 5464 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for `DataFrame.corr` with a callable method and `min_periods`.
