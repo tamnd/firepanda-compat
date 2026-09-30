@@ -6465,3 +6465,17 @@ case(
     in_process=True,
     note="each group's rows are numbered from its last row",
 )
+case(
+    "basics/groupby-any-keep-gaps",
+    "GroupBy.any",
+    level="L3",
+    covers=("skipna",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "a", "b", "b"], "v": [0.0, None, 0.0, 0.0]})
+        .groupby("k")
+        .any(skipna=False)
+    ),
+    in_process=True,
+    note="a gap that is not skipped counts as true, so the group with one is true",
+)
