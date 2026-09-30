@@ -970,6 +970,39 @@ case(
     in_process=True,
     note="the largest of an ordered category is read through the category's own order",
 )
+case(
+    "groupby/value-counts-keep-gaps",
+    "GroupBy.value_counts",
+    level="L3",
+    frames=SMALL,
+    expr=lambda pd, df: (
+        df.assign(
+            key=df["key"].where(df["value"].mod(5) != 0),
+            tag=df["value"].mod(3).where(df["value"].mod(4) != 0),
+        )
+        .groupby("key")["tag"]
+        .value_counts(dropna=False)
+    ),
+    in_process=True,
+    note="the group by drops a missing key while the counts keep a missing value",
+)
+case(
+    "groupby/value-counts-drop-gaps",
+    "GroupBy.value_counts",
+    level="L3",
+    frames=SMALL,
+    expr=lambda pd, df: (
+        df.assign(
+            key=df["key"].where(df["value"].mod(5) != 0),
+            tag=df["value"].mod(3).where(df["value"].mod(4) != 0),
+        )
+        .groupby("key", dropna=False, sort=False)[["tag"]]
+        .value_counts(normalize=True, sort=False)
+    ),
+    in_process=True,
+    note="the group by keeps a missing key while the counts drop a missing value, unsorted "
+    "because pandas orders equal counts and the rows within a key with an unstable sort",
+)
 
 for _kind in ("std", "var", "sem"):
     case(
