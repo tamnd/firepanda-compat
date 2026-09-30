@@ -6892,3 +6892,42 @@ case(
     in_process=True,
     note="a mapping of column names to mappings gives each column its own patterns",
 )
+
+case(
+    "basics/align-repeated-labels",
+    "Series.align",
+    level="L3",
+    covers=("other", "join"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1.0, 2.0], index=["a", "a"]).align(
+        pd.Series([5.0, 6.0], index=["a", "b"]), join="outer"
+    )[1],
+    in_process=True,
+    note="a repeated label on one side meets every row of it on the other",
+)
+
+case(
+    "basics/combine-first-repeated-labels",
+    "DataFrame.combine_first",
+    level="L3",
+    covers=("other",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"v": [1.0, float("nan")]}, index=["a", "a"]).combine_first(
+        pd.DataFrame({"v": [5.0, 6.0]}, index=["a", "b"])
+    ),
+    in_process=True,
+    note="a frame aligns with an outer join first, so a repeated label is joined",
+)
+
+case(
+    "basics/combine-first-series-repeated-raises",
+    "Series.combine_first",
+    level="L4",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1.0, 2.0], index=["a", "a"]).combine_first(
+        pd.Series([5.0], index=["b"])
+    ),
+    raises=("ValueError", "cannot reindex on an axis with duplicate labels"),
+    in_process=True,
+    note="a column reindexes each side onto the labels it keeps, which a repeat refuses",
+)

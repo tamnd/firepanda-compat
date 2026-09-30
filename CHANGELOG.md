@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for repeated row labels: `align` joining a repeated label with every row of it on the other side, a frame's `combine_first` aligning with an outer join, and a column's `combine_first` raising pandas' reindex ValueError.
+- Board after firepanda #1472: 5521 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `replace` with several patterns: a run of patterns rewriting only the rows each matched in the original column, and a frame reading a mapping of column names to mappings.
 - Board after firepanda #1471: 5518 pass, 0 unimplemented, 68 divergent, 2 fail.
 - `basics/bitwise-and-integers`, `basics/str-replace-callable` and `basics/factorize-categorical-sort`: bitwise `&` on integers, a callable `str.replace`, and `factorize` on a categorical column (firepanda #1469).
