@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for resample bins laid from `origin="end"`, `"end_day"` and a timestamp, moved by `offset=`, and for a day rule's empty end bins.
+- Board after firepanda #1381: 5338 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for `ewm(halflife=..., times=...)` over instants that drift apart, with gaps under `adjust=False`, and a timed sum refused with pandas' NotImplementedError.
 - Board after firepanda #1378: 5332 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for text sums, running joins and group sums that join rows in order, and for a text mean refused with pandas' TypeError.

@@ -1905,6 +1905,46 @@ def _days(pd):
     )
 
 
+def _uneven(pd):
+    times = ["2026-01-01 12:00", "2026-01-02 00:00", "2026-01-04 06:00", "2026-01-05 00:00"]
+    return pd.Series([1.0, 2.0, 3.0, 4.0], index=pd.to_datetime(times), name="v")
+
+
+RESAMPLE_ANCHOR = {
+    "end": ({"origin": "end"}, lambda pd: _uneven(pd).resample("30h", origin="end").sum()),
+    "end-left": (
+        {"origin": "end", "closed": "left"},
+        lambda pd: _uneven(pd).resample("30h", origin="end", closed="left").sum(),
+    ),
+    "end-day": (
+        {"origin": "end_day"},
+        lambda pd: _uneven(pd).resample("30h", origin="end_day").sum(),
+    ),
+    "timestamp": (
+        {"origin": "2025-12-31 07:00"},
+        lambda pd: _uneven(pd).resample("30h", origin="2025-12-31 07:00").sum(),
+    ),
+    "offset": ({"offset": "2h"}, lambda pd: _uneven(pd).resample("30h", offset="2h").sum()),
+    "day-right": (
+        {"closed": "right", "label": "right"},
+        lambda pd: _uneven(pd).resample("2D", closed="right", label="right").mean(),
+    ),
+}
+for _name, (_given, _build) in RESAMPLE_ANCHOR.items():
+    case(
+        f"temporal/resample-anchor-{_name}",
+        "DataFrame.resample",
+        level="L3",
+        covers=("rule", *_given),
+        frames=RANGE,
+        expr=lambda pd, df, _build=_build: _build(pd),
+        in_process=True,
+        note="the bins are laid from the origin pandas picks and moved by the offset, and a "
+        "rule in days, which pandas 3 does not count as a tick, runs a step past midnight of "
+        "the last day so an end bin can be empty. " + RESAMPLE,
+    )
+
+
 ROW_FREQ = {
     "head": lambda pd: _days(pd).head(3),
     "every-other": lambda pd: _days(pd).iloc[::2],
