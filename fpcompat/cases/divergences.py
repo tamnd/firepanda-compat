@@ -411,8 +411,8 @@ case(
 # ---------------------------------------------------------------------------
 
 MEASURING_MEMORY = (
-    "in process, because the answer is a number about buffers and the driver's read "
-    "rebuilds those buffers on its way in. The boundary is the thing being measured "
+    "in process, because the answer is a number about arrays and the driver's read "
+    "rebuilds those arrays on its way in. The boundary is the thing being measured "
     "here, so the case has to stay on the near side of it"
 )
 
@@ -422,11 +422,10 @@ case(
     frames=("int64_no_nulls", "int64_half_null", "float64_no_nulls"),
     expr=lambda pd, df: df["value"].nbytes,
     in_process=True,
-    note="firepanda counts the Arrow buffers the values are stored in, including the "
-    "validity bitmap, which Arrow allows a column with no nulls to omit and firepanda "
-    "allocates anyway. pandas counts the size of the numpy representation. The two "
-    "never agree, not even on a dense integer column, because of that one bitmap byte "
-    "per eight rows. " + MEASURING_MEMORY,
+    note="a width a row, which is what pandas' numpy array weighs, with no bitmap even "
+    "where there are gaps, since a float column holds a gap as NaN. This was the "
+    "`engine/nbytes` divergence until firepanda started counting pandas' arrays rather "
+    "than its own buffers. " + MEASURING_MEMORY,
 )
 case(
     "divergences/nbytes/text-column",
@@ -434,9 +433,8 @@ case(
     frames=("single", "two"),
     expr=lambda pd, df: df["c"].nbytes,
     in_process=True,
-    note="the widest version of the gap. A column of text is views and a payload here "
-    "and an array of references in pandas, so the strings themselves are inside this "
-    "number and outside that one, and making them longer moves the two further apart. "
+    note="eight bytes of offset a row and the UTF-8 bytes themselves, which is what "
+    "pandas 3's Arrow large string weighs, with a bitmap only when there is a gap. "
     + MEASURING_MEMORY,
 )
 case(
@@ -445,9 +443,9 @@ case(
     frames=("single", "two", "tall"),
     expr=lambda pd, df: df.index.nbytes,
     in_process=True,
-    note="a frame that declared no labels has none, so firepanda says zero. pandas "
-    "says 132, which is the size of the three Python integers a RangeIndex holds and "
-    "is a fact about a Python object rather than about any data. " + MEASURING_MEMORY,
+    note="a frame that declared no labels has a RangeIndex, which pandas weighs as the "
+    "Python range and its three numbers, 132 bytes whatever its length, and so does "
+    "firepanda. " + MEASURING_MEMORY,
 )
 case(
     "divergences/nbytes/frame",
@@ -456,8 +454,7 @@ case(
     expr=lambda pd, df: df.memory_usage().tolist(),
     in_process=True,
     note="the member a caller actually reads, where the per column numbers and the "
-    "index number are both the ones next door. The labels on the answer agree exactly "
-    "and are scored beside this, so what differs here is only the counting. " + MEASURING_MEMORY,
+    "index number are both the ones next door. " + MEASURING_MEMORY,
 )
 case(
     "divergences/nbytes/frame-labels",
@@ -465,9 +462,8 @@ case(
     frames=("single", "two", "wide"),
     expr=lambda pd, df: list(df.memory_usage().index),
     in_process=True,
-    note="the control, and it has to pass. The shape of the answer is pandas' down to "
-    "the index row coming first under the label `Index`, and only the numbers under "
-    "those labels are the divergence. " + MEASURING_MEMORY,
+    note="the shape of the answer, down to the index row coming first under the label "
+    "`Index`. " + MEASURING_MEMORY,
 )
 case(
     "divergences/nbytes/series-usage",
@@ -476,8 +472,7 @@ case(
     expr=lambda pd, df: df[df.columns[0]].memory_usage(index=False),
     in_process=True,
     note="the column's version with the index left out, so the number is exactly "
-    "`nbytes` and the divergence is exactly the one next door rather than that one "
-    "plus whatever the labels weigh. " + MEASURING_MEMORY,
+    "`nbytes`. " + MEASURING_MEMORY,
 )
 
 

@@ -235,9 +235,9 @@ case(
 
 INVARIANT = (
     "in process, and written as a question the two libraries answer the same way rather "
-    "than as the number itself, because the number is a divergence and is scored under "
-    "`divergences/nbytes`. What is left after the divergence is taken out is still worth "
-    "holding, since every rule here can break without the byte count changing at all. " + MEASURING
+    "than as the number itself, because the number is scored under `divergences/nbytes`. "
+    "These rules are still worth holding on their own, since every one of them can break "
+    "without the byte count changing at all. " + MEASURING
 )
 
 case(
@@ -246,8 +246,7 @@ case(
     frames=SHAPES,
     expr=lambda pd, df: df[df.columns[0]].nbytes > 0,
     in_process=True,
-    note="whether the column weighs anything, which both libraries agree about even "
-    "though they disagree about how much. The empty frame is the half that makes this a "
+    note="whether the column weighs anything. The empty frame is the half that makes this a "
     "question rather than a constant. " + INVARIANT,
 )
 case(
@@ -273,8 +272,7 @@ case(
     expr=lambda pd, df: df[df.columns[0]].memory_usage(index=False) == df[df.columns[0]].nbytes,
     in_process=True,
     note="the column's own weight with the labels left out, which is what `nbytes` "
-    "answers on both sides, so the two members have to agree with each other even where "
-    "neither agrees across the two libraries. " + INVARIANT,
+    "answers on both sides, so the two members have to agree with each other. " + INVARIANT,
 )
 case(
     "basics/memory-series-index",

@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Retired `engine/nbytes`: firepanda #1336 counts bytes the way pandas does, from the numpy or Arrow arrays pandas would hold the data in, so the column, text column, index, frame and column usage cases match pandas.
+- Board after firepanda #1336: 5003 pass, 0 unimplemented, 62 divergent, 2 fail.
 - `engine/moment-precision` is retired: firepanda #1335 takes a series' variance, deviation and standard error in pandas' order, and its skewness after #1334, so the two shifted cases answer pandas' floats and run in process.
 - Board after firepanda #1335: 4990 pass, 0 unimplemented, 75 divergent, 2 fail.
 - `engine/integer-moments` is retired: firepanda #1334 casts whole numbers to float64 before a skewness or kurtosis as pandas does, and `stats/skew` runs in process so it reaches that Python layer.

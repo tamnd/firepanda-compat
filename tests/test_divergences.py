@@ -622,9 +622,14 @@ def test_the_committed_registry_loads():
     `engine/moment-precision` is retired, which leaves sixteen. A series takes its
     variance, deviation, standard error and skewness in pandas' order now, from the
     mean numpy sums and with no correction for its error, so the two shifted cases
-    answer pandas' floats and run in process."""
+    answer pandas' floats and run in process.
+
+    `engine/nbytes` is retired, which leaves fifteen. firepanda counts bytes the way
+    pandas does now, from the numpy or Arrow arrays pandas would hold the data in, so a
+    column, a text column, an index nobody declared, a frame and a column's own usage
+    all answer pandas' numbers."""
     entries = divergences.registry()
-    assert len(entries) == 16
+    assert len(entries) == 15
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 
