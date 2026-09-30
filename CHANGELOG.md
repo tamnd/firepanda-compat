@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `temporal/localize-one-level` and `temporal/localize-level-without-dates` cover `tz_localize` and `tz_convert` with `level=` on a MultiIndex, which firepanda #1399 answers as pandas does, and the refusal of a level without dates.
+- Board after firepanda #1399: 5399 pass, 0 unimplemented, 65 divergent, 2 fail.
 - Cases for `Timestamp.tz_localize` on the hours a daylight saving change skips or repeats (`temporal/timestamp-localize-skipped-hour`, `temporal/timestamp-localize-repeated-hour`), with each `nonexistent` and `ambiguous` policy, and an L4 case for the refusal in pandas' words (`temporal/timestamp-localize-refused`).
 - Board after firepanda #1398: 5397 pass, 0 unimplemented, 65 divergent, 2 fail.
 - A case for dropping a row label that is not there (`basics/drop-missing-label`), an L4 case that checks the `KeyError` names the missing labels as they were given, as pandas does, including a text label dropped from integer row labels.

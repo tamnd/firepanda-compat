@@ -1972,6 +1972,42 @@ case(
     in_process=True,
     note="an hour that happens twice is refused unless told which, in pandas' words",
 )
+case(
+    "temporal/localize-one-level",
+    "DataFrame.tz_localize",
+    level="L3",
+    covers=("tz", "level"),
+    frames=RANGE,
+    expr=lambda pd, df: (
+        pd.DataFrame(
+            {"v": [1, 2, 3]},
+            index=pd.MultiIndex.from_arrays(
+                [["a", "b", "c"], pd.date_range("2024-01-01", periods=3, freq="h")],
+                names=["k", "t"],
+            ),
+        )
+        .tz_localize("UTC", level="t")
+        .tz_convert("US/Eastern", level="t")
+    ),
+    in_process=True,
+    note="level= changes the zone of the dates on that level alone, the other levels kept",
+)
+case(
+    "temporal/localize-level-without-dates",
+    "Series.tz_localize",
+    level="L4",
+    covers=("tz", "level"),
+    frames=RANGE,
+    expr=lambda pd, df: pd.Series(
+        [1, 2],
+        index=pd.MultiIndex.from_arrays(
+            [["a", "b"], pd.date_range("2024-01-01", periods=2)], names=["k", "t"]
+        ),
+    ).tz_localize("UTC", level="k"),
+    raises=("TypeError", "index is not a valid DatetimeIndex or PeriodIndex"),
+    in_process=True,
+    note="a level that does not hold dates is refused, in pandas' words",
+)
 
 
 def _days(pd):
