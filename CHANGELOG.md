@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- A case for `groupby` selecting a key column with `as_index=False`.
+- Board after firepanda #1430: 5467 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `MultiIndex.levels` and `MultiIndex.names` printed as a `FrozenList`.
 - Board after firepanda #1429: 5466 pass, 0 unimplemented, 68 divergent, 2 fail.
 - A case for a MultiIndex level of whole numbers with a gap, sorted with a direction per level.

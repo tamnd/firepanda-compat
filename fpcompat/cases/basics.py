@@ -6172,3 +6172,18 @@ case(
     in_process=True,
     note="names is a FrozenList",
 )
+
+case(
+    "basics/groupby-key-selected-as-index-false",
+    "DataFrame.groupby",
+    level="L3",
+    covers=("by", "as_index"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "b", "a"], "j": [1, 1, 2], "v": [1.0, 2.0, 3.0]})
+        .groupby(["k", "j"], as_index=False)[["j", "v"]]
+        .max()
+    ),
+    in_process=True,
+    note="a reduced key shows its value alone with as_index=False",
+)
