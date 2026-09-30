@@ -7252,3 +7252,54 @@ case(
     in_process=True,
     note="a first level label names the columns under it and keeps the level names left",
 )
+
+
+def _monthly(pd):
+    """Three months with March missing, the labels of the period resample cases."""
+    index = pd.PeriodIndex(["2024-01", "2024-02", "2024-04"], freq="M")
+    return pd.Series([1, 2, 4], index=index)
+
+
+case(
+    "basics/resample-periods-down",
+    "Series.resample",
+    level="L3",
+    covers=("rule",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _monthly(pd).resample("Q").sum(),
+    in_process=True,
+    note="months gathered into their quarters, labelled by the quarters",
+)
+
+case(
+    "basics/resample-periods-convention",
+    "Series.resample",
+    level="L3",
+    covers=("convention",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _monthly(pd).resample("W", convention="end").asfreq(),
+    in_process=True,
+    note="each month lands on the week holding its last day",
+)
+
+case(
+    "basics/resample-periods-ffill",
+    "Series.resample",
+    level="L3",
+    covers=("rule",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _monthly(pd).resample("W").ffill(limit=2),
+    in_process=True,
+    note="months spread over weeks from their first day, filled two weeks on",
+)
+
+case(
+    "basics/resample-periods-incompatible",
+    "Series.resample",
+    level="L4",
+    raises=("IncompatibleFrequency", "not sub or super periods"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _monthly(pd).resample("W").sum(),
+    in_process=True,
+    note="weeks do not divide months, so a reduction between them is refused",
+)

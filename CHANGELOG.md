@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- basics/resample-periods-down, basics/resample-periods-convention and basics/resample-periods-ffill resample a series labelled by months to quarters and to weeks, covering `convention`, and basics/resample-periods-incompatible joins engine/pandas-exception-classes for the IncompatibleFrequency a reduction from months to weeks raises.
+- Board after firepanda #1486: 5550 pass, 0 unimplemented, 68 divergent, 0 fail.
 - engine/interval-row-labels is retired, since `value_counts(bins=)` labels its counts by an IntervalIndex now that firepanda's IntervalIndex is an index of interval labels, and basics/series-value-counts-bins matches pandas exactly.
 - Board after firepanda #1484: 5547 pass, 0 unimplemented, 67 divergent, 0 fail.
 - windows/rolling-apply leaves engine/window-infinity-dense, since it now matches pandas exactly on the frame with no nulls, and signature/pandas.index passes now that `Index` shows pandas' parameters.
