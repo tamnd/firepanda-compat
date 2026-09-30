@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Five cases for pandas' masked index: an `Int64` index with NA, a `string` index, lookup by value, `set_index` on a masked column, and sorting masked labels with NA last.
+- Board after firepanda #1367: 5296 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Six cases for pandas' index of objects: an index of mixed labels, lookup of an object label by its value, sorting object labels, pandas' TypeError on labels Python cannot order, `Series(values, dtype=object)` keeping integers, and `concat` of parts whose labels are of two kinds.
 - Board after firepanda #1366: 5291 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cover `dtype=` on the Index and Series constructors: an index of floats and of instants, instants and spans parsed from text by dtype, and a list refused for a fraction or a number too big for the whole number type.

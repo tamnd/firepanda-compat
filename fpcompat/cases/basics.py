@@ -5187,3 +5187,54 @@ case(
     in_process=True,
     note="labels of two kinds meet as an index of objects. Since firepanda #1366",
 )
+case(
+    "basics/index-masked",
+    "pandas.Index",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Index([3, None, 1], dtype="Int64"),
+    in_process=True,
+    note="a masked index keeps its type and its NA. Since firepanda #1367",
+)
+case(
+    "basics/index-masked-text",
+    "pandas.Index",
+    covers=("dtype",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Index(["a", None], dtype="string"),
+    in_process=True,
+    note="text with NA is the string index. Since firepanda #1367",
+)
+case(
+    "basics/index-masked-lookup",
+    "pandas.Series.loc",
+    covers=(),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1, 2, 3], index=pd.Index([3, None, 1], dtype="Int64")).loc[
+        [1, 3]
+    ],
+    in_process=True,
+    note="a masked label is found by its value. Since firepanda #1367",
+)
+case(
+    "basics/index-masked-set-index",
+    "pandas.DataFrame.set_index",
+    covers=("keys",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"k": pd.Series([3, None, 1], dtype="Int64"), "v": [1, 2, 3]}
+    ).set_index("k"),
+    in_process=True,
+    note="a masked column becomes a masked index. Since firepanda #1367",
+)
+case(
+    "basics/index-masked-sort",
+    "pandas.Series.sort_index",
+    covers=(),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        [1, 2, 3], index=pd.Index([3, None, 1], dtype="Int64")
+    ).sort_index(),
+    in_process=True,
+    note="masked labels sort by value with NA last. Since firepanda #1367",
+)
