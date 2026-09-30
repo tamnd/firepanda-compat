@@ -383,3 +383,55 @@ case(
     note=TYPES,
     in_process=True,
 )
+
+# ---------------------------------------------------------------------------
+# The index of categories as a class of its own
+# ---------------------------------------------------------------------------
+
+INDEX = (
+    "CategoricalIndex is an Index subclass in firepanda's Python layer that answers lookups "
+    "by the labels rather than the codes, which the driver cannot reach, so the case runs "
+    "in process"
+)
+
+case(
+    "categorical/index-lookups",
+    "Index.get_indexer",
+    frames=BOTH,
+    expr=lambda pd, df: [
+        int(at)
+        for at in pd.CategoricalIndex(df["value"])
+        .unique()
+        .get_indexer([*df["value"].cat.categories.tolist(), "absent"])
+    ],
+    note="the positions of the categories among the labels seen once each, -1 for a label "
+    "that is not there. " + INDEX,
+    in_process=True,
+)
+case(
+    "categorical/index-drop",
+    "Index.drop",
+    frames=BOTH,
+    expr=lambda pd, df: pd.CategoricalIndex(df["value"].dropna()).drop(
+        df["value"].dropna().iloc[0]
+    ),
+    note="every label equal to the one dropped goes, and the categories stay. " + INDEX,
+    in_process=True,
+)
+case(
+    "categorical/index-rename-categories",
+    "cat.rename_categories",
+    frames=BOTH,
+    expr=lambda pd, df: pd.CategoricalIndex(df["value"]).rename_categories(str.upper),
+    note=INDEX,
+    in_process=True,
+)
+case(
+    "categorical/index-map",
+    "Index.map",
+    frames=BOTH,
+    expr=lambda pd, df: pd.CategoricalIndex(df["value"]).map(lambda label: label * 2),
+    note="a mapping that keeps the categories apart renames them and answers a category "
+    "index, in the same order. " + INDEX,
+    in_process=True,
+)
