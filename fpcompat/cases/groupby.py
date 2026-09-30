@@ -1025,3 +1025,38 @@ for _kind in ("std", "var", "sem"):
         in_process=True,
         note=REDUCE_OPTIONS,
     )
+case(
+    "groupby/masked-key",
+    "pandas.DataFrame.groupby",
+    covers=("by", "dropna"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": pd.Series([1, 1, None, 2], dtype="Int64"), "v": [1, 2, 3, 4]})
+        .groupby("k", dropna=False)
+        .size()
+    ),
+    in_process=True,
+    note="a masked key labels the answer in its own type. Since firepanda #1368",
+)
+case(
+    "groupby/masked-key-column",
+    "pandas.DataFrame.groupby",
+    covers=("as_index",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": pd.Series([1, 1, None, 2], dtype="Int64"), "v": [1, 2, 3, 4]})
+        .groupby("k", as_index=False)
+        .v.sum()
+    ),
+    in_process=True,
+    note="the key column keeps its masked type. Since firepanda #1368",
+)
+case(
+    "groupby/masked-value-counts",
+    "pandas.Series.value_counts",
+    covers=("dropna",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([5, 6, 5, None], dtype="Int64").value_counts(dropna=False),
+    in_process=True,
+    note="the counts are labelled in the column's masked type. Since firepanda #1368",
+)

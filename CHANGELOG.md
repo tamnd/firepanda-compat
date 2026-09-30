@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Three cases for masked keys: `groupby` on an `Int64` key with `dropna=False`, the key column with `as_index=False`, and `value_counts` on an `Int64` column.
+- Board after firepanda #1368: 5299 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Five cases for pandas' masked index: an `Int64` index with NA, a `string` index, lookup by value, `set_index` on a masked column, and sorting masked labels with NA last.
 - Board after firepanda #1367: 5296 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Six cases for pandas' index of objects: an index of mixed labels, lookup of an object label by its value, sorting object labels, pandas' TypeError on labels Python cannot order, `Series(values, dtype=object)` keeping integers, and `concat` of parts whose labels are of two kinds.
