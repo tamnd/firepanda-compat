@@ -5887,3 +5887,27 @@ case(
     in_process=True,
     note="a direction for the level asked for leaves the other level in the order it came in",
 )
+case(
+    "basics/frame-shift-period-list",
+    "DataFrame.shift",
+    level="L3",
+    covers=("periods", "suffix"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"v": [1, 2, 3, 4], "w": [1.5, 2.5, 3.5, 4.5]}).shift(
+        [0, 1, -1], suffix="_lag"
+    ),
+    in_process=True,
+    note="a shift by each period side by side, named after the column, suffix and period",
+)
+case(
+    "basics/groupby-shift-period-list",
+    "GroupBy.shift",
+    level="L3",
+    covers=("periods",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.DataFrame({"k": ["a", "b", "a", "b"], "v": [1, 2, 3, 4]}).groupby("k")["v"].shift([0, 1])
+    ),
+    in_process=True,
+    note="a group by shifts within each group by each period and answers a frame",
+)
