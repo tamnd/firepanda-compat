@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for the name of the column axis: set by `rename_axis(columns=)` and `axis=1`, named by `pivot` and `crosstab`, printed in the header, the default `var_name` of `melt`, the row name after a transpose, and the labels' name of a reduction.
+- Board after firepanda #1382: 5345 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for resample bins laid from `origin="end"`, `"end_day"` and a timestamp, moved by `offset=`, and for a day rule's empty end bins.
 - Board after firepanda #1381: 5338 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Cases for `ewm(halflife=..., times=...)` over instants that drift apart, with gaps under `adjust=False`, and a timed sum refused with pandas' NotImplementedError.

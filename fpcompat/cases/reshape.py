@@ -736,3 +736,80 @@ case(
     "this method has and the one place the two libraries disagree when it is left out. "
     + AS_A_FRAME,
 )
+
+AXIS_NAME = (
+    "pandas keeps a name for the column axis on the columns' index, prints it in the "
+    "corner of the header, and carries it through nearly every method. firepanda holds "
+    "it beside the frame's columns in its Python layer, so the case runs in process"
+)
+
+case(
+    "reshape/pivot-axis-name",
+    "DataFrame.pivot",
+    level="L3",
+    covers=("index", "columns", "values"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(
+        df.drop_duplicates(subset=["left", "right"]).pivot(
+            index="left", columns="right", values="value"
+        )
+    ),
+    in_process=True,
+    note="the columns of a pivot are named after the columns key. " + AXIS_NAME,
+)
+case(
+    "reshape/crosstab-axis-name",
+    "pandas.crosstab",
+    level="L3",
+    covers=("index", "columns"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(pd.crosstab(df["left"], df["right"])),
+    in_process=True,
+    note="the columns of a crosstab are named after the column key. " + AXIS_NAME,
+)
+case(
+    "reshape/rename-axis-columns",
+    "DataFrame.rename_axis",
+    level="L3",
+    covers=("columns",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(df.head(4).rename_axis(columns="field")),
+    in_process=True,
+    note="naming the column axis by keyword. " + AXIS_NAME,
+)
+case(
+    "reshape/rename-axis-one",
+    "DataFrame.rename_axis",
+    level="L3",
+    covers=("mapper", "axis"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.rename_axis("field", axis=1).columns,
+    in_process=True,
+    note="naming the column axis with axis=1, read back off the columns. " + AXIS_NAME,
+)
+case(
+    "reshape/melt-axis-name",
+    "DataFrame.melt",
+    level="L3",
+    covers=("id_vars", "value_name"),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: df.rename_axis(columns="field").melt(id_vars="left", value_name="v"),
+    in_process=True,
+    note="the name of the column axis is melt's default var_name. " + AXIS_NAME,
+)
+case(
+    "reshape/transpose-axis-name",
+    "DataFrame.T",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(df.head(3).rename_axis(columns="field").T),
+    in_process=True,
+    note="a transpose makes the name of the column axis the name of the rows. " + AXIS_NAME,
+)
+case(
+    "reshape/reduction-axis-name",
+    "DataFrame.sum",
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(df[["value"]].rename_axis(columns="field").sum()),
+    in_process=True,
+    note="a reduction's labels are the columns, so they take the axis name. " + AXIS_NAME,
+)
