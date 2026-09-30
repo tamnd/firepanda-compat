@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case for a frame with MultiIndex columns times an int Series that covers every column, which keeps int64.
+- Board after firepanda #1405: 5425 pass, 0 unimplemented, 67 divergent, 2 fail.
 - Cases for arithmetic on one level of a MultiIndex: `Series.add` and `Series.mul` with `level=` and `fill_value`, and `DataFrame.mul` on the inner level of the rows.
 - Board after firepanda #1404: 5424 pass, 0 unimplemented, 67 divergent, 2 fail.
 - `basics/frame-whole-mean`, `-median`, `-std`, `-var`, `-sem`, `-skew` and `-kurt` cover these reductions with `axis=None` on a frame, which firepanda #1403 answers as one number read from every cell, as pandas does.

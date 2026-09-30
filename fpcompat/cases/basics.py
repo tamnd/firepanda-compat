@@ -5613,3 +5613,20 @@ case(
     in_process=True,
     note="a frame's rows read a Series on flat labels by the inner level",
 )
+case(
+    "basics/frame-mul-multiindex-columns-int",
+    "DataFrame.mul",
+    level="L3",
+    covers=("other", "axis"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        [[1, 2, 3]], columns=pd.MultiIndex.from_tuples([("A", "x"), ("A", "y"), ("B", "x")])
+    ).mul(
+        pd.Series(
+            [10, 10, 100], index=pd.MultiIndex.from_tuples([("A", "x"), ("A", "y"), ("B", "x")])
+        ),
+        axis=1,
+    ),
+    in_process=True,
+    note="an int Series with a label for every column keeps the answer int64",
+)
