@@ -768,6 +768,16 @@ case(
     note="the columns of a crosstab are named after the column key. " + AXIS_NAME,
 )
 case(
+    "reshape/crosstab-flag-heads",
+    "pandas.crosstab",
+    level="L3",
+    covers=("normalize",),
+    frames=("keys_two_column",),
+    expr=lambda pd, df: repr(pd.crosstab(df["left"], df["right"] > 1, normalize="index")),
+    in_process=True,
+    note="boolean column names print flush left to one width, so True reads `True `.",
+)
+case(
     "reshape/rename-axis-columns",
     "DataFrame.rename_axis",
     level="L3",
