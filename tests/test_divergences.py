@@ -627,9 +627,13 @@ def test_the_committed_registry_loads():
     `engine/nbytes` is retired, which leaves fifteen. firepanda counts bytes the way
     pandas does now, from the numpy or Arrow arrays pandas would hold the data in, so a
     column, a text column, an index nobody declared, a frame and a column's own usage
-    all answer pandas' numbers."""
+    all answer pandas' numbers.
+
+    `engine/interval-row-labels` is added, which makes sixteen. Row labels that are
+    intervals are held as categories of intervals, so `value_counts(bins=)` answers
+    pandas' counts under a CategoricalIndex rather than an IntervalIndex."""
     entries = divergences.registry()
-    assert len(entries) == 15
+    assert len(entries) == 16
     assert all(isinstance(entry, Divergence) for entry in entries)
 
 

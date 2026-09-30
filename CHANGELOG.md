@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `Series.value_counts(bins=)` and `DataFrame.set_index(verify_integrity=True)`, both the passing check and the refused repeated label, plus the `engine/interval-row-labels` divergence: firepanda holds interval row labels as a CategoricalIndex of intervals rather than an IntervalIndex.
+- Board after firepanda #1412: 5441 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for transforms across the rows of a frame: rank, shift, diff, pct_change, ffill and interpolate with `axis=1`.
 - Board after firepanda #1411: 5439 pass, 0 unimplemented, 67 divergent, 2 fail.
 - Cases for running scans across the rows of a frame: a cumsum of whole numbers, a cummax over gaps, and a cumsum over flags beside numbers.

@@ -5785,3 +5785,38 @@ case(
     in_process=True,
     note="a gap across a row is on the line between its neighbours",
 )
+case(
+    "basics/series-value-counts-bins",
+    "Series.value_counts",
+    level="L3",
+    covers=("bins",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1, 2, 2, 5, 9, 10]).value_counts(bins=3),
+    in_process=True,
+    note="values counted in equal-width bins, the bins an unnamed interval index",
+)
+case(
+    "basics/frame-set-index-verify-integrity",
+    "DataFrame.set_index",
+    level="L3",
+    covers=("keys", "verify_integrity"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"k": [1, 2, 3], "v": [4, 5, 6]}).set_index(
+        "k", verify_integrity=True
+    ),
+    in_process=True,
+    note="labels each seen once pass the check",
+)
+case(
+    "basics/frame-set-index-verify-integrity-repeated",
+    "DataFrame.set_index",
+    level="L4",
+    covers=("keys", "verify_integrity"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame({"k": [1, 1, 3], "v": [4, 5, 6]}).set_index(
+        "k", verify_integrity=True
+    ),
+    raises=("ValueError", "Index has duplicate keys"),
+    in_process=True,
+    note="a repeated label is refused",
+)

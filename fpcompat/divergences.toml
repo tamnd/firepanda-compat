@@ -243,3 +243,17 @@ reason = "pandas defines about forty six exception classes of its own in pandas.
 spec = "14-errors-across-the-boundary.md#what-is-not-done"
 expect = "raises"
 since = "2026-09-11"
+
+# Row labels that are intervals. pandas keeps them in an IntervalIndex, and firepanda
+# keeps them as categories whose values are intervals, so the labels print and compare
+# the same and only the dtype of the index says otherwise.
+
+[[divergence]]
+id = "engine/interval-row-labels"
+cases = ["basics/series-value-counts-bins"]
+kind = "engine"
+reason = "A firepanda Series or frame labels its rows with an index the core holds, and the core has no interval type, so labels that are intervals are held as categories whose values are the intervals. value_counts(bins=) and a groupby over cut answer the same counts under the same printed labels as pandas, but the index is a CategoricalIndex of intervals rather than an IntervalIndex."
+spec = "06-pandas-parity.md#the-genuine-omissions"
+expect = "differs"
+instead = "the row labels are a CategoricalIndex whose categories are the intervals, printed and ordered as pandas prints and orders them."
+since = "2026-09-30"
