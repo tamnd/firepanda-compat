@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- A case for `Series.compare` with `align_axis=0`, which firepanda #1421 answers with the sides taking turns down the rows as pandas does.
+- Board after firepanda #1421: 5454 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `DataFrame.at` and `Series.at` on a repeated label, which firepanda #1420 answers with a series as pandas does.
 - Board after firepanda #1420: 5453 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `Series.unstack` and `DataFrame.unstack` with a list of levels, which firepanda #1419 spreads across columns of several levels as pandas does.

@@ -5979,3 +5979,15 @@ case(
     in_process=True,
     note="a series answers a label there twice with both values",
 )
+case(
+    "basics/series-compare-align-rows",
+    "Series.compare",
+    level="L3",
+    covers=("align_axis", "keep_shape"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([1, 2, 3, 4], index=["w", "x", "y", "z"]).compare(
+        pd.Series([1, 5, 3, 7], index=["w", "x", "y", "z"]), align_axis=0, keep_shape=True
+    ),
+    in_process=True,
+    note="the two sides take turns down the rows under the label and the side",
+)
