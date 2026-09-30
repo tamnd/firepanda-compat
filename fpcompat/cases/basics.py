@@ -7209,3 +7209,46 @@ case(
     in_process=True,
     note="a frame's covariance refuses instants and spans",
 )
+
+
+def _layered_columns(pd):
+    """A frame whose columns have two named levels."""
+    return pd.DataFrame(
+        [[1, 2, 3, 4], [5, 6, 7, 8]],
+        columns=pd.MultiIndex.from_tuples(
+            [("a", "x"), ("a", "y"), ("b", "x"), ("b", "z")], names=["one", "two"]
+        ),
+    )
+
+
+case(
+    "basics/xs-column-level",
+    "DataFrame.xs",
+    level="L3",
+    covers=("key", "axis", "level"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _layered_columns(pd).xs("x", axis=1, level="two"),
+    in_process=True,
+    note="the column labels are crossed the way row labels are",
+)
+
+case(
+    "basics/xs-column-level-kept",
+    "DataFrame.xs",
+    level="L3",
+    covers=("key", "axis", "level", "drop_level"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _layered_columns(pd).xs("x", axis=1, level=1, drop_level=False),
+    in_process=True,
+    note="the crossed level stays when drop_level is False",
+)
+
+case(
+    "basics/loc-first-column-label",
+    "DataFrame.loc",
+    level="L2",
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: _layered_columns(pd).loc[[1], "a"],
+    in_process=True,
+    note="a first level label names the columns under it and keeps the level names left",
+)

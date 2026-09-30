@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for `xs` with `level=` across columns of two levels, with and without `drop_level`, and for `loc` by a first level column label.
+- Board after firepanda #1481: 5544 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for correlating instants in a frame and in a column with NaT, and for a frame's covariance refusing instants.
 - Board after firepanda #1480: 5541 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for interpolating zoned instants, with and without a limit, and for describing an interval column.
