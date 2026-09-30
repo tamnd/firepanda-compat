@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/ffill-limit-area: `Series.ffill(limit_area="inside")` fills only the gaps between two present values.
+- Board after firepanda #1439: 5481 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/crosstab-several-keys: `pandas.crosstab` with a list of keys on each axis labels rows and columns by the pairs of keys seen.
 - Board after firepanda #1438: 5480 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Cases for `Rolling.sum(numeric_only=True)` over a frame with text, `GroupBy.filter(dropna=False)` and `GroupBy.nth(dropna=)`, all passing on firepanda.

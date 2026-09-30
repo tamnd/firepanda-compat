@@ -6391,3 +6391,15 @@ case(
     in_process=True,
     note="both axes labelled by the pairs of keys seen",
 )
+
+
+case(
+    "basics/ffill-limit-area",
+    "Series.ffill",
+    level="L3",
+    covers=("limit_area",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series([None, 1.0, None, 3.0, None]).ffill(limit_area="inside"),
+    in_process=True,
+    note="only the gap between two present values is filled",
+)
