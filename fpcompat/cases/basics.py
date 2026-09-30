@@ -6931,3 +6931,39 @@ case(
     in_process=True,
     note="a column reindexes each side onto the labels it keeps, which a repeat refuses",
 )
+
+case(
+    "basics/pivot-two-column-keys",
+    "DataFrame.pivot",
+    level="L3",
+    covers=("columns", "index", "values"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {
+            "a": ["x", "x", "y", "y"],
+            "b": ["p", "q", "p", "q"],
+            "c": ["u", "u", "v", "v"],
+            "v": [1, 2, 3, 4],
+        }
+    ).pivot(index="a", columns=["b", "c"], values="v"),
+    in_process=True,
+    note="several columns keys label the answer's columns with a MultiIndex",
+)
+
+case(
+    "basics/pivot-table-two-column-keys",
+    "DataFrame.pivot_table",
+    level="L3",
+    covers=("columns", "fill_value", "aggfunc"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {
+            "a": ["x", "x", "y", "y"],
+            "b": ["p", "q", "p", "q"],
+            "c": ["u", "u", "v", "v"],
+            "v": [1, 2, 3, 4],
+        }
+    ).pivot_table(index="a", columns=["b", "c"], values="v", aggfunc="sum", fill_value=0),
+    in_process=True,
+    note="aggregates over every key are unstacked by the columns keys and filled",
+)
