@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Basics parameter cases: periods on diff and pct_change for a series and a frame, fill_value on a frame shift, skipna on cumsum for a series and a frame, n on head and tail, skipna on any and all, bool_only on a frame, numeric_only on idxmax, subset, normalize, ascending, sort and dropna on a frame value_counts, sort_index descending and on the columns, keep on drop_duplicates, errors on astype, regex on replace, ascending and pct on rank, limit on fillna, and a negative round.
+- Board after firepanda #1341: 5122 pass, 0 unimplemented, 63 divergent, 2 fail.
 - String parameter cases: the fill character of center, ljust and rjust, regex flags on contains, count, findall, extract, extractall and replace, na on startswith and endswith, regex on split, partition and rpartition with expand=False, and cat with a join.
 - Board after firepanda #1340: 5072 pass, 0 unimplemented, 63 divergent, 2 fail.
 - Merge parameter cases: cross and anti joins, a one sided suffix, sort, the indicator on a cross and a right anti join, a merge on both row labels, join with how="cross", lsuffix and rsuffix and sort, and the MergeError for a key on a cross join, which joins the pandas-exception-classes entry.

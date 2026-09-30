@@ -3928,3 +3928,228 @@ case(
     frames=("two",),
     expr=lambda pd, df: type(df.boxplot).__name__,
 )
+
+# ---------------------------------------------------------------------------
+# Parameters of names that already have a plain case
+# ---------------------------------------------------------------------------
+
+PARAMETER_IN_PROCESS = (
+    "the driver has an entry for the plain spelling of this name and not for this "
+    "parameter, so it is run in process"
+)
+
+for name in ("diff", "pct_change"):
+    case(
+        f"basics/{name.replace('_', '-')}-periods",
+        f"Series.{name}",
+        level="L3",
+        covers=("periods",),
+        frames=("float64_no_nulls", "float64_half_null", "int64_half_null"),
+        expr=(lambda how: lambda pd, df: getattr(df["value"], how)(periods=-2))(name),
+        in_process=True,
+        note="a negative period looks forward rather than back, so the gaps are at the "
+        "end. " + PARAMETER_IN_PROCESS,
+    )
+    case(
+        f"basics/frame-{name.replace('_', '-')}",
+        f"DataFrame.{name}",
+        level="L3",
+        covers=("periods",),
+        frames=("float64_half_null", "int64_half_null"),
+        expr=(lambda how: lambda pd, df: getattr(df[["value"]], how)(periods=2))(name),
+        in_process=True,
+        note="the frame spelling, one column at a time. " + PARAMETER_IN_PROCESS,
+    )
+case(
+    "basics/frame-shift",
+    "DataFrame.shift",
+    level="L3",
+    covers=("periods", "fill_value"),
+    frames=("int64_no_nulls", "float64_half_null"),
+    expr=lambda pd, df: df[["value"]].shift(periods=3, fill_value=0),
+    in_process=True,
+    note="with a fill value the integer column stays an integer one. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/cumsum-skipna",
+    "Series.cumsum",
+    level="L3",
+    covers=("skipna",),
+    frames=("float64_half_null", "float64_no_nulls"),
+    expr=lambda pd, df: df["value"].cumsum(skipna=False),
+    in_process=True,
+    note="without skipping, every row after the first gap is a gap. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-cumsum",
+    "DataFrame.cumsum",
+    level="L3",
+    covers=("skipna",),
+    frames=("float64_half_null", "int64_half_null"),
+    expr=lambda pd, df: df[["value"]].cumsum(skipna=True),
+    in_process=True,
+    note="the running total of each column. " + PARAMETER_IN_PROCESS,
+)
+for name in ("head", "tail"):
+    case(
+        f"basics/series-{name}-n",
+        f"Series.{name}",
+        level="L3",
+        covers=("n",),
+        frames=("float64_half_null", "two", "empty"),
+        expr=(lambda how: lambda pd, df: getattr(df[df.columns[0]], how)(n=-3))(name),
+        in_process=True,
+        note="a negative count keeps all but that many rows. " + PARAMETER_IN_PROCESS,
+    )
+for name in ("any", "all"):
+    case(
+        f"basics/series-{name}-skipna",
+        f"Series.{name}",
+        level="L3",
+        covers=("skipna",),
+        frames=("float64_half_null", "float64_all_null", "int64_no_nulls"),
+        expr=(lambda how: lambda pd, df: getattr(df["value"], how)(skipna=False))(name),
+        in_process=True,
+        note="a gap counts as true when it is not skipped. " + PARAMETER_IN_PROCESS,
+    )
+    case(
+        f"basics/frame-{name}-bool-only",
+        f"DataFrame.{name}",
+        level="L3",
+        covers=("bool_only", "skipna"),
+        frames=("tall", "two"),
+        expr=(lambda how: lambda pd, df: getattr(df, how)(bool_only=True, skipna=True))(name),
+        in_process=True,
+        note="only the boolean columns answer. " + PARAMETER_IN_PROCESS,
+    )
+case(
+    "basics/frame-idxmax-numeric-only",
+    "DataFrame.idxmax",
+    level="L3",
+    covers=("skipna", "numeric_only"),
+    frames=("two", "tall"),
+    expr=lambda pd, df: df.idxmax(numeric_only=True),
+    in_process=True,
+    note="the label of each numeric column's largest row. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-value-counts",
+    "DataFrame.value_counts",
+    level="L3",
+    covers=("subset", "normalize", "sort", "ascending", "dropna"),
+    frames=("tall",),
+    expr=lambda pd, df: df.value_counts(subset=["key", "flag"], normalize=True, ascending=True),
+    in_process=True,
+    note="the share of each pair of values, smallest first. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-value-counts-dropna",
+    "DataFrame.value_counts",
+    level="L3",
+    covers=("dropna", "sort"),
+    frames=("two",),
+    expr=lambda pd, df: df.value_counts(dropna=False, sort=False),
+    in_process=True,
+    note="a row with a gap is counted when gaps are kept. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/sort-index-descending",
+    "DataFrame.sort_index",
+    level="L3",
+    covers=("ascending", "ignore_index"),
+    frames=("two", "tall"),
+    expr=lambda pd, df: df.sort_index(ascending=False),
+    in_process=True,
+    note="the labels in reverse. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/sort-index-axis",
+    "DataFrame.sort_index",
+    level="L3",
+    covers=("axis", "ascending"),
+    frames=("tall", "wide"),
+    expr=lambda pd, df: df.sort_index(axis=1, ascending=False),
+    in_process=True,
+    note="the columns rather than the rows. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/drop-duplicates-keep",
+    "DataFrame.drop_duplicates",
+    level="L3",
+    covers=("subset", "keep", "ignore_index"),
+    frames=("tall",),
+    expr=lambda pd, df: df.drop_duplicates(subset=["key"], keep="last", ignore_index=True),
+    in_process=True,
+    note="the last row of each key survives, numbered again from zero. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/drop-duplicates-keep-false",
+    "DataFrame.drop_duplicates",
+    level="L3",
+    covers=("subset", "keep"),
+    frames=("tall",),
+    expr=lambda pd, df: df.drop_duplicates(subset=["key", "flag"], keep=False),
+    in_process=True,
+    note="no row of a repeated pair survives. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/astype-errors-ignore",
+    "Series.astype",
+    level="L3",
+    covers=("dtype", "errors"),
+    frames=("strings_ascii",),
+    expr=lambda pd, df: df["value"].astype("int64", errors="ignore"),
+    in_process=True,
+    note="a cast that fails hands the column back unchanged. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/replace-regex",
+    "Series.replace",
+    level="L3",
+    covers=("to_replace", "value", "regex"),
+    frames=("strings_ascii", "strings_null_heavy"),
+    expr=lambda pd, df: df["value"].replace(r"^a", "A", regex=True),
+    in_process=True,
+    note="the pattern is matched inside each row rather than against the whole of it. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/rank-descending",
+    "Series.rank",
+    level="L3",
+    covers=("ascending",),
+    frames=("float64_half_null", "int64_no_nulls"),
+    expr=lambda pd, df: df["value"].rank(ascending=False),
+    in_process=True,
+    note="the largest row ranks first. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-rank-pct",
+    "DataFrame.rank",
+    level="L3",
+    covers=("na_option", "pct"),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df[["value"]].rank(na_option="bottom", pct=True),
+    in_process=True,
+    note="ranks as a share of the rows, with the gaps last. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/fillna-limit",
+    "Series.fillna",
+    level="L3",
+    covers=("value", "limit"),
+    frames=("float64_half_null",),
+    expr=lambda pd, df: df["value"].fillna(0.0, limit=2),
+    in_process=True,
+    note="only the first two gaps are filled. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/round-negative",
+    "Series.round",
+    level="L3",
+    covers=("decimals",),
+    frames=("tall",),
+    expr=lambda pd, df: df["value"].round(-3),
+    in_process=True,
+    note="a negative count rounds to thousands. " + PARAMETER_IN_PROCESS,
+)
