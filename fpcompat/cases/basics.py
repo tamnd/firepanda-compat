@@ -6252,3 +6252,21 @@ case(
     in_process=True,
     note="over a frame each column gets its four under two levels of column labels",
 )
+
+case(
+    "basics/resample-zoned-day",
+    "Series.resample",
+    level="L3",
+    covers=("rule",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: (
+        pd.Series(
+            range(8),
+            index=pd.date_range("2024-11-02 22:00", periods=8, freq="2h", tz="US/Eastern"),
+        )
+        .resample("D")
+        .sum()
+    ),
+    in_process=True,
+    note="days on the zone's own clock, one of them 25 hours long",
+)
