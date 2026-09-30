@@ -6520,3 +6520,18 @@ case(
     in_process=True,
     note="every group lists every bin, the empty ones too, most common first",
 )
+case(
+    "basics/index-get-indexer-nearest",
+    "Index.get_indexer",
+    level="L3",
+    covers=("method", "tolerance"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: [
+        int(at)
+        for at in pd.Index([10, 20, 30, 40]).get_indexer(
+            [5, 10, 14, 26, 35, 50], method="nearest", tolerance=6
+        )
+    ],
+    in_process=True,
+    note="a missing label reads from the nearest label within the tolerance, -1 past it",
+)
