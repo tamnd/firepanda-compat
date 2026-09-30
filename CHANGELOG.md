@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `basics/category-quantile-nearest` checks that an ordered categorical's quantile picks categories through their codes, which firepanda #1461 added.
+- Board after firepanda #1461: 5501 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/rank-axis-none, `DataFrame.rank(axis=None)` raising pandas' "No axis named None" ValueError, after firepanda #1460 stopped reading a None axis as the default on 26 methods.
 - Board after firepanda #1460: 5500 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/groupby-cummax-skipna-false, a group by's `cummax(skipna=False)` leaving the rest of a group missing after a gap, lifted from a refusal in firepanda #1459.

@@ -6669,3 +6669,16 @@ case(
     in_process=True,
     note="pandas reads axis=None as no axis here rather than as the default",
 )
+
+case(
+    "basics/category-quantile-nearest",
+    "Series.quantile",
+    level="L3",
+    covers=("interpolation",),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.Series(
+        pd.Categorical(["b", "a", "c", "b", "a"], categories=["c", "b", "a"], ordered=True)
+    ).quantile([0.1, 0.5, 0.9], interpolation="nearest"),
+    in_process=True,
+    note="an ordered categorical's quantile picks categories through their codes",
+)
