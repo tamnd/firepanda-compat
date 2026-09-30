@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Case basics/quantile-method-table, `DataFrame.quantile(method="table")` taking whole rows at each quantile, lifted from a refusal in firepanda #1458.
+- Board after firepanda #1458: 5498 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/reset-index-col-level, `DataFrame.reset_index(col_level=..., col_fill=...)` on MultiIndex columns, lifted from a refusal in firepanda #1457.
 - Board after firepanda #1457: 5497 pass, 0 unimplemented, 68 divergent, 2 fail.
 - Case basics/to-datetime-exact-false, `to_datetime(format=..., exact=False)` searching each row for the format, lifted from a refusal in firepanda #1456.

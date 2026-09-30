@@ -6630,3 +6630,16 @@ case(
     in_process=True,
     note="the labels land under a tuple with the name at col_level and col_fill elsewhere",
 )
+
+case(
+    "basics/quantile-method-table",
+    "DataFrame.quantile",
+    level="L3",
+    covers=("method", "interpolation"),
+    frames=("int64_no_nulls",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"a": [3, 1, 2, 1, 5], "b": [1.5, 9.0, 4.0, 2.0, 0.5]}
+    ).quantile([0.1, 0.5, 0.9], method="table", interpolation="nearest"),
+    in_process=True,
+    note="whole rows are taken from the frame sorted by every column at once",
+)
