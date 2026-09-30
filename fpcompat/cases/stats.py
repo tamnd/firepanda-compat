@@ -106,6 +106,44 @@ case(
     ),
 )
 
+
+def _moments(pd):
+    days = pd.to_datetime(["2026-01-01", "2026-01-03", None, "2026-01-02"])
+    spans = pd.to_timedelta(["1D", "2D", "4D", "8D"])
+    return pd.DataFrame({"n": [1, 2, 3, 4], "s": ["a", "b", "a", "c"], "d": days, "t": spans})
+
+
+MOMENTS = (
+    "describe on moments and spans answers an object column of a count beside moments or "
+    "spans, NaT where there are none, and spans carry a spread where moments do not"
+)
+DESCRIBE_MOMENTS = {
+    "moments": ("Series.describe", (), lambda pd: _moments(pd)["d"].describe()),
+    "spans": ("Series.describe", (), lambda pd: _moments(pd)["t"].describe()),
+    "moments-frame": ("DataFrame.describe", (), lambda pd: _moments(pd).describe()),
+    "include": (
+        "DataFrame.describe",
+        ("include",),
+        lambda pd: _moments(pd).describe(include=["number", "object"]),
+    ),
+    "exclude": (
+        "DataFrame.describe",
+        ("exclude",),
+        lambda pd: _moments(pd).describe(exclude="number"),
+    ),
+}
+for _name, (_api, _covers, _build) in DESCRIBE_MOMENTS.items():
+    case(
+        f"stats/describe-{_name}",
+        _api,
+        level="L3" if _covers else "L2",
+        covers=_covers,
+        frames=("tall",),
+        expr=lambda pd, df, _build=_build: _build(pd),
+        in_process=True,
+        note=MOMENTS + ", and a frame picks its columns by type as select_dtypes does",
+    )
+
 # ---------------------------------------------------------------------------
 # Spread
 # ---------------------------------------------------------------------------

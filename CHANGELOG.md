@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- `stats/describe-moments`, `-spans`, `-moments-frame`, `-include` and `-exclude` score describe on datetime and timedelta columns and a frame's include and exclude types.
+- Board after firepanda #1391: 5379 pass, 0 unimplemented, 65 divergent, 2 fail.
 - Three cases for keys across the columns: `reshape/concat-keys-columns`, `reshape/concat-keys-series-columns` and `reshape/transform-list`, as firepanda #1390 labels the columns of `concat(keys=, axis=1)` as pandas does.
 - Board after firepanda #1390: 5374 pass, 0 unimplemented, 65 divergent, 2 fail.
 - A `reshape/crosstab-flag-heads` case: a crosstab over a flag prints its boolean column names flush left to one width, as firepanda #1389 prints them as pandas does.
