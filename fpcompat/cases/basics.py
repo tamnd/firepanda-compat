@@ -664,6 +664,30 @@ case(
     expr=lambda pd, df: df[df["flag"]],
 )
 case(
+    "basics/row-slice-reversed",
+    "DataFrame.__getitem__",
+    frames=SHAPES,
+    expr=lambda pd, df: df[::-1],
+    in_process=True,
+    note="a slice in the brackets picks rows, by position for whole numbers",
+)
+case(
+    "basics/row-slice-stepped",
+    "DataFrame.__getitem__",
+    frames=SHAPES,
+    expr=lambda pd, df: df[1:5:2],
+    in_process=True,
+    note="a stepped slice of whole numbers picks rows by position",
+)
+case(
+    "basics/row-slice-backward-label",
+    "DataFrame.loc",
+    frames=SHAPES,
+    expr=lambda pd, df: df.loc[3:0:-1],
+    in_process=True,
+    note="a negative step walks the labels back from the first bound",
+)
+case(
     "basics/copy",
     "DataFrame.copy",
     frames=SHAPES,
@@ -13045,8 +13069,671 @@ TAIL5_CASES = (
 )
 
 
+def _tail_pairs(pd):
+    """A two-level index of four rows with a repeat."""
+    return pd.MultiIndex.from_tuples([("a", 1), ("b", 2), ("a", 1), ("c", 3)], names=["k", "n"])
+
+
+def _tail_counts(pd):
+    """Whole-number labels with a repeat."""
+    return pd.Index([4, 1, 4, 2], name="i")
+
+
+def _tail_halves(pd):
+    """Float labels with a gap."""
+    return pd.Index([1.25, float("nan"), 3.5], name="f")
+
+
+def _tail_days(pd):
+    """Four daily instants with a repeat."""
+    return pd.DatetimeIndex(["2024-01-03", "2024-01-01", "2024-01-03", "2024-01-02"], name="t")
+
+
+def _tail_run(pd):
+    """Four ascending daily instants."""
+    return pd.date_range("2024-01-01", periods=4, freq="D", name="t")
+
+
+def _tail_grid(pd):
+    """Two numeric columns over text labels."""
+    return pd.DataFrame({"a": [1, 2, 3], "b": [4.0, 5.0, 6.0]}, index=list("xyz"))
+
+
+TAIL6_CASES = (
+    (
+        "multi-value-counts-bins",
+        "MultiIndex.value_counts",
+        ("bins",),
+        lambda pd: _tail_levels(_tail_pairs(pd).value_counts(bins=None).index),
+    ),
+    (
+        "multi-unique-level",
+        "MultiIndex.unique",
+        ("level",),
+        lambda pd: _tail_pairs(pd).unique(level="k").tolist(),
+    ),
+    (
+        "multi-to-frame-dupes",
+        "MultiIndex.to_frame",
+        ("allow_duplicates",),
+        lambda pd: _tail_pairs(pd).to_frame(index=False, allow_duplicates=False),
+    ),
+    (
+        "multi-slice-locs-step",
+        "MultiIndex.slice_locs",
+        ("step",),
+        lambda pd: [
+            int(x) for x in _tail_pairs(pd).sortlevel()[0].slice_locs(("a", 1), ("b", 2), step=None)
+        ],
+    ),
+    (
+        "multi-reorder-levels-order",
+        "MultiIndex.reorder_levels",
+        ("order",),
+        lambda pd: _tail_levels(_tail_pairs(pd).reorder_levels(order=["n", "k"])),
+    ),
+    (
+        "multi-reindex-tolerance",
+        "MultiIndex.reindex",
+        ("tolerance",),
+        lambda pd: [
+            int(x)
+            for x in _tail_pairs(pd).unique().reindex([("b", 2), ("a", 1)], tolerance=None)[1]
+        ],
+    ),
+    (
+        "multi-ravel-order",
+        "MultiIndex.ravel",
+        ("order",),
+        lambda pd: [tuple(x) for x in _tail_pairs(pd).ravel(order="C").tolist()],
+    ),
+    (
+        "multi-nunique-dropna",
+        "MultiIndex.nunique",
+        ("dropna",),
+        lambda pd: int(_tail_pairs(pd).nunique(dropna=False)),
+    ),
+    (
+        "multi-memory-deep",
+        "MultiIndex.memory_usage",
+        ("deep",),
+        lambda pd: _tail_pairs(pd).memory_usage(deep=False) > 0,
+    ),
+    (
+        "multi-is-other",
+        "MultiIndex.is_",
+        ("other",),
+        lambda pd: _tail_pairs(pd).is_(other=_tail_pairs(pd)),
+    ),
+    (
+        "multi-identical-other",
+        "MultiIndex.identical",
+        ("other",),
+        lambda pd: _tail_pairs(pd).identical(other=_tail_pairs(pd)),
+    ),
+    (
+        "multi-get-locs-seq",
+        "MultiIndex.get_locs",
+        ("seq",),
+        lambda pd: [int(x) for x in _tail_pairs(pd).sortlevel()[0].get_locs(seq=["a"])],
+    ),
+    (
+        "multi-get-loc-key",
+        "MultiIndex.get_loc",
+        ("key",),
+        lambda pd: _tail_pairs(pd).unique().get_loc(key=("b", 2)),
+    ),
+    (
+        "multi-level-values-named",
+        "MultiIndex.get_level_values",
+        ("level",),
+        lambda pd: _tail_pairs(pd).get_level_values(level="n"),
+    ),
+    (
+        "multi-indexer-non-unique",
+        "MultiIndex.get_indexer_non_unique",
+        ("target",),
+        lambda pd: [int(x) for x in _tail_pairs(pd).get_indexer_non_unique(target=[("a", 1)])[0]],
+    ),
+    (
+        "multi-indexer-for-target",
+        "MultiIndex.get_indexer_for",
+        ("target",),
+        lambda pd: [int(x) for x in _tail_pairs(pd).get_indexer_for(target=[("c", 3)])],
+    ),
+    (
+        "multi-indexer-tolerance",
+        "MultiIndex.get_indexer",
+        ("tolerance",),
+        lambda pd: [
+            int(x) for x in _tail_pairs(pd).unique().get_indexer([("c", 3)], tolerance=None)
+        ],
+    ),
+    (
+        "multi-equals-other",
+        "MultiIndex.equals",
+        ("other",),
+        lambda pd: _tail_pairs(pd).equals(other=_tail_pairs(pd)[::-1]),
+    ),
+    (
+        "multi-equal-levels-other",
+        "MultiIndex.equal_levels",
+        ("other",),
+        lambda pd: _tail_pairs(pd).equal_levels(other=_tail_pairs(pd)),
+    ),
+    (
+        "multi-duplicated-keep",
+        "MultiIndex.duplicated",
+        ("keep",),
+        lambda pd: [bool(x) for x in _tail_pairs(pd).duplicated(keep="last")],
+    ),
+    (
+        "multi-dropna-how",
+        "MultiIndex.dropna",
+        ("how",),
+        lambda pd: _tail_levels(_tail_pairs(pd).dropna(how="all")),
+    ),
+    (
+        "multi-droplevel-named",
+        "MultiIndex.droplevel",
+        ("level",),
+        lambda pd: _tail_pairs(pd).droplevel(level="k"),
+    ),
+    (
+        "multi-drop-duplicates-keep",
+        "MultiIndex.drop_duplicates",
+        ("keep",),
+        lambda pd: _tail_levels(_tail_pairs(pd).drop_duplicates(keep="last")),
+    ),
+    (
+        "multi-delete-loc",
+        "MultiIndex.delete",
+        ("loc",),
+        lambda pd: _tail_levels(_tail_pairs(pd).delete(loc=0)),
+    ),
+    (
+        "multi-argsort-na-position",
+        "MultiIndex.argsort",
+        ("na_position",),
+        lambda pd: [int(x) for x in _tail_pairs(pd).argsort(na_position="last")],
+    ),
+    (
+        "multi-append-other",
+        "MultiIndex.append",
+        ("other",),
+        lambda pd: _tail_levels(_tail_pairs(pd).append(other=_tail_pairs(pd)[:1])),
+    ),
+    (
+        "index-unique-level",
+        "Index.unique",
+        ("level",),
+        lambda pd: _tail_counts(pd).unique(level=None),
+    ),
+    (
+        "index-to-numpy-na-value",
+        "Index.to_numpy",
+        ("na_value",),
+        lambda pd: _tail_halves(pd).to_numpy(na_value=0.0).tolist(),
+    ),
+    (
+        "index-set-names-level",
+        "Index.set_names",
+        ("level",),
+        lambda pd: _tail_counts(pd).set_names("j", level=None),
+    ),
+    (
+        "index-round-decimals",
+        "Index.round",
+        ("decimals",),
+        lambda pd: _tail_halves(pd).round(decimals=1),
+    ),
+    ("index-rename-named", "Index.rename", ("name",), lambda pd: _tail_counts(pd).rename(name="j")),
+    (
+        "index-reindex-level",
+        "Index.reindex",
+        ("level",),
+        lambda pd: _tail_counts(pd).unique().reindex([2, 4], level=None)[0],
+    ),
+    (
+        "index-ravel-order",
+        "Index.ravel",
+        ("order",),
+        lambda pd: _tail_counts(pd).ravel(order="C").tolist(),
+    ),
+    (
+        "index-memory-deep",
+        "Index.memory_usage",
+        ("deep",),
+        lambda pd: _tail_counts(pd).memory_usage(deep=True) > 0,
+    ),
+    (
+        "index-map-na-action",
+        "Index.map",
+        ("na_action",),
+        lambda pd: _tail_halves(pd).map(lambda x: x * 2, na_action="ignore"),
+    ),
+    (
+        "index-isin-level",
+        "Index.isin",
+        ("level",),
+        lambda pd: [bool(x) for x in _tail_counts(pd).isin([4], level=None)],
+    ),
+    (
+        "index-is-other",
+        "Index.is_",
+        ("other",),
+        lambda pd: _tail_counts(pd).is_(other=_tail_counts(pd)),
+    ),
+    (
+        "index-infer-objects-copy",
+        "Index.infer_objects",
+        ("copy",),
+        lambda pd: _tail_counts(pd).infer_objects(copy=False),
+    ),
+    (
+        "index-identical-other",
+        "Index.identical",
+        ("other",),
+        lambda pd: _tail_counts(pd).identical(other=_tail_counts(pd).rename("j")),
+    ),
+    (
+        "index-level-values-named",
+        "Index.get_level_values",
+        ("level",),
+        lambda pd: _tail_counts(pd).get_level_values(level=0),
+    ),
+    (
+        "index-indexer-non-unique",
+        "Index.get_indexer_non_unique",
+        ("target",),
+        lambda pd: [int(x) for x in _tail_counts(pd).get_indexer_non_unique(target=[4, 9])[0]],
+    ),
+    (
+        "index-indexer-for-target",
+        "Index.get_indexer_for",
+        ("target",),
+        lambda pd: [int(x) for x in _tail_counts(pd).get_indexer_for(target=[1, 2])],
+    ),
+    (
+        "index-fillna-value",
+        "Index.fillna",
+        ("value",),
+        lambda pd: _tail_halves(pd).fillna(value=0.0),
+    ),
+    (
+        "index-equals-other",
+        "Index.equals",
+        ("other",),
+        lambda pd: _tail_counts(pd).equals(other=pd.Index([4, 1, 4, 2])),
+    ),
+    (
+        "index-droplevel-named",
+        "Index.droplevel",
+        ("level",),
+        lambda pd: _tail_counts(pd).droplevel(level=[]),
+    ),
+    ("index-diff-periods", "Index.diff", ("periods",), lambda pd: _tail_counts(pd).diff(periods=2)),
+    ("index-delete-loc", "Index.delete", ("loc",), lambda pd: _tail_counts(pd).delete(loc=[0, 2])),
+    (
+        "index-asof-label",
+        "Index.asof",
+        ("label",),
+        lambda pd: int(pd.Index([1, 3, 5]).asof(label=4)),
+    ),
+    (
+        "index-append-other",
+        "Index.append",
+        ("other",),
+        lambda pd: _tail_counts(pd).append(other=pd.Index([7], name="i")),
+    ),
+    (
+        "instant-value-counts-bins",
+        "DatetimeIndex.value_counts",
+        ("bins",),
+        lambda pd: _tail_days(pd).value_counts(bins=None),
+    ),
+    (
+        "instant-unique-level",
+        "DatetimeIndex.unique",
+        ("level",),
+        lambda pd: _tail_days(pd).unique(level=None),
+    ),
+    (
+        "instant-tz-localize-nonexistent",
+        "DatetimeIndex.tz_localize",
+        ("nonexistent",),
+        lambda pd: _tail_run(pd).tz_localize("UTC", nonexistent="raise"),
+    ),
+    (
+        "instant-tz-convert-named",
+        "DatetimeIndex.tz_convert",
+        ("tz",),
+        lambda pd: _tail_run(pd).tz_localize("UTC").tz_convert(tz="Asia/Tokyo"),
+    ),
+    (
+        "instant-to-period-named",
+        "DatetimeIndex.to_period",
+        ("freq",),
+        lambda pd: [str(x) for x in _tail_run(pd).to_period(freq="M")],
+    ),
+    (
+        "instant-strftime-named",
+        "DatetimeIndex.strftime",
+        ("date_format",),
+        lambda pd: _tail_run(pd).strftime(date_format="%d/%m").tolist(),
+    ),
+    (
+        "instant-snap-freq",
+        "DatetimeIndex.snap",
+        ("freq",),
+        lambda pd: pd.DatetimeIndex(["2024-01-01 10:00", "2024-01-02 14:00"]).snap(freq="D"),
+    ),
+    (
+        "instant-slice-locs-step",
+        "DatetimeIndex.slice_locs",
+        ("step",),
+        lambda pd: [
+            int(x) for x in _tail_run(pd).slice_locs("2024-01-02", "2024-01-03", step=None)
+        ],
+    ),
+    (
+        "instant-rename-named",
+        "DatetimeIndex.rename",
+        ("name",),
+        lambda pd: _tail_run(pd).rename(name="u"),
+    ),
+    (
+        "instant-reindex-level",
+        "DatetimeIndex.reindex",
+        ("level",),
+        lambda pd: _tail_run(pd).reindex(_tail_run(pd)[::2], level=None)[0],
+    ),
+    (
+        "instant-ravel-order",
+        "DatetimeIndex.ravel",
+        ("order",),
+        lambda pd: [str(x) for x in _tail_run(pd).ravel(order="C")],
+    ),
+    (
+        "instant-month-name-locale",
+        "DatetimeIndex.month_name",
+        ("locale",),
+        lambda pd: _tail_run(pd).month_name(locale=None).tolist(),
+    ),
+    (
+        "instant-day-name-locale",
+        "DatetimeIndex.day_name",
+        ("locale",),
+        lambda pd: _tail_run(pd).day_name(locale=None).tolist(),
+    ),
+    (
+        "instant-memory-deep",
+        "DatetimeIndex.memory_usage",
+        ("deep",),
+        lambda pd: _tail_run(pd).memory_usage(deep=False) > 0,
+    ),
+    ("instant-mean-axis", "DatetimeIndex.mean", ("axis",), lambda pd: _tail_run(pd).mean(axis=0)),
+    (
+        "instant-join-level",
+        "DatetimeIndex.join",
+        ("level",),
+        lambda pd: _tail_run(pd).join(_tail_run(pd)[1:], how="inner", level=None),
+    ),
+    (
+        "instant-is-other",
+        "DatetimeIndex.is_",
+        ("other",),
+        lambda pd: _tail_run(pd).is_(other=_tail_run(pd)),
+    ),
+    (
+        "instant-infer-objects-copy",
+        "DatetimeIndex.infer_objects",
+        ("copy",),
+        lambda pd: _tail_run(pd).infer_objects(copy=False),
+    ),
+    (
+        "instant-identical-other",
+        "DatetimeIndex.identical",
+        ("other",),
+        lambda pd: _tail_run(pd).identical(other=_tail_run(pd)),
+    ),
+    (
+        "instant-get-loc-key",
+        "DatetimeIndex.get_loc",
+        ("key",),
+        lambda pd: _tail_run(pd).get_loc(key="2024-01-03"),
+    ),
+    (
+        "instant-level-values-named",
+        "DatetimeIndex.get_level_values",
+        ("level",),
+        lambda pd: _tail_run(pd).get_level_values(level="t"),
+    ),
+    (
+        "instant-indexer-non-unique",
+        "DatetimeIndex.get_indexer_non_unique",
+        ("target",),
+        lambda pd: [
+            int(x)
+            for x in _tail_days(pd).get_indexer_non_unique(target=pd.DatetimeIndex(["2024-01-03"]))[
+                0
+            ]
+        ],
+    ),
+    (
+        "instant-indexer-for-target",
+        "DatetimeIndex.get_indexer_for",
+        ("target",),
+        lambda pd: [
+            int(x)
+            for x in _tail_run(pd).get_indexer_for(
+                target=pd.DatetimeIndex(["2024-01-02", "2025-01-01"])
+            )
+        ],
+    ),
+    (
+        "instant-fillna-value",
+        "DatetimeIndex.fillna",
+        ("value",),
+        lambda pd: pd.DatetimeIndex(["2024-01-01", None]).fillna(value=pd.Timestamp("2024-02-02")),
+    ),
+    (
+        "instant-equals-other",
+        "DatetimeIndex.equals",
+        ("other",),
+        lambda pd: _tail_run(pd).equals(other=_tail_run(pd)),
+    ),
+    (
+        "instant-duplicated-keep",
+        "DatetimeIndex.duplicated",
+        ("keep",),
+        lambda pd: [bool(x) for x in _tail_days(pd).duplicated(keep=False)],
+    ),
+    (
+        "instant-droplevel-named",
+        "DatetimeIndex.droplevel",
+        ("level",),
+        lambda pd: _tail_run(pd).droplevel(level=[]),
+    ),
+    (
+        "instant-diff-periods",
+        "DatetimeIndex.diff",
+        ("periods",),
+        lambda pd: _tail_run(pd).diff(periods=2),
+    ),
+    (
+        "instant-delete-loc",
+        "DatetimeIndex.delete",
+        ("loc",),
+        lambda pd: _tail_run(pd).delete(loc=1),
+    ),
+    (
+        "instant-asof-label",
+        "DatetimeIndex.asof",
+        ("label",),
+        lambda pd: _tail_run(pd).asof(label="2024-01-02 12:00"),
+    ),
+    (
+        "instant-append-other",
+        "DatetimeIndex.append",
+        ("other",),
+        lambda pd: _tail_run(pd).append(other=_tail_run(pd)[:1]),
+    ),
+    (
+        "frame-transpose-copy",
+        "DataFrame.transpose",
+        ("copy",),
+        lambda pd: _tail_grid(pd).transpose(copy=False),
+    ),
+    (
+        "frame-to-timestamp-copy",
+        "DataFrame.to_timestamp",
+        ("copy",),
+        lambda pd: pd.DataFrame(
+            {"a": [1, 2]}, index=pd.period_range("2024-01", periods=2, freq="M")
+        ).to_timestamp(copy=False),
+    ),
+    (
+        "frame-to-string-encoding",
+        "DataFrame.to_string",
+        ("encoding",),
+        lambda pd: _tail_grid(pd).to_string(encoding=None),
+    ),
+    (
+        "frame-set-axis-copy",
+        "DataFrame.set_axis",
+        ("copy",),
+        lambda pd: _tail_grid(pd).set_axis(["p", "q"], axis=1, copy=False),
+    ),
+    (
+        "frame-rename-axis-copy",
+        "DataFrame.rename_axis",
+        ("copy",),
+        lambda pd: _tail_grid(pd).rename_axis("row", copy=False),
+    ),
+    (
+        "frame-rename-copy",
+        "DataFrame.rename",
+        ("copy",),
+        lambda pd: _tail_grid(pd).rename(columns={"a": "c"}, copy=False),
+    ),
+    (
+        "frame-reindex-like-copy",
+        "DataFrame.reindex_like",
+        ("copy",),
+        lambda pd: _tail_grid(pd).reindex_like(_tail_grid(pd)[::-1], copy=False),
+    ),
+    (
+        "frame-reindex-copy",
+        "DataFrame.reindex",
+        ("copy",),
+        lambda pd: _tail_grid(pd).reindex(["z", "x"], copy=False),
+    ),
+    (
+        "frame-merge-copy",
+        "DataFrame.merge",
+        ("copy",),
+        lambda pd: _tail_grid(pd).merge(_tail_grid(pd), on="a", copy=False),
+    ),
+    (
+        "frame-infer-objects-copy",
+        "DataFrame.infer_objects",
+        ("copy",),
+        lambda pd: _tail_grid(pd).infer_objects(copy=False),
+    ),
+    (
+        "cat-reorder-ordered",
+        "cat.reorder_categories",
+        ("ordered",),
+        lambda pd: pd.Series(["a", "b"], dtype="category").cat.reorder_categories(
+            ["b", "a"], ordered=True
+        ),
+    ),
+    (
+        "dt-to-period-named",
+        "dt.to_period",
+        ("freq",),
+        lambda pd: pd.Series(_tail_run(pd)).dt.to_period(freq="M").astype(str),
+    ),
+    (
+        "dt-month-name-locale",
+        "dt.month_name",
+        ("locale",),
+        lambda pd: pd.Series(_tail_run(pd)).dt.month_name(locale=None),
+    ),
+    (
+        "dt-day-name-locale",
+        "dt.day_name",
+        ("locale",),
+        lambda pd: pd.Series(_tail_run(pd)).dt.day_name(locale=None),
+    ),
+    (
+        "timestamp-utcfromtimestamp-named",
+        "Timestamp.utcfromtimestamp",
+        ("ts",),
+        lambda pd: pd.Timestamp.utcfromtimestamp(ts=0),
+    ),
+    (
+        "timestamp-today-tz",
+        "Timestamp.today",
+        ("tz",),
+        lambda pd: str(pd.Timestamp.today(tz="UTC").tz),
+    ),
+    (
+        "timestamp-now-tz",
+        "Timestamp.now",
+        ("tz",),
+        lambda pd: str(pd.Timestamp.now(tz="Asia/Tokyo").tz),
+    ),
+    (
+        "timedelta-view-dtype",
+        "Timedelta.view",
+        ("dtype",),
+        lambda pd: int(pd.Timedelta("1s").view(dtype="i8")),
+    ),
+    (
+        "is-sparse-arr",
+        "api.types.is_sparse",
+        ("arr",),
+        lambda pd: pd.api.types.is_sparse(arr=pd.Series([1])),
+    ),
+    (
+        "arrow-dtype-named",
+        "pandas.ArrowDtype",
+        ("pyarrow_dtype",),
+        lambda pd: str(pd.ArrowDtype(pyarrow_dtype=__import__("pyarrow").int64())),
+    ),
+    ("series-info-max-cols", "Series.info", ("max_cols",), lambda pd: _tail_info(pd)),
+    (
+        "grouped-sample-weights",
+        "GroupBy.sample",
+        ("weights",),
+        lambda pd: (
+            pd.DataFrame({"g": list("aabb"), "v": [1, 2, 3, 4]})
+            .groupby("g")
+            .sample(n=1, weights=[0.0, 1.0, 1.0, 0.0])
+        ),
+    ),
+    (
+        "undefined-variable-local",
+        "errors.UndefinedVariableError",
+        ("name", "is_local"),
+        lambda pd: str(pd.errors.UndefinedVariableError(name="x", is_local=True)),
+    ),
+)
+
+
+def _tail_info(pd):
+    """The lines info writes for a column, without the memory line."""
+    import io
+
+    buffer = io.StringIO()
+    pd.Series([1, 2], name="v").info(buf=buffer, max_cols=None, memory_usage=False)
+    return buffer.getvalue().splitlines()[1:]
+
+
 for _id, _api, _covers, _build in (
-    TAIL_CASES + TAIL2_CASES + TAIL3_CASES + TAIL4_CASES + TAIL5_CASES
+    TAIL_CASES + TAIL2_CASES + TAIL3_CASES + TAIL4_CASES + TAIL5_CASES + TAIL6_CASES
 ):
     case(
         f"basics/{_id}",

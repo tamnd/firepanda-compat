@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 103 more parameter tail cases for MultiIndex, Index and DatetimeIndex lookups, set operations, naming and conversions by keyword, frame copy options, dt and cat options, Timestamp now and today, and GroupBy sample weights, plus row slice cases for df[::-1], df[1:5:2] and a backward loc label slice on every frame shape.
+- Board after firepanda #1519: 6501 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 43 more parameter tail cases: searchsorted side and sorter, set_flags, rolling, expanding and ewm method, MultiIndex putmask and factorize, asof_locs, grouped resample, DatetimeIndex std, frame describe percentiles, skipna, numeric_only, axis, keep, level, validate and limit options, and union_categoricals with sort_categories and ignore_order.
 - Board after firepanda #1518: 6386 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 140 more parameter tail cases: the api.types predicates and dtype constructors by keyword, top level missing-value tests, options, merge, melt and dummies options, Timestamp and Timedelta rounding, zone and naming methods, Series update, unstack, reshaping, copy and axis variants, Rolling, Expanding and ewm numeric_only, agg and pipe, Resampler fills, quantile, transform and get_group, and GroupBy take, pipe, ngroup, fills, cumulatives and include_groups.
