@@ -14530,7 +14530,7 @@ for _id, _api, _covers, _build in (
     case(
         f"basics/{_id}",
         _api,
-        level="L3",
+        level="L3" if _covers else "L2",
         covers=_covers,
         frames=("single",),
         expr=lambda pd, df, _build=_build: _build(pd),
