@@ -14228,6 +14228,176 @@ TAIL9_CASES = (
 )
 
 
+def _tail10_shapes(pd):
+    """Angles and degrees of three shapes."""
+    return pd.DataFrame(
+        {"angles": [0, 3, 4], "degrees": [360, 180, 360]},
+        index=["circle", "triangle", "rectangle"],
+    )
+
+
+def _tail10_numpy():
+    """numpy, read when a case needs it."""
+    import numpy
+
+    return numpy
+
+
+def _tail10_relabelled(pd):
+    """Three columns given two levels of labels after they are made."""
+    frame = pd.DataFrame({"A": [1, 4], "B": [2, 5], "C": [3, 6]})
+    frame.columns = [list("ABC"), list("DEF")]
+    return _tail_levels(frame.columns)
+
+
+def _tail10_gap_written(pd, kind):
+    """A column of two values with NA written over the first."""
+    values = {"int64": [1, 2], "float64": [1.5, 2.5]}[kind]
+    column = pd.Series(values, dtype=kind)
+    column.iloc[0] = pd.NA
+    return column
+
+
+def _tail10_frame_gap(pd):
+    """A frame with NA written into one cell by position."""
+    frame = pd.DataFrame({"a": [1.5, 2.5], "b": [3.5, 4.5]})
+    frame.iloc[0, 1] = pd.NA
+    return frame
+
+
+TAIL10_CASES = (
+    (
+        "frame-mul-dict",
+        "DataFrame.mul",
+        ("other",),
+        lambda pd: _tail10_shapes(pd).mul({"angles": 0, "degrees": 2}),
+    ),
+    (
+        "frame-add-dict-order",
+        "DataFrame.add",
+        ("other",),
+        lambda pd: _tail10_shapes(pd).add({"degrees": 1, "angles": 2}),
+    ),
+    (
+        "frame-mul-dict-rows",
+        "DataFrame.mul",
+        ("axis",),
+        lambda pd: _tail10_shapes(pd).mul(
+            {"circle": 1, "triangle": 2, "rectangle": 3}, axis="index"
+        ),
+    ),
+    (
+        "frame-sub-dict",
+        "DataFrame.sub",
+        ("other",),
+        lambda pd: _tail10_shapes(pd).sub({"angles": 1, "degrees": 10}),
+    ),
+    (
+        "series-index-lists",
+        "pandas.Series",
+        ("index",),
+        lambda pd: _tail_levels(
+            pd.Series([1, 2, 3, 4], index=[["a", "a", "b", "b"], [1, 2, 1, 2]]).index
+        ),
+    ),
+    (
+        "series-index-lists-sum",
+        "pandas.Series",
+        ("index",),
+        lambda pd: (
+            pd.Series([1, 2, 3, 4], index=[["a", "a", "b", "b"], [1, 2, 1, 2]])
+            .groupby(level=0)
+            .sum()
+        ),
+    ),
+    (
+        "series-index-arrays",
+        "pandas.Series",
+        ("index",),
+        lambda pd: _tail_levels(
+            pd.Series(
+                [5, 6], index=[_tail10_numpy().array(["x", "y"]), _tail10_numpy().array([1, 2])]
+            ).index
+        ),
+    ),
+    (
+        "frame-index-lists",
+        "pandas.DataFrame",
+        ("index",),
+        lambda pd: _tail_levels(pd.DataFrame({"g": [1, 2]}, index=[["x", "y"], ["p", "q"]]).index),
+    ),
+    (
+        "frame-columns-lists",
+        "pandas.DataFrame",
+        ("columns",),
+        lambda pd: _tail_levels(pd.DataFrame([[1, 2]], columns=[["a", "a"], ["x", "y"]]).columns),
+    ),
+    (
+        "frame-columns-lists-values",
+        "pandas.DataFrame",
+        ("columns",),
+        lambda pd: pd.DataFrame([[1, 2], [3, 4]], columns=[["a", "a"], ["x", "y"]])["a"][
+            "y"
+        ].tolist(),
+    ),
+    ("frame-columns-assigned-lists", "DataFrame.set_axis", ("labels",), _tail10_relabelled),
+    (
+        "date-range-compound-freq",
+        "pandas.date_range",
+        ("freq",),
+        lambda pd: pd.date_range("2018-04-09", periods=4, freq="1D20min"),
+    ),
+    (
+        "date-range-compound-hours",
+        "pandas.date_range",
+        ("freq",),
+        lambda pd: pd.date_range("2020-01-01", periods=3, freq="2h30min"),
+    ),
+    (
+        "datetimeindex-m8-dtype",
+        "pandas.DatetimeIndex",
+        ("dtype",),
+        lambda pd: pd.DatetimeIndex(["2015-03-29 02:30:00", "2015-03-29 03:30:00"], dtype="M8[ns]"),
+    ),
+    (
+        "series-ufunc-sqrt",
+        "Series.transform",
+        ("func",),
+        lambda pd: _tail10_numpy().sqrt(
+            pd.Series([1.0, 4.0, 9.0], index=["p", "q", "r"], name="v")
+        ),
+    ),
+    (
+        "series-ufunc-add",
+        "Series.transform",
+        ("func",),
+        lambda pd: _tail10_numpy().add(pd.Series([1.5, 2.5], name="v"), 1),
+    ),
+    (
+        "series-transform-ufuncs",
+        "Series.transform",
+        ("func",),
+        lambda pd: pd.Series([1.0, 2.0, 3.0]).transform(
+            [_tail10_numpy().sqrt, _tail10_numpy().exp]
+        ),
+    ),
+    (
+        "series-transform-ufunc-one",
+        "Series.transform",
+        ("func",),
+        lambda pd: pd.Series([1.0, 4.0]).transform(_tail10_numpy().sqrt),
+    ),
+    ("series-iloc-na-int", "pandas.Series", ("data",), lambda pd: _tail10_gap_written(pd, "int64")),
+    (
+        "series-iloc-na-float",
+        "pandas.Series",
+        ("data",),
+        lambda pd: _tail10_gap_written(pd, "float64"),
+    ),
+    ("frame-iloc-na", "pandas.DataFrame", ("data",), _tail10_frame_gap),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -14238,6 +14408,7 @@ for _id, _api, _covers, _build in (
     + TAIL7_CASES
     + TAIL8_CASES
     + TAIL9_CASES
+    + TAIL10_CASES
 ):
     case(
         f"basics/{_id}",

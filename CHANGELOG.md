@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Twenty-one basics cases for dict operands in the flex operators, lists of arrays read as a MultiIndex on rows and columns, compound steps such as 1D20min, the M8[ns] spelling, numpy ufuncs over a Series and in transform, and writing pd.NA into a column.
+- Board after firepanda #1525: 6586 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Twenty-one basics cases for forward and offset window indexers, check_array_indexer, named aggregation on frames and series, factorize and unique over numpy arrays, set_option with a dict, and slash-style date parsing in Timestamp and bdate_range.
 - Board after firepanda #1523: 6565 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 29 cases for array argmax, argmin, argsort, duplicated, isin, item, nbytes, searchsorted, shift, map and interpolate, Categorical argsort, isin, sort_values, map, item assignment and shift, IntervalArray makers and questions, and IntervalIndex.is_overlapping.
