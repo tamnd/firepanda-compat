@@ -12733,7 +12733,321 @@ def _tail_update(pd):
     return column
 
 
-for _id, _api, _covers, _build in TAIL_CASES + TAIL2_CASES + TAIL3_CASES + TAIL4_CASES:
+def _tail_sorted(pd):
+    """Ascending floats with labels."""
+    return pd.Series([1.0, 2.0, 4.0, 8.0], index=list("wxyz"), name="v")
+
+
+def _tail_shiftable(pd):
+    """A two-level index of three rows."""
+    return pd.MultiIndex.from_tuples([("a", 1), ("a", 2), ("b", 1)], names=["k", "n"])
+
+
+def _tail_daily(pd):
+    """Six daily readings with a group key."""
+    return pd.DataFrame(
+        {"g": list("ababab"), "v": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]},
+        index=pd.date_range("2024-01-01", periods=6, freq="D"),
+    )
+
+
+TAIL5_CASES = (
+    (
+        "series-searchsorted-side",
+        "Series.searchsorted",
+        ("side", "sorter"),
+        lambda pd: [
+            int(x) for x in _tail_sorted(pd).searchsorted([2.0, 5.0], side="right", sorter=None)
+        ],
+    ),
+    (
+        "index-searchsorted-side",
+        "Index.searchsorted",
+        ("side", "sorter"),
+        lambda pd: [
+            int(x) for x in pd.Index([1, 3, 5]).searchsorted([3, 4], side="left", sorter=None)
+        ],
+    ),
+    (
+        "series-set-flags-dupes",
+        "Series.set_flags",
+        ("copy", "allows_duplicate_labels"),
+        lambda pd: (
+            _tail_sorted(pd)
+            .set_flags(copy=False, allows_duplicate_labels=True)
+            .flags.allows_duplicate_labels
+        ),
+    ),
+    (
+        "frame-set-flags-dupes",
+        "DataFrame.set_flags",
+        ("copy", "allows_duplicate_labels"),
+        lambda pd: (
+            pd.DataFrame({"a": [1]})
+            .set_flags(copy=False, allows_duplicate_labels=False)
+            .flags.allows_duplicate_labels
+        ),
+    ),
+    (
+        "series-rolling-method",
+        "Series.rolling",
+        ("win_type", "on", "method"),
+        lambda pd: _tail_sorted(pd).rolling(2, win_type=None, on=None, method="single").sum(),
+    ),
+    (
+        "frame-rolling-method",
+        "DataFrame.rolling",
+        ("win_type", "method"),
+        lambda pd: _tail_daily(pd)[["v"]].rolling(2, win_type=None, method="single").sum(),
+    ),
+    (
+        "multi-putmask-value",
+        "MultiIndex.putmask",
+        ("mask", "value"),
+        lambda pd: _tail_levels(
+            _tail_shiftable(pd).putmask(
+                mask=[True, False, False], value=pd.MultiIndex.from_tuples([("z", 9)] * 3)
+            )
+        ),
+    ),
+    (
+        "multi-factorize-sort",
+        "MultiIndex.factorize",
+        ("sort", "use_na_sentinel"),
+        lambda pd: _tail_shiftable(pd).factorize(sort=True, use_na_sentinel=True)[0].tolist(),
+    ),
+    (
+        "index-asof-locs-mask",
+        "Index.asof_locs",
+        ("where", "mask"),
+        lambda pd: [
+            int(x)
+            for x in pd.Index([1, 3, 5]).asof_locs(
+                where=pd.Index([2, 6]), mask=pd.Series([True, True, True]).to_numpy()
+            )
+        ],
+    ),
+    (
+        "instant-asof-locs-mask",
+        "DatetimeIndex.asof_locs",
+        ("where", "mask"),
+        lambda pd: [
+            int(x)
+            for x in _tail_daily(pd).index.asof_locs(
+                where=pd.DatetimeIndex(["2024-01-03 12:00"]), mask=pd.Series([True] * 6).to_numpy()
+            )
+        ],
+    ),
+    (
+        "grouped-resample-rule",
+        "GroupBy.resample",
+        ("rule", "include_groups"),
+        lambda pd: _tail_daily(pd).groupby("g").resample(rule="2D", include_groups=False).sum(),
+    ),
+    (
+        "frame-resample-level",
+        "DataFrame.resample",
+        ("convention", "level"),
+        lambda pd: _tail_daily(pd)[["v"]].resample("2D", convention="start", level=None).sum(),
+    ),
+    (
+        "instant-std-keepdims",
+        "DatetimeIndex.std",
+        ("dtype", "out", "keepdims"),
+        lambda pd: str(_tail_daily(pd).index.std(dtype=None, out=None, keepdims=False)),
+    ),
+    (
+        "pandas-reset-option-pat",
+        "pandas.reset_option",
+        ("pat",),
+        lambda pd: pd.reset_option(pat="display.max_rows"),
+    ),
+    (
+        "frame-describe-percentiles",
+        "DataFrame.describe",
+        ("percentiles",),
+        lambda pd: _tail_daily(pd)[["v"]].describe(percentiles=[0.1, 0.9]),
+    ),
+    (
+        "frame-var-skipna",
+        "DataFrame.var",
+        ("skipna",),
+        lambda pd: _tail_daily(pd)[["v"]].var(skipna=True),
+    ),
+    (
+        "frame-std-skipna",
+        "DataFrame.std",
+        ("skipna",),
+        lambda pd: _tail_daily(pd)[["v"]].std(skipna=False),
+    ),
+    (
+        "frame-sem-skipna",
+        "DataFrame.sem",
+        ("skipna",),
+        lambda pd: _tail_daily(pd)[["v"]].sem(skipna=True),
+    ),
+    (
+        "frame-unstack-sort",
+        "DataFrame.unstack",
+        ("sort",),
+        lambda pd: _tail_daily(pd).set_index("g", append=True)[["v"]].unstack(sort=False),
+    ),
+    (
+        "frame-take-axis",
+        "DataFrame.take",
+        ("axis",),
+        lambda pd: _tail_daily(pd).take([1, 0], axis=1),
+    ),
+    (
+        "frame-select-exclude",
+        "DataFrame.select_dtypes",
+        ("exclude",),
+        lambda pd: _tail_daily(pd).select_dtypes(exclude="number"),
+    ),
+    (
+        "frame-quantile-numeric",
+        "DataFrame.quantile",
+        ("numeric_only",),
+        lambda pd: _tail_daily(pd).quantile(0.5, numeric_only=True),
+    ),
+    (
+        "frame-prod-numeric",
+        "DataFrame.prod",
+        ("numeric_only",),
+        lambda pd: _tail_daily(pd).prod(numeric_only=True),
+    ),
+    (
+        "frame-mean-numeric",
+        "DataFrame.mean",
+        ("numeric_only",),
+        lambda pd: _tail_daily(pd).mean(numeric_only=True),
+    ),
+    (
+        "frame-mode-numeric",
+        "DataFrame.mode",
+        ("numeric_only",),
+        lambda pd: _tail_daily(pd).mode(numeric_only=True),
+    ),
+    (
+        "frame-cumsum-numeric",
+        "DataFrame.cumsum",
+        ("numeric_only",),
+        lambda pd: _tail_daily(pd)[["v"]].cumsum(numeric_only=True),
+    ),
+    ("frame-pop-item", "DataFrame.pop", ("item",), lambda pd: _tail_daily(pd).pop(item="v")),
+    (
+        "frame-nunique-axis",
+        "DataFrame.nunique",
+        ("axis",),
+        lambda pd: _tail_daily(pd).nunique(axis=0),
+    ),
+    (
+        "frame-nsmallest-keep",
+        "DataFrame.nsmallest",
+        ("keep",),
+        lambda pd: _tail_daily(pd).nsmallest(2, "v", keep="last"),
+    ),
+    (
+        "frame-lt-level",
+        "DataFrame.lt",
+        ("level",),
+        lambda pd: _tail_daily(pd)[["v"]].lt(3.0, level=None),
+    ),
+    (
+        "frame-ge-level",
+        "DataFrame.ge",
+        ("level",),
+        lambda pd: _tail_daily(pd)[["v"]].ge(3.0, level=None),
+    ),
+    (
+        "frame-join-validate",
+        "DataFrame.join",
+        ("validate",),
+        lambda pd: _tail_daily(pd)[["v"]].join(_tail_daily(pd)[["g"]], validate="one_to_one"),
+    ),
+    (
+        "frame-interpolate-limit",
+        "DataFrame.interpolate",
+        ("limit",),
+        lambda pd: pd.DataFrame({"a": [1.0, float("nan"), float("nan"), 4.0]}).interpolate(limit=1),
+    ),
+    (
+        "frame-group-keys",
+        "DataFrame.groupby",
+        ("group_keys",),
+        lambda pd: (
+            _tail_daily(pd)
+            .reset_index(drop=True)
+            .groupby("g", group_keys=False)[["v"]]
+            .apply(lambda f: f.head(1))
+        ),
+    ),
+    (
+        "frame-filter-axis",
+        "DataFrame.filter",
+        ("axis",),
+        lambda pd: _tail_daily(pd).filter(items=["v"], axis=1),
+    ),
+    (
+        "frame-expanding-method",
+        "DataFrame.expanding",
+        ("method",),
+        lambda pd: _tail_daily(pd)[["v"]].expanding(method="single").sum(),
+    ),
+    (
+        "frame-ewm-method",
+        "DataFrame.ewm",
+        ("method",),
+        lambda pd: _tail_daily(pd)[["v"]].ewm(com=1, method="single").mean(),
+    ),
+    ("frame-eval-expr", "DataFrame.eval", ("expr",), lambda pd: _tail_daily(pd).eval(expr="v * 2")),
+    (
+        "frame-equals-other",
+        "DataFrame.equals",
+        ("other",),
+        lambda pd: _tail_daily(pd).equals(other=_tail_daily(pd)),
+    ),
+    (
+        "frame-droplevel-axis",
+        "DataFrame.droplevel",
+        ("axis",),
+        lambda pd: _tail_daily(pd).set_index("g", append=True).droplevel("g", axis=0),
+    ),
+    (
+        "frame-dot-other",
+        "DataFrame.dot",
+        ("other",),
+        lambda pd: pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]}).dot(
+            other=pd.Series([1.0, 1.0], index=["a", "b"])
+        ),
+    ),
+    (
+        "union-cats-sorted",
+        "api.types.union_categoricals",
+        ("to_union", "sort_categories"),
+        lambda pd: pd.Series(
+            pd.api.types.union_categoricals(
+                to_union=[pd.Categorical(["b", "a"]), pd.Categorical(["c"])], sort_categories=True
+            )
+        ),
+    ),
+    (
+        "union-cats-ignore-order",
+        "api.types.union_categoricals",
+        ("ignore_order",),
+        lambda pd: pd.Series(
+            pd.api.types.union_categoricals(
+                [pd.Categorical(["a"], ordered=True), pd.Categorical(["b"], ordered=True)],
+                ignore_order=True,
+            )
+        ),
+    ),
+)
+
+
+for _id, _api, _covers, _build in (
+    TAIL_CASES + TAIL2_CASES + TAIL3_CASES + TAIL4_CASES + TAIL5_CASES
+):
     case(
         f"basics/{_id}",
         _api,
