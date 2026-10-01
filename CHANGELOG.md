@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 46 basics cases for the flex arithmetic and comparison methods on a Series and a DataFrame given level= and fill_value=, a flat operand read by one level of a MultiIndex with a gap on one side filled, NaN included.
+- Board after firepanda #1501: 5645 pass, 0 unimplemented, 68 divergent, 0 fail.
 - Cases for resample closed, label, origin, offset and level, Series.groupby level, sort, dropna, group_keys and observed, query parser, engine and names, pivot_table margins_name, dropna, observed and sort, merge_ordered sides, bdate_range zones, Series.xs levels, tz_localize ambiguous and nonexistent, convert_dtypes flags, reindex_like fills, and the Categorical, period_range, Timestamp, PeriodIndex, DatetimeIndex, IntervalIndex, MultiIndex and pivot constructors.
 - Board after firepanda #1491: 5599 pass, 0 unimplemented, 68 divergent, 0 fail.
 - Cases for sparsify and layout in to_string, stack by a named level, rename_axis with a mapping, reindex by level, asfreq over periods, info without memory usage, Period fields, eval dicts, resolvers and target, wide_to_long sep and suffix, a CategoricalIndex given as index=, and merge_asof by and on the index.

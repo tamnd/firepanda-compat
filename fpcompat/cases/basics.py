@@ -8153,3 +8153,116 @@ case(
     in_process=True,
     note="one value per pair of keys spread into columns",
 )
+
+
+def _level_pair(pd):
+    labels = pd.MultiIndex.from_arrays([list("aabb"), [1, 2, 1, 2]], names=["x", "y"])
+    return (
+        pd.Series([1.0, 2.0, 3.0, 4.0], index=labels),
+        pd.Series([10.0, 20.0], index=pd.Index(["a", "b"], name="x")),
+    )
+
+
+def _series_level_fill(pd, op):
+    layered, flat = _level_pair(pd)
+    left = pd.Series([1.0, float("nan"), 3.0], index=[0, 1, 2])
+    right = pd.Series([4.0, 5.0, float("nan")], index=[1, 2, 3])
+    answers = [
+        getattr(layered, op)(flat, level="x", axis=0),
+        getattr(left, op)(right, fill_value=2.0),
+    ]
+    return pd.concat([part for answer in answers for part in _parts(answer)])
+
+
+def _parts(answer):
+    return list(answer) if isinstance(answer, tuple) else [answer]
+
+
+def _frame_level_fill(pd, op):
+    labels = pd.MultiIndex.from_arrays([list("aabb"), [1, 2, 1, 2]], names=["x", "y"])
+    layered = pd.DataFrame(
+        {"p": [1.0, 2.0, 3.0, 4.0], "q": [5.0, float("nan"), 7.0, 8.0]}, index=labels
+    )
+    flat = pd.DataFrame(
+        {"p": [1.0, float("nan"), 9.0], "r": [2.0, 3.0, 4.0]},
+        index=pd.Index(["a", "c", "b"], name="x"),
+    )
+    return pd.concat(
+        [
+            getattr(layered, op)(flat, level="x", fill_value=1.0),
+            getattr(layered, op)(pd.Series({"p": 2.0, "q": 3.0}), axis="columns"),
+        ]
+    )
+
+
+for _op in (
+    "add",
+    "sub",
+    "subtract",
+    "mul",
+    "multiply",
+    "truediv",
+    "div",
+    "divide",
+    "floordiv",
+    "mod",
+    "pow",
+    "radd",
+    "rsub",
+    "rmul",
+    "rtruediv",
+    "rdiv",
+    "rfloordiv",
+    "rmod",
+    "rpow",
+    "divmod",
+    "rdivmod",
+    "eq",
+    "ne",
+    "lt",
+    "le",
+    "gt",
+    "ge",
+):
+    case(
+        f"basics/series-{_op}-level-fill",
+        f"Series.{_op}",
+        level="L3",
+        covers=("other", "level", "fill_value", "axis"),
+        frames=("single",),
+        expr=(lambda op: lambda pd, df: _series_level_fill(pd, op))(_op),
+        in_process=True,
+        note="a flat operand read by one level of the labels, and a gap on one side filled",
+    )
+
+for _op in (
+    "add",
+    "sub",
+    "subtract",
+    "mul",
+    "multiply",
+    "truediv",
+    "div",
+    "divide",
+    "floordiv",
+    "mod",
+    "pow",
+    "radd",
+    "rsub",
+    "rmul",
+    "rtruediv",
+    "rdiv",
+    "rfloordiv",
+    "rmod",
+    "rpow",
+):
+    case(
+        f"basics/frame-{_op}-level-fill",
+        f"DataFrame.{_op}",
+        level="L3",
+        covers=("other", "axis", "level", "fill_value"),
+        frames=("single",),
+        expr=(lambda op: lambda pd, df: _frame_level_fill(pd, op))(_op),
+        in_process=True,
+        note="a flat frame read by one level of the rows with gaps filled, and a row across",
+    )
