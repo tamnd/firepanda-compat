@@ -13732,8 +13732,116 @@ def _tail_info(pd):
     return buffer.getvalue().splitlines()[1:]
 
 
+def _tail7_ranked(pd):
+    """Five values over text labels, grouped two ways."""
+    return pd.Series([3, 1, 2, 5, 4], index=list("abcde"), name="v").groupby([1, 1, 1, 2, 2])
+
+
+def _tail7_pairs(pd):
+    """One column over a two-level index."""
+    index = pd.MultiIndex.from_tuples([("a", 1), ("a", 2), ("b", 1)], names=["k", "n"])
+    return pd.DataFrame({"v": [1, 2, 3]}, index=index)
+
+
+def _tail7_spans(pd):
+    """Three durations."""
+    return pd.to_timedelta(["1s", "2s", "6s"])
+
+
+TAIL7_CASES = (
+    (
+        "grouped-series-nlargest",
+        "Series.groupby",
+        ("by",),
+        lambda pd: [
+            (int(k), str(n), int(v)) for (k, n), v in _tail7_ranked(pd).nlargest(2).items()
+        ],
+    ),
+    (
+        "grouped-series-nsmallest",
+        "Series.groupby",
+        ("by",),
+        lambda pd: _tail7_ranked(pd).nsmallest(1).tolist(),
+    ),
+    (
+        "grouped-series-unique",
+        "Series.groupby",
+        ("by",),
+        lambda pd: [sorted(int(x) for x in part) for part in _tail7_ranked(pd).unique().tolist()],
+    ),
+    (
+        "grouped-series-rising",
+        "Series.groupby",
+        ("by",),
+        lambda pd: [bool(x) for x in _tail7_ranked(pd).is_monotonic_increasing.tolist()],
+    ),
+    (
+        "grouped-series-falling",
+        "Series.groupby",
+        ("by",),
+        lambda pd: [bool(x) for x in _tail7_ranked(pd).is_monotonic_decreasing.tolist()],
+    ),
+    (
+        "timedelta-index-sum",
+        "pandas.to_timedelta",
+        ("arg",),
+        lambda pd: str(_tail7_spans(pd).sum()),
+    ),
+    (
+        "timedelta-index-mean",
+        "pandas.to_timedelta",
+        ("arg",),
+        lambda pd: str(_tail7_spans(pd).mean()),
+    ),
+    (
+        "timedelta-index-median",
+        "pandas.to_timedelta",
+        ("arg",),
+        lambda pd: str(_tail7_spans(pd).median()),
+    ),
+    (
+        "timedelta-index-std",
+        "pandas.to_timedelta",
+        ("arg",),
+        lambda pd: str(_tail7_spans(pd).std()),
+    ),
+    (
+        "frame-drop-tuple-key",
+        "DataFrame.drop",
+        ("labels",),
+        lambda pd: _tail7_pairs(pd).drop(("a", 2)).reset_index(),
+    ),
+    (
+        "frame-drop-tuple-ignore",
+        "DataFrame.drop",
+        ("errors",),
+        lambda pd: _tail7_pairs(pd).drop(("z", 9), errors="ignore").reset_index(),
+    ),
+    (
+        "series-drop-tuple-key",
+        "Series.drop",
+        ("labels",),
+        lambda pd: _tail7_pairs(pd)["v"].drop(("b", 1)).tolist(),
+    ),
+    (
+        "frame-equals-label-kinds",
+        "DataFrame.equals",
+        ("other",),
+        lambda pd: pd.DataFrame({1: [10], 2: [20]}).equals(pd.DataFrame({1.0: [10], 2.0: [20]})),
+    ),
+    (
+        "frame-combine-ufunc",
+        "DataFrame.combine",
+        ("func",),
+        lambda pd: pd.DataFrame({"A": [5, 0], "B": [2, 4]}).combine(
+            pd.DataFrame({"A": [1, 1], "B": [3, 3]}), __import__("numpy").minimum
+        ),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
-    TAIL_CASES + TAIL2_CASES + TAIL3_CASES + TAIL4_CASES + TAIL5_CASES + TAIL6_CASES
+    TAIL_CASES + TAIL2_CASES + TAIL3_CASES + TAIL4_CASES + TAIL5_CASES + TAIL6_CASES + TAIL7_CASES
 ):
     case(
         f"basics/{_id}",
