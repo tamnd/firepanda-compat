@@ -14613,6 +14613,123 @@ TAIL13_CASES = (
 )
 
 
+def _tail14_labels(pd):
+    """Two readings a second apart, on a March morning."""
+    return pd.date_range("2018-03-10 09:00", periods=2, freq="s")
+
+
+def _tail14_gappy(pd):
+    """Two columns named by numbers, each with gaps."""
+    nan = float("nan")
+    return pd.DataFrame({0: [nan, 2.0, nan, 3.0], 1: [3.0, nan, 5.0, nan]})
+
+
+def _tail14_counts():
+    """Three whole numbers in a numpy array."""
+    import numpy as np
+
+    return np.arange(3)
+
+
+def _tail14_shapes(pd):
+    """Shapes on flat labels, and the same names under two groups."""
+    flat = pd.DataFrame(
+        {"angles": [0, 3, 4], "degrees": [360, 180, 360]},
+        index=["circle", "triangle", "rectangle"],
+    )
+    rows = [["A", "A", "A", "B", "B", "B"], ["circle", "triangle", "rectangle", "square", "p", "h"]]
+    deep = pd.DataFrame(
+        {"angles": [0, 3, 4, 4, 5, 6], "degrees": [360, 180, 360, 360, 540, 720]}, index=rows
+    )
+    return flat, deep
+
+
+TAIL14_CASES = (
+    (
+        "strftime-twelve-hour-clock",
+        "DatetimeIndex.strftime",
+        ("date_format",),
+        lambda pd: _tail14_labels(pd).strftime("%B %d, %Y, %r"),
+    ),
+    (
+        "strftime-locale-stamp",
+        "DatetimeIndex.strftime",
+        ("date_format",),
+        lambda pd: _tail14_labels(pd).strftime("%c"),
+    ),
+    (
+        "strftime-locale-date-time",
+        "Series.dt.strftime",
+        (),
+        lambda pd: pd.Series(_tail14_labels(pd)).dt.strftime("%x %X"),
+    ),
+    (
+        "ffill-number-names",
+        "GroupBy.ffill",
+        (),
+        lambda pd: _tail14_gappy(pd).groupby(pd.Series([0, 0, 1, 1])).ffill(),
+    ),
+    (
+        "loc-by-argsort",
+        "DataFrame.loc",
+        (),
+        lambda pd: pd.DataFrame({"c": [40, 44, 50], "w": ["a", "b", "c"]}).loc[
+            pd.Series([1, 0, 2])
+        ],
+    ),
+    (
+        "loc-column-key-and-name",
+        "DataFrame.loc",
+        (),
+        lambda pd: pd.DataFrame({"c": [40, 44, 50]}).loc[pd.Series([2, 0]), "c"],
+    ),
+    (
+        "spans-from-array-days",
+        "pandas.to_timedelta",
+        ("arg", "unit"),
+        lambda pd: pd.to_timedelta(_tail14_counts(), unit="D"),
+    ),
+    (
+        "reindex-text-fill-numbers",
+        "Series.reindex",
+        ("index", "fill_value"),
+        lambda pd: pd.Series([1, 2], index=["a", "b"]).reindex(["a", "c"], fill_value="missing"),
+    ),
+    (
+        "reindex-text-fill-floats",
+        "Series.reindex",
+        ("index", "fill_value"),
+        lambda pd: pd.Series([1.5, 2.0], index=["a", "b"]).reindex(["c", "a"], fill_value="z"),
+    ),
+    (
+        "frame-reindex-text-fill",
+        "DataFrame.reindex",
+        ("labels", "fill_value"),
+        lambda pd: pd.DataFrame({"s": [200, 404], "t": [0.5, 1.0]}, index=["a", "b"]).reindex(
+            ["b", "z"], fill_value="missing"
+        ),
+    ),
+    (
+        "flat-add-deep-by-level",
+        "DataFrame.add",
+        ("other", "level", "fill_value"),
+        lambda pd: _tail14_shapes(pd)[0].add(_tail14_shapes(pd)[1], level=1, fill_value=0),
+    ),
+    (
+        "flat-le-deep-by-level",
+        "DataFrame.le",
+        ("other", "level"),
+        lambda pd: _tail14_shapes(pd)[0].le(_tail14_shapes(pd)[1], level=1),
+    ),
+    (
+        "flat-rsub-deep-by-level",
+        "DataFrame.rsub",
+        ("other", "level", "fill_value"),
+        lambda pd: _tail14_shapes(pd)[0].rsub(_tail14_shapes(pd)[1], level=1, fill_value=1),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -14627,6 +14744,7 @@ for _id, _api, _covers, _build in (
     + TAIL11_CASES
     + TAIL12_CASES
     + TAIL13_CASES
+    + TAIL14_CASES
 ):
     case(
         f"basics/{_id}",

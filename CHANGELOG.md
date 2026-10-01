@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Thirteen tail cases for strftime's C composites, groupby fills on number column names, loc by a column of labels, to_timedelta on a numpy array, reindex with a text fill beside numbers, and a flat frame against a MultiIndex frame with `level=`.
+- Board after firepanda #1533: 6629 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Fourteen tail cases for rounding to frequencies of several pieces, `Period("nan")`, numpy's short temporal dtype names, compiled patterns in `str.replace`, index value counts with repeats and a gap, `putmask` with an Index, set operations across number widths, and NaN among text labels.
 - Board after firepanda #1532: 6616 pass, 0 unimplemented, 69 divergent, 0 fail.
 - TAIL12 basics cases for `abs` over complex numbers and objects, in a column and a frame, and `DataFrame.quantile` over numbers beside datetimes with one and two quantiles.
