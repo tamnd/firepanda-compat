@@ -8266,3 +8266,426 @@ for _op in (
         in_process=True,
         note="a flat frame read by one level of the rows with gaps filled, and a row across",
     )
+
+
+def _hourly_six(pd):
+    return pd.date_range("2024-01-01", periods=6, freq="4h")
+
+
+def _utc_pair(pd):
+    return pd.date_range("2024-01-01", periods=2, tz="UTC")
+
+
+def _xy_pairs(pd):
+    return pd.MultiIndex.from_tuples([("a", 1), ("b", 2)], names=["x", "y"])
+
+
+def _uneven_rows(pd):
+    pairs = [("b", 1), ("a", 2), ("b", 2), ("a", 1), ("c", 3)]
+    return pd.MultiIndex.from_tuples(pairs, names=["x", "y"])
+
+
+def _update_pair(pd):
+    left = pd.DataFrame({"a": [1.0, 2.0, float("nan")], "b": [4.0, 5.0, 6.0]})
+    right = pd.DataFrame({"a": [10.0, float("nan"), 30.0]})
+    return left, right
+
+
+def _updated_left_only(pd, df):
+    left, right = _update_pair(pd)
+    left.update(right, join="left", overwrite=False)
+    return left
+
+
+def _updated_filtered(pd, df):
+    left, right = _update_pair(pd)
+    left.update(right, filter_func=_above_one)
+    return left
+
+
+def _above_one(values):
+    return values > 1
+
+
+def _updated_overlap(pd, df):
+    left, right = _update_pair(pd)
+    left.update(right, errors="raise")
+    return left
+
+
+def _inserted_beside(pd, df):
+    made = pd.DataFrame({"a": [1, 2]})
+    made.insert(1, "c", [3, 4], allow_duplicates=True)
+    return made
+
+
+def _compare_pair(pd):
+    left = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    right = pd.DataFrame({"a": [1, 9, 3], "b": [4, 5, 7]})
+    return left, right
+
+
+def _negated(values):
+    return -values
+
+
+case(
+    "basics/frame-from-mapping-columns",
+    "pandas.DataFrame",
+    level="L3",
+    covers=("data",),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame({"p": {"y": 1, "x": 3}, "q": {"z": 2}}),
+    in_process=True,
+    note="each inner mapping read by its keys, the rows every key in the order first seen",
+)
+case(
+    "basics/frame-from-mapping-columns-named-rows",
+    "pandas.DataFrame",
+    level="L3",
+    covers=("data", "index"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame({"p": {"y": 1}, "q": 7}, index=["y", "w"]),
+    in_process=True,
+    note="with rows named, a mapping column is read by those labels and a scalar spread",
+)
+case(
+    "basics/frame-mapping-beside-list",
+    "pandas.DataFrame",
+    level="L4",
+    covers=("data",),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame({"p": {"y": 1, "x": 3}, "q": [5, 6]}),
+    raises=("ValueError", "Mixing dicts with non-Series"),
+    in_process=True,
+    note="a list beside a mapping has no labels to line up by, so pandas refuses it",
+)
+case(
+    "basics/from-dict-uneven-mappings",
+    "DataFrame.from_dict",
+    level="L3",
+    covers=("data", "orient", "dtype"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame.from_dict(
+        {"p": {"x": 1, "y": 3}, "q": {"x": 2}}, orient="columns", dtype="float64"
+    ),
+    in_process=True,
+    note="uneven inner mappings, a missing key a gap, cast to the dtype asked for",
+)
+case(
+    "basics/from-dict-rows-named-columns",
+    "DataFrame.from_dict",
+    level="L3",
+    covers=("data", "orient", "columns"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame.from_dict(
+        {"r1": [1, 2], "r2": [3, 4]}, orient="index", columns=["p", "q"]
+    ),
+    in_process=True,
+    note="each key a row, the lists read across the column names given",
+)
+case(
+    "basics/series-tz-convert-step",
+    "Series.tz_convert",
+    level="L3",
+    covers=("tz", "axis"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2], index=_utc_pair(pd)).tz_convert("US/Eastern", axis=0),
+    in_process=True,
+    note="a daily step moved to a clock with daylight saving is dropped from the labels",
+)
+case(
+    "basics/frame-tz-convert-level",
+    "DataFrame.tz_convert",
+    level="L3",
+    covers=("tz", "level"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"v": [1, 2]}, index=pd.MultiIndex.from_arrays([_utc_pair(pd), [1, 2]])
+    ).tz_convert("Asia/Tokyo", level=0),
+    in_process=True,
+    note="the instants of one level of the rows moved to another clock, the other kept",
+)
+case(
+    "basics/frame-tz-localize-nonexistent",
+    "DataFrame.tz_localize",
+    level="L3",
+    covers=("tz", "nonexistent"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"v": [1, 2]}, index=pd.date_range("2024-03-10 01:30", periods=2, freq="h")
+    ).tz_localize("US/Eastern", nonexistent="shift_forward"),
+    in_process=True,
+    note="a wall time skipped by the spring change is moved to the first one that exists",
+)
+case(
+    "basics/frame-tz-localize-ambiguous",
+    "DataFrame.tz_localize",
+    level="L3",
+    covers=("tz", "ambiguous"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"v": [1, 2]}, index=pd.DatetimeIndex(["2024-11-03 01:30", "2024-11-03 01:30"])
+    ).tz_localize("US/Eastern", ambiguous=[True, False]),
+    in_process=True,
+    note="a wall time the autumn change repeats, read as summer time and then winter time",
+)
+case(
+    "basics/series-between-time-inclusive",
+    "Series.between_time",
+    level="L3",
+    covers=("start_time", "end_time", "inclusive"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(range(6), index=_hourly_six(pd)).between_time(
+        "20:00", "04:00", inclusive="right"
+    ),
+    in_process=True,
+    note="a window across midnight that takes its end and leaves its start out",
+)
+case(
+    "basics/frame-between-time-neither",
+    "DataFrame.between_time",
+    level="L3",
+    covers=("start_time", "end_time", "inclusive", "axis"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame({"x": range(6)}, index=_hourly_six(pd)).between_time(
+        "04:00", "12:00", inclusive="neither", axis=0
+    ),
+    in_process=True,
+    note="a window that leaves both ends out, read along the rows",
+)
+case(
+    "basics/frame-update-left-kept",
+    "DataFrame.update",
+    level="L3",
+    covers=("other", "join", "overwrite"),
+    frames=("single",),
+    expr=_updated_left_only,
+    in_process=True,
+    note="only gaps in the frame are filled from the other one when overwrite is off",
+)
+case(
+    "basics/frame-update-filtered",
+    "DataFrame.update",
+    level="L3",
+    covers=("other", "filter_func"),
+    frames=("single",),
+    expr=_updated_filtered,
+    in_process=True,
+    note="only cells the filter passes are written from the other frame",
+)
+case(
+    "basics/frame-update-overlap-refused",
+    "DataFrame.update",
+    level="L4",
+    covers=("other", "errors"),
+    frames=("single",),
+    expr=_updated_overlap,
+    raises=("ValueError", "Data overlaps"),
+    in_process=True,
+    note="errors='raise' refuses to write over a value both frames hold",
+)
+case(
+    "basics/series-product-flags",
+    "Series.product",
+    level="L3",
+    covers=("axis", "skipna", "numeric_only", "min_count"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            pd.Series([1.0, float("nan"), 3.0]).product(axis=0, numeric_only=False),
+            pd.Series([1.0, float("nan"), 3.0]).product(skipna=False),
+            pd.Series([1.0, float("nan"), 3.0]).product(min_count=5),
+        ]
+    ),
+    in_process=True,
+    note="a gap skipped, a gap kept, and too few values for min_count",
+)
+case(
+    "basics/series-rename-on-level",
+    "Series.rename",
+    level="L3",
+    covers=("index", "axis", "level"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2], index=_xy_pairs(pd)).rename({1: 9}, axis=0, level=1),
+    in_process=True,
+    note="labels renamed on the inner level of the rows only",
+)
+case(
+    "basics/series-rename-missing-refused",
+    "Series.rename",
+    level="L4",
+    covers=("index", "errors"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2]).rename({5: 6}, errors="raise"),
+    raises=("KeyError", "not found in axis"),
+    in_process=True,
+    note="errors='raise' refuses a label the series does not have",
+)
+case(
+    "basics/frame-insert-allow-duplicates",
+    "DataFrame.insert",
+    level="L3",
+    covers=("loc", "column", "value", "allow_duplicates"),
+    frames=("single",),
+    expr=_inserted_beside,
+    in_process=True,
+    note="allow_duplicates given for a new label, which goes in where loc says",
+)
+case(
+    "basics/frame-compare-stacked",
+    "DataFrame.compare",
+    level="L3",
+    covers=("other", "align_axis"),
+    frames=("single",),
+    expr=lambda pd, df: _compare_pair(pd)[0].compare(_compare_pair(pd)[1], align_axis=0),
+    in_process=True,
+    note="the two sides of each difference stacked as rows rather than set side by side",
+)
+case(
+    "basics/frame-compare-kept-shape",
+    "DataFrame.compare",
+    level="L3",
+    covers=("other", "keep_shape", "keep_equal"),
+    frames=("single",),
+    expr=lambda pd, df: _compare_pair(pd)[0].compare(
+        _compare_pair(pd)[1], keep_shape=True, keep_equal=True
+    ),
+    in_process=True,
+    note="every row and column kept, the equal values shown rather than blanked",
+)
+case(
+    "basics/frame-compare-result-names",
+    "DataFrame.compare",
+    level="L3",
+    covers=("other", "result_names"),
+    frames=("single",),
+    expr=lambda pd, df: _compare_pair(pd)[0].compare(_compare_pair(pd)[1], result_names=("L", "R")),
+    in_process=True,
+    note="the two sides named as asked for in the inner column level",
+)
+case(
+    "basics/frame-to-timestamp-day-end",
+    "DataFrame.to_timestamp",
+    level="L3",
+    covers=("freq", "how", "axis"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"v": [1, 2]}, index=pd.period_range("2024-01", periods=2, freq="M")
+    ).to_timestamp(freq="D", how="end", axis=0),
+    in_process=True,
+    note="monthly periods read as the last day of each month",
+)
+case(
+    "basics/frame-reindex-inner-level",
+    "DataFrame.reindex",
+    level="L3",
+    covers=("labels", "axis", "level"),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame({"v": range(5)}, index=_uneven_rows(pd)).reindex(
+        labels=[3, 2], axis="index", level="y"
+    ),
+    in_process=True,
+    note="rows kept by the inner level in the order they stand, not the order asked for",
+)
+case(
+    "basics/series-reindex-outer-level",
+    "Series.reindex",
+    level="L3",
+    covers=("index", "level"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(range(5), index=_uneven_rows(pd)).reindex(["c", "b"], level=0),
+    in_process=True,
+    note="rows taken by the outer level in the order the labels are asked for",
+)
+case(
+    "basics/series-swaplevel-named",
+    "Series.swaplevel",
+    level="L3",
+    covers=("i", "j"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2], index=_xy_pairs(pd)).swaplevel("x", "y"),
+    in_process=True,
+    note="the two levels of the rows swapped by name",
+)
+case(
+    "basics/series-reset-index-level-dropped",
+    "Series.reset_index",
+    level="L3",
+    covers=("level", "drop"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2], index=_xy_pairs(pd)).reset_index(level="y", drop=True),
+    in_process=True,
+    note="one level of the rows taken away and not kept as a column",
+)
+case(
+    "basics/series-reset-index-named",
+    "Series.reset_index",
+    level="L3",
+    covers=("name", "allow_duplicates"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2], index=_xy_pairs(pd)).reset_index(
+        name="q", allow_duplicates=False
+    ),
+    in_process=True,
+    note="every level made a column and the values named as asked",
+)
+case(
+    "basics/series-rename-axis-mapping",
+    "Series.rename_axis",
+    level="L3",
+    covers=("index",),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2], index=_xy_pairs(pd)).rename_axis(index={"x": "z"}),
+    in_process=True,
+    note="one level name changed through a mapping, the other kept",
+)
+case(
+    "basics/series-rename-axis-list",
+    "Series.rename_axis",
+    level="L3",
+    covers=("mapper",),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2], index=_xy_pairs(pd)).rename_axis(["p", "q"]),
+    in_process=True,
+    note="every level of the rows given a new name in order",
+)
+case(
+    "basics/series-sort-values-keyed",
+    "Series.sort_values",
+    level="L3",
+    covers=("kind", "key"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([3, 1, 2], index=list("abc")).sort_values(
+        kind="stable", key=_negated
+    ),
+    in_process=True,
+    note="sorted by a key that turns the order around, with a stable sort",
+)
+case(
+    "basics/series-sort-values-renumbered",
+    "Series.sort_values",
+    level="L3",
+    covers=("ascending", "na_position", "ignore_index"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([3.0, float("nan"), 2.0]).sort_values(
+        ascending=False, na_position="first", ignore_index=True
+    ),
+    in_process=True,
+    note="largest first with the gap leading, and the labels numbered again",
+)
+case(
+    "basics/series-skew-flags",
+    "Series.skew",
+    level="L3",
+    covers=("axis", "skipna", "numeric_only"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [
+            pd.Series([1.0, 2.0, 5.0, 9.0]).skew(axis=0, numeric_only=False),
+            pd.Series([1.0, float("nan"), 5.0, 9.0]).skew(skipna=False),
+        ]
+    ),
+    in_process=True,
+    note="the skew of four values, and a gap kept so the answer is missing",
+)
