@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 29 cases for array argmax, argmin, argsort, duplicated, isin, item, nbytes, searchsorted, shift, map and interpolate, Categorical argsort, isin, sort_values, map, item assignment and shift, IntervalArray makers and questions, and IntervalIndex.is_overlapping.
+- Board after firepanda #1522: 6544 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 14 cases for SeriesGroupBy nlargest, nsmallest, unique and monotonic flags, TimedeltaIndex sum, mean, median and std, drop by a MultiIndex tuple, equals across int and float labels, and combine with np.minimum.
 - Board after firepanda #1521: 6515 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 103 more parameter tail cases for MultiIndex, Index and DatetimeIndex lookups, set operations, naming and conversions by keyword, frame copy options, dt and cat options, Timestamp now and today, and GroupBy sample weights, plus row slice cases for df[::-1], df[1:5:2] and a backward loc label slice on every frame shape.

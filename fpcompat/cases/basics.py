@@ -13840,8 +13840,206 @@ TAIL7_CASES = (
 )
 
 
+def _tail8_numbers(pd):
+    """Masked whole numbers with a gap and a repeat."""
+    return pd.array([3, 1, None, 4, 1], dtype="Int64")
+
+
+def _tail8_letters(pd):
+    """An ordered categorical with a gap."""
+    return pd.Categorical(["b", "b", "a", "c", None], categories=["c", "b", "a"], ordered=True)
+
+
+def _tail8_spans(pd):
+    """Three intervals, two of them overlapping."""
+    return pd.arrays.IntervalArray.from_tuples([(0, 1), (1, 3), (2, 4)])
+
+
+def _tail8_set(pd):
+    """A categorical with values put in place."""
+    made = pd.Categorical(["a", "b", "c"])
+    made[2] = "a"
+    made[0:2] = ["c", "c"]
+    return made.tolist()
+
+
+TAIL8_CASES = (
+    ("array-argmax", "pandas.array", ("data",), lambda pd: int(_tail8_numbers(pd).argmax())),
+    ("array-argmin", "pandas.array", ("data",), lambda pd: int(_tail8_numbers(pd).argmin())),
+    ("array-argsort", "pandas.array", ("data",), lambda pd: _tail8_numbers(pd).argsort().tolist()),
+    (
+        "array-argsort-falling",
+        "pandas.array",
+        ("data",),
+        lambda pd: _tail8_numbers(pd).argsort(ascending=False).tolist(),
+    ),
+    (
+        "array-argsort-gaps-first",
+        "pandas.array",
+        ("data",),
+        lambda pd: _tail8_numbers(pd).argsort(na_position="first").tolist(),
+    ),
+    (
+        "array-duplicated",
+        "pandas.array",
+        ("data",),
+        lambda pd: _tail8_numbers(pd).duplicated().tolist(),
+    ),
+    (
+        "array-duplicated-all",
+        "pandas.array",
+        ("data",),
+        lambda pd: _tail8_numbers(pd).duplicated(keep=False).tolist(),
+    ),
+    (
+        "array-isin",
+        "pandas.array",
+        ("data",),
+        lambda pd: [bool(x) for x in _tail8_numbers(pd).isin([1, 4])],
+    ),
+    ("array-item", "pandas.array", ("data",), lambda pd: int(pd.array([7], dtype="Int64").item())),
+    ("array-nbytes", "pandas.array", ("data",), lambda pd: _tail8_numbers(pd).nbytes),
+    (
+        "array-searchsorted",
+        "pandas.array",
+        ("data",),
+        lambda pd: pd.array([1, 2, 3, 5], dtype="Int64").searchsorted([4]).tolist(),
+    ),
+    (
+        "array-shift",
+        "pandas.array",
+        ("data",),
+        lambda pd: str(_tail8_numbers(pd).shift(-1, fill_value=0).dtype),
+    ),
+    (
+        "array-shift-values",
+        "pandas.array",
+        ("data",),
+        lambda pd: [int(x) for x in _tail8_numbers(pd).shift(-1, fill_value=0)[2:]],
+    ),
+    (
+        "array-map-text",
+        "pandas.array",
+        ("data",),
+        lambda pd: pd.array(["x", "y"], dtype="string").map(str.upper).tolist(),
+    ),
+    (
+        "array-numpy-interpolate",
+        "pandas.array",
+        ("data",),
+        lambda pd: [
+            float(x)
+            for x in pd.arrays.NumpyExtensionArray(
+                __import__("numpy").array([0, 1, float("nan"), 3])
+            ).interpolate(
+                method="linear",
+                axis=0,
+                index=pd.Index([1, 2, 3, 4]),
+                limit=3,
+                limit_direction="forward",
+                limit_area="inside",
+                copy=False,
+            )
+        ],
+    ),
+    (
+        "categorical-argsort",
+        "pandas.Categorical",
+        ("values",),
+        lambda pd: _tail8_letters(pd).argsort().tolist(),
+    ),
+    (
+        "categorical-isin",
+        "pandas.Categorical",
+        ("values",),
+        lambda pd: _tail8_letters(pd).isin(["a", "c"]).tolist(),
+    ),
+    (
+        "categorical-sort-values",
+        "pandas.Categorical",
+        ("values",),
+        lambda pd: _tail8_letters(pd).sort_values().tolist()[:4],
+    ),
+    (
+        "categorical-sort-falling",
+        "pandas.Categorical",
+        ("values",),
+        lambda pd: (
+            _tail8_letters(pd).sort_values(ascending=False, na_position="first").tolist()[1:]
+        ),
+    ),
+    (
+        "categorical-map",
+        "pandas.Categorical",
+        ("values",),
+        lambda pd: (
+            _tail8_letters(pd).map(lambda v: v.upper(), na_action="ignore").categories.tolist()
+        ),
+    ),
+    ("categorical-setitem", "pandas.Categorical", ("values",), _tail8_set),
+    (
+        "categorical-shift",
+        "pandas.Categorical",
+        ("values",),
+        lambda pd: _tail8_letters(pd).shift(1).tolist()[1:],
+    ),
+    (
+        "interval-array-contains",
+        "pandas.IntervalIndex",
+        ("data",),
+        lambda pd: _tail8_spans(pd).contains(2).tolist(),
+    ),
+    (
+        "interval-array-overlaps",
+        "pandas.IntervalIndex",
+        ("data",),
+        lambda pd: _tail8_spans(pd).overlaps(pd.Interval(0.5, 1.5)).tolist(),
+    ),
+    (
+        "interval-array-breaks-left",
+        "pandas.IntervalIndex",
+        ("data",),
+        lambda pd: pd.arrays.IntervalArray.from_breaks(range(4)).left.tolist(),
+    ),
+    (
+        "interval-array-set-closed",
+        "pandas.IntervalIndex",
+        ("closed",),
+        lambda pd: pd.arrays.IntervalArray.from_breaks(range(4)).set_closed("both").closed,
+    ),
+    (
+        "interval-array-from-list",
+        "pandas.IntervalIndex",
+        ("data",),
+        lambda pd: pd.arrays.IntervalArray([pd.Interval(0, 1), pd.Interval(1, 5)]).right.tolist(),
+    ),
+    (
+        "interval-index-overlapping",
+        "pandas.IntervalIndex",
+        ("data",),
+        lambda pd: pd.IntervalIndex.from_tuples([(0, 10), (1, 2), (3, 4)]).is_overlapping,
+    ),
+    (
+        "interval-index-overlapping-closed",
+        "pandas.IntervalIndex",
+        ("closed",),
+        lambda pd: [
+            pd.IntervalIndex.from_breaks([0, 1, 2], closed=c).is_overlapping
+            for c in ("right", "both")
+        ],
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
-    TAIL_CASES + TAIL2_CASES + TAIL3_CASES + TAIL4_CASES + TAIL5_CASES + TAIL6_CASES + TAIL7_CASES
+    TAIL_CASES
+    + TAIL2_CASES
+    + TAIL3_CASES
+    + TAIL4_CASES
+    + TAIL5_CASES
+    + TAIL6_CASES
+    + TAIL7_CASES
+    + TAIL8_CASES
 ):
     case(
         f"basics/{_id}",
