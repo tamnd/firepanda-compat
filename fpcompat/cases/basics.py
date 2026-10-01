@@ -3676,6 +3676,147 @@ case(
 )
 
 
+XML_DOC = """<?xml version='1.0' encoding='utf-8'?>
+<data>
+  <row id="1"><shape>square</shape><deg>360</deg><sides>4.0</sides><d>2020-01-02</d></row>
+  <row id="2"><shape>circle</shape><deg>360</deg><sides/><d>2021-03-04</d></row>
+  <row id="3"><shape>triangle</shape><deg>180</deg><sides>3.0</sides><d>2022-05-06</d></row>
+</data>"""
+XML_SPACED = """<?xml version='1.0'?>
+<s:data xmlns:s="https://example.com/s"><s:row><s:a>1</s:a><s:b>x</s:b></s:row>\
+<s:row><s:a>2</s:a><s:b>y</s:b></s:row></s:data>"""
+XML_READ = "firepanda reads XML in the Python layer with the standard library's parser"
+
+
+def _xml_read(pd, **options):
+    """The document read by the engine's `read_xml` with the standard library's parser."""
+    return pd.read_xml(io.StringIO(XML_DOC), parser="etree", **options)
+
+
+def _xml_doubled(value):
+    """A cell's text read as an integer and doubled, the converter the cases hand over."""
+    return int(value) * 2
+
+
+def _xml_on_disk(pd, **options):
+    """The document read back from a file, the only source `iterparse` and `compression` take."""
+    import os
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as folder:
+        path = os.path.join(folder, "doc.xml")
+        if options.get("compression"):
+            _xml_read(pd).to_xml(path, parser="etree", compression=options["compression"])
+        else:
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(XML_DOC)
+        return pd.read_xml(path, parser="etree", **options)
+
+
+XML_READS = {
+    "plain": ({}, ("path_or_buffer", "parser")),
+    "xpath": ({"xpath": ".//row[@id='2']"}, ("xpath",)),
+    "elements": ({"elems_only": True}, ("elems_only",)),
+    "attributes": ({"attrs_only": True}, ("attrs_only",)),
+    "names": ({"names": ["i", "s", "g", "n", "t"]}, ("names",)),
+    "dtype": ({"dtype": {"deg": "float64", "shape": "string"}}, ("dtype",)),
+    "converters": ({"converters": {"deg": _xml_doubled}}, ("converters",)),
+    "dates": ({"parse_dates": ["d"]}, ("parse_dates",)),
+    "arrow-backend": ({"dtype_backend": "pyarrow"}, ("dtype_backend",)),
+    "nullable-backend": ({"dtype_backend": "numpy_nullable"}, ("dtype_backend",)),
+}
+for name, (options, covers) in XML_READS.items():
+    case(
+        f"basics/read-xml-{name}",
+        "pandas.read_xml",
+        level="L3",
+        covers=covers,
+        frames=("single",),
+        expr=lambda pd, df, options=options: _xml_read(pd, **options),
+        in_process=True,
+        note="a small document of rows, attributes and a gap. " + XML_READ,
+    )
+case(
+    "basics/read-xml-namespaces",
+    "pandas.read_xml",
+    level="L3",
+    covers=("namespaces", "xpath"),
+    frames=("single",),
+    expr=lambda pd, df: pd.read_xml(
+        io.StringIO(XML_SPACED),
+        xpath=".//s:row",
+        namespaces={"s": "https://example.com/s"},
+        parser="etree",
+    ),
+    in_process=True,
+    note="rows found through a namespace prefix. " + XML_READ,
+)
+case(
+    "basics/read-xml-encoding",
+    "pandas.read_xml",
+    level="L3",
+    covers=("encoding",),
+    frames=("single",),
+    expr=lambda pd, df: pd.read_xml(
+        io.BytesIO(XML_DOC.replace("utf-8", "latin-1").encode("latin-1")),
+        parser="etree",
+        encoding="latin-1",
+    ),
+    in_process=True,
+    note="bytes decoded with the encoding given. " + XML_READ,
+)
+case(
+    "basics/read-xml-iterparse",
+    "pandas.read_xml",
+    level="L3",
+    covers=("iterparse",),
+    frames=("single",),
+    expr=lambda pd, df: _xml_on_disk(pd, iterparse={"row": ["id", "shape", "deg"]}),
+    in_process=True,
+    note="a file read one element at a time, keeping the fields named. " + XML_READ,
+)
+case(
+    "basics/read-xml-compression",
+    "pandas.read_xml",
+    level="L3",
+    covers=("compression",),
+    frames=("single",),
+    expr=lambda pd, df: _xml_on_disk(pd, compression="gzip"),
+    in_process=True,
+    note="a gzip file written by the engine's to_xml and read back. " + XML_READ,
+)
+case(
+    "basics/read-xml-stylesheet",
+    "pandas.read_xml",
+    level="L4",
+    raises=("ValueError", "To use stylesheet, you need lxml"),
+    frames=("single",),
+    expr=lambda pd, df: _xml_read(pd, stylesheet=io.StringIO("<x/>")),
+    in_process=True,
+    note="a stylesheet needs lxml, which the standard library's parser refuses. " + XML_READ,
+)
+case(
+    "basics/read-xml-storage",
+    "pandas.read_xml",
+    level="L4",
+    raises=("ValueError", "storage_options passed with file object"),
+    frames=("single",),
+    expr=lambda pd, df: _xml_read(pd, storage_options={"anon": True}),
+    in_process=True,
+    note="storage options only go with an fsspec path, not a buffer. " + XML_READ,
+)
+case(
+    "basics/read-xml-iterparse-list",
+    "pandas.read_xml",
+    level="L4",
+    raises=("TypeError", "list is not a valid type for iterparse"),
+    frames=("single",),
+    expr=lambda pd, df: _xml_on_disk(pd, iterparse=["row"]),
+    in_process=True,
+    note="iterparse takes a mapping of the row element to its fields, not a list. " + XML_READ,
+)
+
+
 case(
     "basics/frame-repr",
     "DataFrame.to_string",
