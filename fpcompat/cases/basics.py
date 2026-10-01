@@ -8921,3 +8921,73 @@ case(
     in_process=True,
     note="a column as a plain mapping of label to value",
 )
+
+case(
+    "basics/wide-to-long-named",
+    "pandas.wide_to_long",
+    level="L3",
+    covers=("df", "stubnames", "i", "j"),
+    frames=("single",),
+    expr=lambda pd, df: pd.wide_to_long(
+        df=pd.DataFrame(
+            {
+                "A1970": [1, 2],
+                "A1980": [3, 4],
+                "B1970": [5.0, 6.0],
+                "B1980": [7.0, 8.0],
+                "id": [0, 1],
+            }
+        ),
+        stubnames=["A", "B"],
+        i="id",
+        j="year",
+    ),
+    in_process=True,
+    note="two stubs, each given by keyword",
+)
+case(
+    "basics/series-to-csv-dates",
+    "Series.to_csv",
+    level="L3",
+    covers=("date_format",),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        pd.to_datetime(["2024-01-02 03:04", "2024-02-03 00:00"]), name="t"
+    ).to_csv(date_format="%Y/%m/%d"),
+    in_process=True,
+    note="instants written in the given format",
+)
+case(
+    "basics/series-to-csv-escaped",
+    "Series.to_csv",
+    level="L3",
+    covers=("doublequote", "escapechar", "errors"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(['a"b', "é"], name="v").to_csv(
+        doublequote=False, escapechar="\\", errors="strict"
+    ),
+    in_process=True,
+    note="a quote escaped rather than doubled",
+)
+case(
+    "basics/series-to-json-shaped",
+    "Series.to_json",
+    level="L3",
+    covers=("index", "indent"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2], index=["a", "b"]).to_json(
+        orient="split", index=False, indent=2
+    ),
+    in_process=True,
+    note="split without labels, indented",
+)
+case(
+    "basics/series-to-json-mode",
+    "Series.to_json",
+    level="L3",
+    covers=("mode", "lines", "orient"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2]).to_json(orient="records", lines=True, mode="w"),
+    in_process=True,
+    note="JSON lines written in the default mode",
+)

@@ -46,6 +46,17 @@ def _roundtrip(pd, value, name="frame.pkl", write=None, **options):
         return pd.read_pickle(target, compression=options.get("compression", "infer"))
 
 
+def _read_named(pd, frame):
+    """Writes a bz2 pickle under a plain name and reads it with the compression named."""
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.TemporaryDirectory() as folder:
+        target = Path(folder) / "frame.bin"
+        frame.to_pickle(target, compression="bz2")
+        return pd.read_pickle(filepath_or_buffer=target, compression="bz2")
+
+
 case(
     "pickle/frame-roundtrip",
     "DataFrame.to_pickle",
@@ -130,4 +141,53 @@ case(
     in_process=True,
     note=IN_PROCESS_NOTE,
     expr=lambda pd, df: pickle.loads(pickle.dumps(df["b"])),
+)
+case(
+    "pickle/module-options",
+    "pandas.to_pickle",
+    frames=("two",),
+    covers=("obj", "filepath_or_buffer", "compression", "protocol"),
+    in_process=True,
+    note="gzip and an older protocol named by keyword. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _roundtrip(
+        pd,
+        df,
+        name="frame.pkl.gz",
+        write=lambda value, target, **options: pd.to_pickle(
+            obj=value, filepath_or_buffer=target, **options
+        ),
+        compression="gzip",
+        protocol=4,
+    ),
+)
+case(
+    "pickle/frame-path",
+    "DataFrame.to_pickle",
+    frames=("two",),
+    covers=("path",),
+    in_process=True,
+    note="the path given by keyword. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _roundtrip(
+        pd, df, write=lambda value, target, **options: value.to_pickle(path=target)
+    ),
+)
+case(
+    "pickle/series-path-protocol",
+    "Series.to_pickle",
+    frames=("two",),
+    covers=("path", "protocol"),
+    in_process=True,
+    note="the path by keyword and an older protocol. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _roundtrip(
+        pd, df["b"], write=lambda value, target, **options: value.to_pickle(path=target, protocol=3)
+    ),
+)
+case(
+    "pickle/read-named",
+    "pandas.read_pickle",
+    frames=("two",),
+    covers=("filepath_or_buffer", "compression"),
+    in_process=True,
+    note="a bz2 file read with its compression named. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _read_named(pd, df),
 )

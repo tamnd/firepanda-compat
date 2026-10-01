@@ -125,3 +125,152 @@ case(
     note=IN_PROCESS_NOTE,
     expr=lambda pd, df: _roundtrip(pd, df, kind="orc", read={"columns": ["a", "c"]}),
 )
+
+
+def _gapped(pd):
+    """A frame with a gap in a number, a text and a flag column, all with values."""
+    return pd.DataFrame(
+        {
+            "i": pd.Series([1.0, float("nan"), 3.0]),
+            "j": pd.Series([1, 2, 3]),
+            "s": pd.Series(["x", float("nan"), "z"]),
+            "b": pd.Series([True, False, True]),
+        }
+    )
+
+
+def _partitioned(pd):
+    """The folders `partition_cols` writes, and the frame read back from them."""
+    import os
+    import tempfile
+
+    frame = pd.DataFrame({"k": ["x", "y", "x"], "v": [1, 2, 3]})
+    with tempfile.TemporaryDirectory() as folder:
+        frame.to_parquet(folder, partition_cols=["k"])
+        back = pd.read_parquet(folder).sort_values("v").reset_index(drop=True)
+        return sorted(os.listdir(folder)), back.astype({"k": str})
+
+
+case(
+    "columnar/parquet-nullable-backend",
+    "pandas.read_parquet",
+    frames=("single",),
+    covers=("path", "dtype_backend"),
+    in_process=True,
+    note="numbers, text and flags read into pandas' nullable types. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _roundtrip(pd, _gapped(pd), read={"dtype_backend": "numpy_nullable"}),
+)
+case(
+    "columnar/parquet-arrow-backend",
+    "pandas.read_parquet",
+    frames=("single",),
+    covers=("dtype_backend",),
+    in_process=True,
+    note="every column read as an ArrowDtype of its Arrow type. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _roundtrip(pd, _gapped(pd), read={"dtype_backend": "pyarrow"}),
+)
+case(
+    "columnar/parquet-read-options",
+    "pandas.read_parquet",
+    frames=("two",),
+    covers=("engine", "filesystem", "to_pandas_kwargs", "kwargs"),
+    in_process=True,
+    note="the engine named, no file system, empty to_pandas_kwargs and a pyarrow "
+    "option handed through. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _roundtrip(
+        pd,
+        df,
+        read={
+            "engine": "pyarrow",
+            "filesystem": None,
+            "to_pandas_kwargs": {},
+            "use_threads": False,
+        },
+    ),
+)
+case(
+    "columnar/parquet-filters",
+    "pandas.read_parquet",
+    frames=("single",),
+    covers=("filters",),
+    in_process=True,
+    note="only the rows the filter keeps. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _roundtrip(
+        pd, pd.DataFrame({"a": [1, 2, 3]}), read={"filters": [("a", ">", 1)]}
+    ),
+)
+case(
+    "columnar/parquet-write-options",
+    "DataFrame.to_parquet",
+    frames=("two",),
+    covers=("path", "engine", "filesystem", "kwargs"),
+    in_process=True,
+    note="the engine named, no file system and a pyarrow option handed through. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _roundtrip(pd, df, engine="pyarrow", filesystem=None, row_group_size=1),
+)
+case(
+    "columnar/parquet-partitions",
+    "DataFrame.to_parquet",
+    frames=("single",),
+    covers=("partition_cols",),
+    in_process=True,
+    note="one folder per key, read back as a frame. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _partitioned(pd),
+)
+case(
+    "columnar/feather-backends",
+    "pandas.read_feather",
+    frames=("single",),
+    covers=("path", "dtype_backend"),
+    in_process=True,
+    note="the nullable and the Arrow types of the same file. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: [
+        _roundtrip(pd, _gapped(pd), kind="feather", read={"dtype_backend": backend})
+        .dtypes.astype(str)
+        .tolist()
+        for backend in ("numpy_nullable", "pyarrow")
+    ],
+)
+case(
+    "columnar/feather-threads",
+    "pandas.read_feather",
+    frames=("two",),
+    covers=("use_threads",),
+    in_process=True,
+    note=IN_PROCESS_NOTE,
+    expr=lambda pd, df: _roundtrip(pd, df, kind="feather", read={"use_threads": False}),
+)
+case(
+    "columnar/feather-write-options",
+    "DataFrame.to_feather",
+    frames=("two",),
+    covers=("path", "kwargs"),
+    in_process=True,
+    note="a pyarrow option handed through. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _roundtrip(pd, df, kind="feather", compression="uncompressed"),
+)
+case(
+    "columnar/orc-backends",
+    "pandas.read_orc",
+    frames=("single",),
+    covers=("path", "dtype_backend"),
+    in_process=True,
+    note="the nullable and the Arrow types of the same file. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: [
+        _roundtrip(pd, _gapped(pd), kind="orc", read={"dtype_backend": backend})
+        .dtypes.astype(str)
+        .tolist()
+        for backend in ("numpy_nullable", "pyarrow")
+    ],
+)
+case(
+    "columnar/orc-write-options",
+    "DataFrame.to_orc",
+    frames=("two",),
+    covers=("path", "engine", "index", "engine_kwargs"),
+    in_process=True,
+    note="the engine named, no labels and a pyarrow option handed through. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: _roundtrip(
+        pd, df, kind="orc", engine="pyarrow", index=False, engine_kwargs={"compression": "zlib"}
+    ),
+)

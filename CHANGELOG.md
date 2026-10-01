@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 33 I/O parameter cases: `read_json` lines with `nrows` and `chunksize`, `read_table` and `read_fwf` readers and chunks, `read_fwf` `colspecs` and `infer_nrows`, Parquet, Feather and ORC `dtype_backend` and write options, Parquet `filters` and `partition_cols`, pickle keywords and protocols, `Series.to_csv` and `Series.to_json` options, and `wide_to_long` by keyword.
+- Board after firepanda #1506: 5801 pass, 0 unimplemented, 68 divergent, 0 fail.
 - 14 basics cases for writer parameters no case reached: to_html of a MultiIndex with sparsify, index_names and cut rows, to_html columns, formatters, justify, decimal, buf and render_links, Series and DataFrame to_csv quoting, quotechar, chunksize, columns, mode, encoding, errors and compression, Series and DataFrame to_json date_format, double_precision, force_ascii, date_unit, default_handler, lines and index, to_string and to_dict targets.
 - Board after firepanda #1504: 5768 pass, 0 unimplemented, 68 divergent, 0 fail.
 - 77 textread cases for parameters no case reached: 21 read_csv options (delimiter, engine, skipinitialspace, skipfooter, na_filter, skip_blank_lines, date_format, dayfirst, cache_dates, lineterminator, quoting, doublequote, escapechar, float_precision, dtype_backend, encoding_errors, compression, dialect, iterator), the whole read_csv table run again through read_table, and 12 read_json cases for dtype, convert_axes, keep_default_dates, precise_float, date_unit, encoding_errors and dtype_backend.

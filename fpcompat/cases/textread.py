@@ -290,3 +290,136 @@ case(
         io.StringIO("  a    b  c\n  1  2.5  x\n 10  3.0  y\n"), widths=[3, 5, 3]
     ),
 )
+
+LINES = '{"a":1,"b":"x"}\n{"a":2,"b":"y"}\n{"a":3,"b":"z"}\n'
+FIXED = "a  b\n1  x\n22 y\n"
+
+case(
+    "textread/json-lines-nrows",
+    "pandas.read_json",
+    frames=("two",),
+    covers=("path_or_buf", "lines", "nrows"),
+    in_process=True,
+    note="the first two lines of a JSON lines text. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.read_json(io.StringIO(LINES), lines=True, nrows=2),
+)
+case(
+    "textread/json-lines-chunks",
+    "pandas.read_json",
+    frames=("two",),
+    covers=("lines", "chunksize"),
+    in_process=True,
+    note="each chunk read from its own lines, the labels carried on. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: [
+        chunk for chunk in pd.read_json(io.StringIO(LINES), lines=True, chunksize=2)
+    ][1],
+)
+case(
+    "textread/json-lines-chunk-rows",
+    "pandas.read_json",
+    frames=("two",),
+    covers=("lines", "chunksize", "nrows"),
+    in_process=True,
+    note="nrows is looked at before each chunk, so the last chunk is read whole. "
+    + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.concat(
+        list(pd.read_json(io.StringIO(LINES * 2), lines=True, chunksize=2, nrows=3))
+    ),
+)
+case(
+    "textread/json-lines-read-all",
+    "pandas.read_json",
+    frames=("two",),
+    covers=("lines", "chunksize"),
+    in_process=True,
+    note="the chunk reader asked for everything at once. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.read_json(io.StringIO(LINES), lines=True, chunksize=1).read(),
+)
+case(
+    "textread/json-plain-options",
+    "pandas.read_json",
+    frames=("two",),
+    covers=("lines", "compression", "engine"),
+    in_process=True,
+    note="no compression and the default engine named. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.read_json(
+        io.StringIO(LINES), lines=True, compression=None, engine="ujson"
+    ),
+)
+case(
+    "textread/json-chunk-size-bad",
+    "pandas.read_json",
+    level="L4",
+    frames=("two",),
+    in_process=True,
+    note=IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.read_json(io.StringIO(LINES), lines=True, chunksize=0),
+    raises=("ValueError", "must be an integer >=1"),
+)
+case(
+    "textread/table-iterator",
+    "pandas.read_table",
+    frames=("two",),
+    covers=("filepath_or_buffer", "iterator"),
+    in_process=True,
+    note="a reader handed back and asked for one row. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.read_table(io.StringIO("a\tb\n1\t2\n3\t4\n"), iterator=True).get_chunk(
+        1
+    ),
+)
+case(
+    "textread/table-chunks",
+    "pandas.read_table",
+    frames=("two",),
+    covers=("chunksize",),
+    in_process=True,
+    note="each chunk typed from its own rows, the labels carried on. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.concat(
+        list(pd.read_table(io.StringIO("a\tb\n1\t2\n3\tx\n"), chunksize=1))
+    ),
+)
+case(
+    "textread/fwf-colspecs",
+    "pandas.read_fwf",
+    frames=("two",),
+    covers=("filepath_or_buffer", "colspecs"),
+    in_process=True,
+    note="the fields cut where the spans say. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.read_fwf(io.StringIO(FIXED), colspecs=[(0, 2), (3, 4)]),
+)
+case(
+    "textread/fwf-infer-rows",
+    "pandas.read_fwf",
+    frames=("two",),
+    covers=("infer_nrows",),
+    in_process=True,
+    note="the fields found from the first row alone. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.read_fwf(io.StringIO(FIXED), infer_nrows=1),
+)
+case(
+    "textread/fwf-iterator",
+    "pandas.read_fwf",
+    frames=("two",),
+    covers=("iterator",),
+    in_process=True,
+    note="a reader handed back and asked for one row. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.read_fwf(io.StringIO(FIXED), iterator=True).get_chunk(1),
+)
+case(
+    "textread/fwf-chunks",
+    "pandas.read_fwf",
+    frames=("two",),
+    covers=("chunksize",),
+    in_process=True,
+    note="each chunk typed from its own rows, the labels carried on. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.concat(list(pd.read_fwf(io.StringIO(FIXED), chunksize=1))),
+)
+case(
+    "textread/fwf-read-options",
+    "pandas.read_fwf",
+    frames=("two",),
+    covers=("widths", "kwds"),
+    in_process=True,
+    note="read_csv's header and skiprows handed through. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.read_fwf(io.StringIO(FIXED), widths=[3, 1], header=None, skiprows=1),
+)
