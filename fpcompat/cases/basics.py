@@ -14513,6 +14513,106 @@ TAIL12_CASES = (
 )
 
 
+def _tail13_pattern():
+    """A compiled pattern that ignores case."""
+    import re
+
+    return re.compile("^f.", re.IGNORECASE)
+
+
+def _tail13_moment(pd):
+    """One afternoon reading, to be rounded to an hour and a half."""
+    return pd.Timestamp("2020-03-14 15:32:52")
+
+
+TAIL13_CASES = (
+    (
+        "ceil-hour-and-a-half",
+        "Timestamp.ceil",
+        ("freq",),
+        lambda pd: _tail13_moment(pd).ceil("1h30min"),
+    ),
+    (
+        "span-ceil-pieces",
+        "Timedelta.ceil",
+        ("freq",),
+        lambda pd: pd.Timedelta("1h10min").ceil("1h30min"),
+    ),
+    (
+        "labels-ceil-pieces",
+        "DatetimeIndex.ceil",
+        ("freq",),
+        lambda pd: pd.DatetimeIndex(["2020-03-14 15:32", "2020-03-14 17:01"]).ceil("1h30min"),
+    ),
+    (
+        "dt-floor-pieces",
+        "Series.dt.floor",
+        (),
+        lambda pd: pd.Series(pd.to_datetime(["2020-03-14 15:32"])).dt.floor("1h30min"),
+    ),
+    (
+        "dt-round-day-and-hours",
+        "Series.dt.round",
+        (),
+        lambda pd: pd.Series(pd.to_datetime(["2020-03-14 15:32"])).dt.round("1D2h"),
+    ),
+    (
+        "period-nan-text",
+        "pandas.Period",
+        ("value", "freq"),
+        lambda pd: pd.Series([pd.Period("nan", freq="D") is pd.NaT]),
+    ),
+    (
+        "short-moment-name-cast",
+        "Series.astype",
+        ("dtype",),
+        lambda pd: pd.Series(["2015-03-29 02:30:00"]).astype("M8[ns]"),
+    ),
+    (
+        "short-span-name-cast",
+        "Series.astype",
+        ("dtype",),
+        lambda pd: pd.Series([1, 2]).astype("<m8[s]"),
+    ),
+    (
+        "replace-compiled-pattern",
+        "Series.str.replace",
+        (),
+        lambda pd: pd.Series(["foo", "fuz"]).str.replace(_tail13_pattern(), "X", regex=True),
+    ),
+    (
+        "label-counts-repeats-gap",
+        "Index.value_counts",
+        ("dropna",),
+        lambda pd: pd.Index([3, 1, 2, 3, 4, float("nan")]).value_counts(dropna=True),
+    ),
+    (
+        "putmask-index-values",
+        "Index.putmask",
+        ("mask", "value"),
+        lambda pd: pd.Index([1, 2, 3]).putmask([True, False, True], pd.Index([7, 8, 9])),
+    ),
+    (
+        "union-two-widths",
+        "Index.union",
+        ("other",),
+        lambda pd: pd.Index([1, 2], dtype="uint8").union(pd.Index([3, 4])),
+    ),
+    (
+        "difference-keeps-width",
+        "Index.difference",
+        ("other",),
+        lambda pd: pd.Index([1, 2], dtype="int8").difference(pd.Index([2, 4], dtype="uint16")),
+    ),
+    (
+        "labels-nan-among-text",
+        "pandas.Index",
+        ("data",),
+        lambda pd: pd.Index([float("nan"), "var1", float("nan")]),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -14526,6 +14626,7 @@ for _id, _api, _covers, _build in (
     + TAIL10_CASES
     + TAIL11_CASES
     + TAIL12_CASES
+    + TAIL13_CASES
 ):
     case(
         f"basics/{_id}",

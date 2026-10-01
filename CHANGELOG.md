@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Fourteen tail cases for rounding to frequencies of several pieces, `Period("nan")`, numpy's short temporal dtype names, compiled patterns in `str.replace`, index value counts with repeats and a gap, `putmask` with an Index, set operations across number widths, and NaN among text labels.
+- Board after firepanda #1532: 6616 pass, 0 unimplemented, 69 divergent, 0 fail.
 - TAIL12 basics cases for `abs` over complex numbers and objects, in a column and a frame, and `DataFrame.quantile` over numbers beside datetimes with one and two quantiles.
 - Board after firepanda #1529: 6602 pass, 0 unimplemented, 69 divergent, 0 fail.
 - TAIL11 basics cases for `convert_dtypes` on columns of objects, read by the kind pandas infers, and `DataFrame.eval` over several assignment lines, in place and not.
