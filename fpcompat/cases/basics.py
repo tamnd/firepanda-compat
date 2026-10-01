@@ -8689,3 +8689,235 @@ case(
     in_process=True,
     note="the skew of four values, and a gap kept so the answer is missing",
 )
+
+
+def _leveled_rows(pd):
+    """A frame on two levels of row labels, the outer one repeating down the rows."""
+    index = pd.MultiIndex.from_tuples([(1, "x"), (1, "y"), (2, "z")], names=["a", "b"])
+    return pd.DataFrame({"c": [1.5, float("nan"), 2.0], "d": ["p", "q", "r"]}, index=index)
+
+
+def _into_buffer(write):
+    """What a writer puts in a text buffer it is handed."""
+    buffer = io.StringIO()
+    write(buffer)
+    return buffer.getvalue()
+
+
+def _stamped_pair(pd):
+    """Two dates beside a float, a text and a whole number."""
+    return pd.DataFrame(
+        {
+            "n": [1, 2],
+            "t": ["é", "y<z"],
+            "f": [1.123456, float("nan")],
+            "d": pd.to_datetime(["2024-01-02", "2024-01-03"]),
+        }
+    )
+
+
+def _odd_cell(value):
+    """The text default_handler writes for an object JSON cannot hold."""
+    return "odd"
+
+
+case(
+    "basics/frame-to-html-levels",
+    "DataFrame.to_html",
+    frames=("single",),
+    expr=lambda pd, df: [_leveled_rows(pd).to_html(), _leveled_rows(pd)._repr_html_()],
+    in_process=True,
+    note="each level of the row labels in its own cell, a repeat joined into one tall cell",
+)
+case(
+    "basics/frame-to-html-levels-unsparse",
+    "DataFrame.to_html",
+    level="L3",
+    covers=("sparsify", "index_names"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _leveled_rows(pd).to_html(sparsify=False),
+        _leveled_rows(pd).to_html(index_names=False),
+        _leveled_rows(pd).to_html(index=False),
+    ],
+    in_process=True,
+    note="every label repeated, the row of level names left out, and no labels at all",
+)
+case(
+    "basics/frame-to-html-levels-cut",
+    "DataFrame.to_html",
+    level="L3",
+    covers=("max_rows",),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame(
+        {"v": range(8)},
+        index=pd.MultiIndex.from_tuples([("a", n) for n in range(8)], names=["k", "n"]),
+    ).to_html(max_rows=4),
+    in_process=True,
+    note="the row of dots for cut rows breaks the tall cell of a repeated label",
+)
+case(
+    "basics/frame-to-html-picked",
+    "DataFrame.to_html",
+    level="L3",
+    covers=("columns", "formatters", "justify", "decimal", "buf"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _stamped_pair(pd).to_html(columns=["n", "t"], justify="left"),
+        _stamped_pair(pd).to_html(formatters={"n": lambda v: f"<{v}>"}),
+        _stamped_pair(pd).to_html(decimal=","),
+        _into_buffer(lambda buffer: _stamped_pair(pd).to_html(buf=buffer)),
+    ],
+    in_process=True,
+    note="some columns left aligned, a formatter, a comma for the point, and a buffer",
+)
+case(
+    "basics/frame-to-html-links",
+    "DataFrame.to_html",
+    level="L3",
+    covers=("render_links",),
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame({"u": ["http://x.org", "plain"]}).to_html(render_links=True),
+    in_process=True,
+    note="a cell that reads as a link becomes an anchor",
+)
+case(
+    "basics/series-to-csv-quoted",
+    "Series.to_csv",
+    level="L3",
+    covers=("quoting", "quotechar", "chunksize", "columns"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        pd.Series([1.5, float("nan")], name="v").to_csv(quoting=1),
+        pd.Series(["a", "b"], name="v").to_csv(quotechar="'", quoting=2),
+        pd.Series([1, 2, 3], name="v").to_csv(chunksize=1),
+        pd.Series([1, 2], name="v").to_csv(columns=["v"]),
+    ],
+    in_process=True,
+    note="every cell quoted, text quoted with a chosen mark, rows in chunks, and the name",
+)
+case(
+    "basics/series-to-csv-target",
+    "Series.to_csv",
+    level="L3",
+    covers=("path_or_buf", "mode", "encoding", "compression"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _into_buffer(lambda buffer: pd.Series([1, 2], name="v").to_csv(buffer, mode="w")),
+        pd.Series(["é"], name="v").to_csv(encoding="utf-8", compression=None),
+    ],
+    in_process=True,
+    note="written into a buffer, and handed back with the encoding and compression given",
+)
+case(
+    "basics/frame-to-csv-target",
+    "DataFrame.to_csv",
+    level="L3",
+    covers=("path_or_buf", "mode", "encoding", "compression", "chunksize", "errors"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _into_buffer(lambda buffer: _stamped_pair(pd).to_csv(buffer, mode="w", chunksize=1)),
+        _stamped_pair(pd).to_csv(encoding="utf-8", errors="strict", compression=None),
+    ],
+    in_process=True,
+    note="written into a buffer one row at a time, and handed back under the encoding options",
+)
+case(
+    "basics/series-to-json-options",
+    "Series.to_json",
+    level="L3",
+    covers=(
+        "path_or_buf",
+        "date_format",
+        "double_precision",
+        "force_ascii",
+        "date_unit",
+        "default_handler",
+        "lines",
+        "compression",
+    ),
+    frames=("single",),
+    expr=lambda pd, df: [
+        pd.Series(pd.to_datetime(["2024-01-02"])).to_json(date_format="iso", date_unit="s"),
+        pd.Series([1.23456, 2.5]).to_json(double_precision=2),
+        pd.Series(["é"]).to_json(force_ascii=False),
+        pd.Series([object()]).to_json(default_handler=_odd_cell),
+        pd.Series([1, 2]).to_json(orient="records", lines=True, compression=None),
+        _into_buffer(lambda buffer: pd.Series([1, 2]).to_json(buffer)),
+    ],
+    in_process=True,
+    note="ISO dates in seconds, fewer digits, raw text, a handler, lines, and a buffer",
+)
+case(
+    "basics/frame-to-json-options",
+    "DataFrame.to_json",
+    level="L3",
+    covers=(
+        "path_or_buf",
+        "date_format",
+        "force_ascii",
+        "date_unit",
+        "default_handler",
+        "compression",
+        "index",
+    ),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _stamped_pair(pd).to_json(date_format="iso", date_unit="ms"),
+        _stamped_pair(pd).to_json(force_ascii=False, orient="split", index=False),
+        pd.DataFrame({"a": [object()]}).to_json(default_handler=_odd_cell, compression=None),
+        _into_buffer(lambda buffer: _stamped_pair(pd).to_json(buffer, date_unit="s")),
+    ],
+    in_process=True,
+    note="ISO dates, raw text without the labels, a handler, and a buffer",
+)
+case(
+    "basics/frame-to-dict-shapes",
+    "DataFrame.to_dict",
+    level="L3",
+    covers=("orient", "into", "index"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _stamped_pair(pd)[["n"]].to_dict(orient="split", index=False),
+        _stamped_pair(pd)[["n"]].to_dict(orient="tight", index=False),
+        type(_stamped_pair(pd)[["n"]].to_dict(into=dict)).__name__,
+    ],
+    in_process=True,
+    note="the split and tight shapes without labels, and the mapping type asked for",
+)
+case(
+    "basics/frame-to-string-target",
+    "DataFrame.to_string",
+    level="L3",
+    covers=("buf", "columns"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _stamped_pair(pd).to_string(columns=["n", "f"]),
+        _into_buffer(lambda buffer: _stamped_pair(pd).to_string(buffer)),
+    ],
+    in_process=True,
+    note="some of the columns, and the text written into a buffer",
+)
+case(
+    "basics/series-to-string-target",
+    "Series.to_string",
+    level="L3",
+    covers=("buf",),
+    frames=("single",),
+    expr=lambda pd, df: _into_buffer(lambda buffer: pd.Series([1.5, 2.0]).to_string(buffer)),
+    in_process=True,
+    note="a column's text written into a buffer",
+)
+case(
+    "basics/series-to-dict-into",
+    "Series.to_dict",
+    level="L3",
+    covers=("into",),
+    frames=("single",),
+    expr=lambda pd, df: [
+        pd.Series([1, 2], index=["a", "b"]).to_dict(into=dict),
+        type(pd.Series([1, 2]).to_dict(into=dict)).__name__,
+    ],
+    in_process=True,
+    note="a column as a plain mapping of label to value",
+)

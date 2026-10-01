@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 14 basics cases for writer parameters no case reached: to_html of a MultiIndex with sparsify, index_names and cut rows, to_html columns, formatters, justify, decimal, buf and render_links, Series and DataFrame to_csv quoting, quotechar, chunksize, columns, mode, encoding, errors and compression, Series and DataFrame to_json date_format, double_precision, force_ascii, date_unit, default_handler, lines and index, to_string and to_dict targets.
+- Board after firepanda #1504: 5768 pass, 0 unimplemented, 68 divergent, 0 fail.
 - 77 textread cases for parameters no case reached: 21 read_csv options (delimiter, engine, skipinitialspace, skipfooter, na_filter, skip_blank_lines, date_format, dayfirst, cache_dates, lineterminator, quoting, doublequote, escapechar, float_precision, dtype_backend, encoding_errors, compression, dialect, iterator), the whole read_csv table run again through read_table, and 12 read_json cases for dtype, convert_axes, keep_default_dates, precise_float, date_unit, encoding_errors and dtype_backend.
 - Board after firepanda #1503: 5754 pass, 0 unimplemented, 68 divergent, 0 fail.
 - 32 basics cases for parameters no case reached: a frame built from mappings of row label to value, from_dict orient, columns and dtype, tz_convert level, tz_localize ambiguous and nonexistent, between_time inclusive, update join, overwrite, filter_func and errors, product and skew flags, rename level and errors, insert allow_duplicates, compare align_axis, keep_shape, keep_equal and result_names, to_timestamp freq and how, reindex on an inner and an outer level, swaplevel, reset_index, rename_axis and sort_values kind, key and ignore_index.
