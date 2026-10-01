@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Twenty-one basics cases for forward and offset window indexers, check_array_indexer, named aggregation on frames and series, factorize and unique over numpy arrays, set_option with a dict, and slash-style date parsing in Timestamp and bdate_range.
+- Board after firepanda #1523: 6565 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 29 cases for array argmax, argmin, argsort, duplicated, isin, item, nbytes, searchsorted, shift, map and interpolate, Categorical argsort, isin, sort_values, map, item assignment and shift, IntervalArray makers and questions, and IntervalIndex.is_overlapping.
 - Board after firepanda #1522: 6544 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 14 cases for SeriesGroupBy nlargest, nsmallest, unique and monotonic flags, TimedeltaIndex sum, mean, median and std, drop by a MultiIndex tuple, equals across int and float labels, and combine with np.minimum.

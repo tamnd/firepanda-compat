@@ -14031,6 +14031,203 @@ TAIL8_CASES = (
 )
 
 
+def _tail9_gappy(pd):
+    """Five floats with a gap."""
+    return pd.Series([1.0, 2.0, float("nan"), 4.0, 5.0], name="v")
+
+
+def _tail9_ahead(pd, size=2):
+    """A window of the row and the rows after it."""
+    return pd.api.indexers.FixedForwardWindowIndexer(window_size=size)
+
+
+def _tail9_options(pd):
+    """Two options set from one dict, read back, and put back."""
+    pd.set_option({"display.max_columns": 4, "display.precision": 1})
+    try:
+        return [pd.get_option("display.max_columns"), pd.get_option("display.precision")]
+    finally:
+        pd.reset_option("display.max_columns")
+        pd.reset_option("display.precision")
+
+
+def _tail9_scores(pd):
+    """Three numeric columns."""
+    return pd.DataFrame({"A": [1, 2, 3], "B": [4.0, 5.0, 6.0], "C": [7, 8, 10]})
+
+
+def _tail9_days(pd):
+    """Six days of rising floats."""
+    return pd.Series(
+        range(6), index=pd.date_range("2020-01-01", periods=6, freq="D"), dtype="float64"
+    )
+
+
+TAIL9_CASES = (
+    (
+        "rolling-forward-sum",
+        "Series.rolling",
+        ("window",),
+        lambda pd: _tail9_gappy(pd).rolling(_tail9_ahead(pd)).sum(),
+    ),
+    (
+        "rolling-forward-sum-periods",
+        "Series.rolling",
+        ("min_periods",),
+        lambda pd: _tail9_gappy(pd).rolling(_tail9_ahead(pd), min_periods=1).sum(),
+    ),
+    (
+        "rolling-forward-count",
+        "Series.rolling",
+        ("window",),
+        lambda pd: _tail9_gappy(pd).rolling(_tail9_ahead(pd)).count(),
+    ),
+    (
+        "rolling-forward-max",
+        "Series.rolling",
+        ("window",),
+        lambda pd: _tail9_gappy(pd).rolling(_tail9_ahead(pd), min_periods=1).max(),
+    ),
+    (
+        "rolling-forward-mean",
+        "Series.rolling",
+        ("window",),
+        lambda pd: _tail9_gappy(pd).rolling(_tail9_ahead(pd), min_periods=1).mean(),
+    ),
+    (
+        "rolling-forward-std",
+        "Series.rolling",
+        ("window",),
+        lambda pd: _tail9_gappy(pd).rolling(_tail9_ahead(pd, 3), min_periods=2).std(),
+    ),
+    (
+        "rolling-forward-apply",
+        "Series.rolling",
+        ("window",),
+        lambda pd: (
+            _tail9_gappy(pd)
+            .rolling(_tail9_ahead(pd), min_periods=1)
+            .apply(lambda w: w.sum() * 2, raw=True)
+        ),
+    ),
+    (
+        "rolling-forward-frame",
+        "DataFrame.rolling",
+        ("window",),
+        lambda pd: (
+            pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+            .rolling(_tail9_ahead(pd), min_periods=1)
+            .sum()
+        ),
+    ),
+    (
+        "rolling-offset-business",
+        "Series.rolling",
+        ("window",),
+        lambda pd: (
+            _tail9_days(pd)
+            .rolling(
+                pd.api.indexers.VariableOffsetWindowIndexer(
+                    index=_tail9_days(pd).index, offset=pd.offsets.BDay(1)
+                ),
+                min_periods=1,
+            )
+            .sum()
+        ),
+    ),
+    (
+        "rolling-offset-closed",
+        "Series.rolling",
+        ("closed",),
+        lambda pd: (
+            _tail9_days(pd)
+            .rolling(
+                pd.api.indexers.VariableOffsetWindowIndexer(
+                    index=_tail9_days(pd).index, offset=pd.offsets.BDay(1)
+                ),
+                min_periods=1,
+                closed="both",
+            )
+            .sum()
+        ),
+    ),
+    (
+        "check-array-indexer-flags",
+        "pandas.array",
+        ("data",),
+        lambda pd: [
+            bool(x)
+            for x in pd.api.indexers.check_array_indexer(
+                pd.array([1, 2, 3]), pd.array([True, None, True], dtype="boolean")
+            )
+        ],
+    ),
+    (
+        "frame-agg-named",
+        "DataFrame.agg",
+        ("kwargs",),
+        lambda pd: _tail9_scores(pd).agg(y=("C", "min"), x=("A", "max"), z=("C", "max")),
+    ),
+    (
+        "frame-agg-named-one",
+        "DataFrame.agg",
+        ("kwargs",),
+        lambda pd: _tail9_scores(pd).agg(x=("A", "max")),
+    ),
+    (
+        "series-agg-named",
+        "Series.agg",
+        ("kwargs",),
+        lambda pd: pd.Series([1, 2, 3]).agg(x="max", y="min"),
+    ),
+    (
+        "factorize-numpy-objects",
+        "pandas.factorize",
+        ("values",),
+        lambda pd: [
+            x.tolist()
+            for x in pd.factorize(__import__("numpy").array(["b", "b", "a", "c", "b"], dtype="O"))
+        ],
+    ),
+    (
+        "factorize-numpy-sorted",
+        "pandas.factorize",
+        ("sort",),
+        lambda pd: [
+            x.tolist()
+            for x in pd.factorize(
+                __import__("numpy").array(["b", "b", "a", "c", "b"], dtype="O"), sort=True
+            )
+        ],
+    ),
+    (
+        "unique-numpy",
+        "pandas.unique",
+        ("values",),
+        lambda pd: pd.unique(__import__("numpy").array([3, 1, 3])).tolist(),
+    ),
+    ("set-option-dict", "pandas.set_option", ("args",), _tail9_options),
+    (
+        "timestamp-month-first",
+        "pandas.Timestamp",
+        ("ts_input",),
+        lambda pd: str(pd.Timestamp("1/2/2018")),
+    ),
+    (
+        "timestamp-year-slashes",
+        "pandas.Timestamp",
+        ("ts_input",),
+        lambda pd: str(pd.Timestamp("2018/01/02 10:30")),
+    ),
+    (
+        "bdate-range-slashes",
+        "pandas.bdate_range",
+        ("start",),
+        lambda pd: [str(x) for x in pd.bdate_range(start="1/1/2018", end="1/08/2018")],
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -14040,6 +14237,7 @@ for _id, _api, _covers, _build in (
     + TAIL6_CASES
     + TAIL7_CASES
     + TAIL8_CASES
+    + TAIL9_CASES
 ):
     case(
         f"basics/{_id}",
