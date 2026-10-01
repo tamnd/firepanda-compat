@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 19 cases for window and time options: GroupBy.ewm and GroupBy.rolling settings with column picks and on labels, Rolling and Expanding var, std and rank options with numeric_only, Series.to_sql with every option, Timestamp.replace for the sub second parts, zone and fold, and Resampler.interpolate limits.
+- Board after firepanda #1512: 5897 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 23 index method cases: value_counts, take, sortlevel, sort_values, to_numpy, symmetric_difference, slice_locs, slice_indexer, reindex, get_indexer, join and searchsorted options on flat, multi and datetime indexes, plus DatetimeIndex std, mean and indexer_between_time.
 - Board after firepanda #1511: 5878 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 17 `read_xml` cases with the standard library's parser, covering every parameter. They include `xpath`, `namespaces`, `elems_only`, `attrs_only`, `names`, `dtype`, `converters`, `parse_dates`, `encoding`, `iterparse`, `compression` and both `dtype_backend`s. Three are refusals: a stylesheet without lxml, `storage_options` with a handle, and a list for `iterparse`.

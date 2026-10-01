@@ -4893,6 +4893,20 @@ case(
     note="an instant with some of its parts swapped. " + PARAMETER_IN_PROCESS,
 )
 case(
+    "basics/timestamp-replace-fine",
+    "Timestamp.replace",
+    level="L3",
+    covers=("microsecond", "nanosecond", "tzinfo", "fold"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        str(pd.Timestamp("2024-03-10 01:30:00.000001").replace(microsecond=5, nanosecond=7)),
+        str(pd.Timestamp("2024-03-10 01:30:00").replace(tzinfo=__import__("datetime").UTC)),
+        pd.Timestamp("2024-03-10 01:30:00").replace(fold=1).fold,
+    ],
+    in_process=True,
+    note="the sub second parts, the zone and the fold swapped. " + PARAMETER_IN_PROCESS,
+)
+case(
     "basics/series-to-csv-options",
     "Series.to_csv",
     level="L3",
@@ -9197,6 +9211,47 @@ SQL_NOTE = (
     "driver entry could only emit the frame it was handed"
 )
 
+
+def _series_sql(pd):
+    """A column written with every option, its count, then appended to and read back raw."""
+    import sqlite3
+
+    con = sqlite3.connect(":memory:")
+    written = pd.Series([1, 2, 3], name="v").to_sql(
+        name="t",
+        con=con,
+        schema=None,
+        if_exists="replace",
+        index=True,
+        index_label="i",
+        chunksize=2,
+        dtype={"v": "INTEGER"},
+        method="multi",
+    )
+    pd.Series([4], name="v").to_sql("t", con, if_exists="append", index=False)
+    return written, con.execute("select * from t").fetchall()
+
+
+case(
+    "basics/series-sql-options",
+    "Series.to_sql",
+    level="L3",
+    covers=(
+        "name",
+        "con",
+        "schema",
+        "if_exists",
+        "index",
+        "index_label",
+        "chunksize",
+        "dtype",
+        "method",
+    ),
+    frames=("single",),
+    expr=lambda pd, df: _series_sql(pd),
+    in_process=True,
+    note="a column becomes a table with its labels, and the rows written are counted. " + SQL_NOTE,
+)
 case(
     "basics/sql-roundtrip",
     "DataFrame.to_sql",

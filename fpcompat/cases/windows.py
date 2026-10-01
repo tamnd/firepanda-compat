@@ -563,3 +563,225 @@ case(
     note="against another frame the second level of row labels is the other frame's columns",
     rules=SPREAD,
 )
+
+
+def _keyed(pd):
+    return pd.DataFrame(
+        {
+            "g": ["a", "b", "a", "b", "a", "b"],
+            "x": [1.0, 2.0, float("nan"), 4.0, 5.0, 7.0],
+            "y": [1, 2, 3, 4, 5, 6],
+            "t": pd.date_range("2024-01-01", periods=6, freq="D"),
+        }
+    )
+
+
+def _wobbly(pd):
+    return pd.Series([1.0, 3.0, 2.0, 8.0, 5.0, 4.0, 4.0])
+
+
+def _mixed(pd):
+    return pd.DataFrame({"a": [1.0, 2.0, 4.0, 1.0], "b": ["x", "y", "z", "w"]})
+
+
+def _side_by_side(pd, answers):
+    return pd.concat(list(answers.values()), axis=1, keys=list(answers))
+
+
+SELF_BUILT = "In process because the case builds its own small frame"
+case(
+    "windows/grouped-ewm-options",
+    "GroupBy.ewm",
+    level="L3",
+    covers=("com", "span", "halflife", "alpha", "min_periods", "adjust", "ignore_na", "times"),
+    frames=("single",),
+    expr=lambda pd, df: _side_by_side(
+        pd,
+        {
+            "com": _keyed(pd).groupby("g")["x"].ewm(com=0.5, min_periods=1, adjust=True).mean(),
+            "span": _keyed(pd).groupby("g")["x"].ewm(span=3).mean(),
+            "halflife": _keyed(pd).groupby("g")["x"].ewm(halflife=2.0).mean(),
+            "alpha": _keyed(pd)
+            .groupby("g")["x"]
+            .ewm(alpha=0.3, adjust=False, ignore_na=True)
+            .mean(),
+            "times": _keyed(pd).groupby("g")["x"].ewm(halflife="1D", times=_keyed(pd)["t"]).mean(),
+        },
+    ),
+    in_process=True,
+    note="each group weighted on its own under every decay setting. " + SELF_BUILT,
+    rules=RUNNING,
+)
+case(
+    "windows/grouped-rolling-options",
+    "GroupBy.rolling",
+    level="L3",
+    covers=("window", "min_periods", "center", "win_type", "closed", "method"),
+    frames=("single",),
+    expr=lambda pd, df: _side_by_side(
+        pd,
+        {
+            "closed": _keyed(pd).groupby("g")["x"].rolling(2, min_periods=1, closed="right").sum(),
+            "center": _keyed(pd).groupby("g")["x"].rolling(3, min_periods=1, center=True).mean(),
+            "win_type": _keyed(pd)
+            .groupby("g")["x"]
+            .rolling(2, win_type="triang", min_periods=1)
+            .sum(),
+            "method": _keyed(pd).groupby("g")["x"].rolling(2, method="single").max(),
+            "attribute": _keyed(pd).groupby("g").rolling(2).y.mean(),
+        },
+    ),
+    in_process=True,
+    note="win_type is taken and left unused, as pandas never weights a window over groups, "
+    "and a column is picked by attribute. " + SELF_BUILT,
+    rules=RUNNING,
+)
+case(
+    "windows/grouped-rolling-on",
+    "GroupBy.rolling",
+    level="L3",
+    covers=("on", "closed"),
+    frames=("single",),
+    expr=lambda pd, df: _keyed(pd).groupby("g").rolling("2D", on="t", closed="both")["x"].sum(),
+    in_process=True,
+    note="a picked column of a window ordered by on is labelled by the group and the instants. "
+    + SELF_BUILT,
+    rules=RUNNING,
+)
+for _name, _rules in (("var", SPREAD), ("std", SPREAD), ("rank", None)):
+    _extra = {} if _rules is None else {"rules": _rules}
+    case(
+        f"windows/rolling-{_name}-numeric-only",
+        f"Rolling.{_name}",
+        level="L3",
+        covers=("numeric_only",),
+        frames=("single",),
+        expr=lambda pd, df, _name=_name: getattr(_mixed(pd).rolling(2), _name)(numeric_only=True),
+        in_process=True,
+        note="the text column left out of the answer. " + SELF_BUILT,
+        **_extra,
+    )
+    case(
+        f"windows/expanding-{_name}-numeric-only",
+        f"Expanding.{_name}",
+        level="L3",
+        covers=("numeric_only",),
+        frames=("single",),
+        expr=lambda pd, df, _name=_name: getattr(_mixed(pd).expanding(), _name)(numeric_only=True),
+        in_process=True,
+        note="the text column left out of the answer. " + SELF_BUILT,
+        **_extra,
+    )
+case(
+    "windows/rolling-var-std-ddof",
+    "Rolling.var",
+    level="L3",
+    covers=("ddof",),
+    frames=("single",),
+    expr=lambda pd, df: _side_by_side(
+        pd,
+        {
+            "var0": _wobbly(pd).rolling(3).var(ddof=0),
+            "var2": _wobbly(pd).rolling(3).var(ddof=2),
+        },
+    ),
+    in_process=True,
+    note="the divisor moved by ddof. " + SELF_BUILT,
+    rules=SPREAD,
+)
+case(
+    "windows/rolling-std-ddof",
+    "Rolling.std",
+    level="L3",
+    covers=("ddof",),
+    frames=("single",),
+    expr=lambda pd, df: _side_by_side(
+        pd,
+        {
+            "std0": _wobbly(pd).rolling(3).std(ddof=0),
+            "std2": _wobbly(pd).rolling(3).std(ddof=2),
+        },
+    ),
+    in_process=True,
+    note="the divisor moved by ddof. " + SELF_BUILT,
+    rules=SPREAD,
+)
+case(
+    "windows/rolling-rank-options",
+    "Rolling.rank",
+    level="L3",
+    covers=("method", "ascending", "pct"),
+    frames=("single",),
+    expr=lambda pd, df: _side_by_side(
+        pd,
+        {
+            "min": _wobbly(pd).rolling(3).rank(method="min", ascending=False, pct=True),
+            "max": _wobbly(pd).rolling(3).rank(method="max"),
+            "average": _wobbly(pd).rolling(3).rank(method="average", pct=True),
+        },
+    ),
+    in_process=True,
+    note="the last row's rank in its window, ties by the method, falling or as a share. "
+    + SELF_BUILT,
+)
+case(
+    "windows/expanding-var-std-ddof",
+    "Expanding.var",
+    level="L3",
+    covers=("ddof",),
+    frames=("single",),
+    expr=lambda pd, df: _side_by_side(
+        pd,
+        {
+            "var0": _wobbly(pd).expanding().var(ddof=0),
+            "var2": _wobbly(pd).expanding(min_periods=3).var(ddof=2),
+        },
+    ),
+    in_process=True,
+    note="the growing window's variance with the divisor moved. " + SELF_BUILT,
+    rules=SPREAD,
+)
+case(
+    "windows/expanding-std-ddof",
+    "Expanding.std",
+    level="L3",
+    covers=("ddof",),
+    frames=("single",),
+    expr=lambda pd, df: _side_by_side(
+        pd,
+        {
+            "std0": _wobbly(pd).expanding().std(ddof=0),
+            "std1": _wobbly(pd).expanding(min_periods=2).std(ddof=1),
+        },
+    ),
+    in_process=True,
+    note="the growing window's spread with the divisor moved. " + SELF_BUILT,
+    rules=SPREAD,
+)
+case(
+    "windows/expanding-rank-options",
+    "Expanding.rank",
+    level="L3",
+    covers=("method", "ascending", "pct"),
+    frames=("single",),
+    expr=lambda pd, df: _side_by_side(
+        pd,
+        {
+            "average": _wobbly(pd).expanding().rank(method="average", ascending=True, pct=False),
+            "max": _wobbly(pd).expanding().rank(method="max", ascending=False, pct=True),
+            "min": _wobbly(pd).expanding().rank(method="min"),
+        },
+    ),
+    in_process=True,
+    note="each row ranked among every row so far. " + SELF_BUILT,
+)
+case(
+    "windows/expanding-rank-dense",
+    "Expanding.rank",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: _wobbly(pd).expanding().rank(method="dense"),
+    raises=("ValueError", "Method 'dense' is not supported"),
+    in_process=True,
+    note="a window rank has no dense method. " + SELF_BUILT,
+)

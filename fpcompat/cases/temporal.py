@@ -2148,3 +2148,23 @@ for _name, _build in SHIFT_FREQ.items():
         in_process=True,
         note="shifting by a frequency moves the labels and leaves every value where it is",
     )
+case(
+    "temporal/resample-interpolate-options",
+    "Resampler.interpolate",
+    level="L3",
+    covers=("method", "axis", "limit", "limit_direction", "limit_area"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        pd.Series([1.0, None, 3.0], index=pd.date_range("2024-01-01", periods=3, freq="D"))
+        .resample("12h")
+        .interpolate(method="linear", limit=1, limit_direction="forward", limit_area="inside")
+        .tolist(),
+        pd.Series([1.0, 5.0, 3.0], index=pd.date_range("2024-01-01", periods=3, freq="D"))
+        .resample("8h")
+        .interpolate(method="linear", axis=0)
+        .tolist(),
+    ],
+    in_process=True,
+    note="the new instants filled along a line, bounded by a limit and kept inside the "
+    "values. In process because the resample and the fill run in firepanda's Python layer",
+)
