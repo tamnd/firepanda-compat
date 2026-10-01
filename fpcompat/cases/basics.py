@@ -14730,6 +14730,72 @@ TAIL14_CASES = (
 )
 
 
+def _tail15_readings(pd):
+    """Four readings under two row keys and two column keys, a count and a word each."""
+    return pd.DataFrame(
+        {
+            "foo": ["one", "one", "two", "two"],
+            "bar": ["A", "B", "A", "B"],
+            "baz": [1, 2, 3, 4],
+            "zoo": ["x", "y", "z", "q"],
+        }
+    )
+
+
+TAIL15_CASES = (
+    (
+        "pivot-count-beside-word",
+        "DataFrame.pivot",
+        ("index", "columns", "values"),
+        lambda pd: _tail15_readings(pd).pivot(index="foo", columns="bar", values=["baz", "zoo"]),
+    ),
+    (
+        "pivot-count-beside-word-gap",
+        "DataFrame.pivot",
+        ("index", "columns", "values"),
+        lambda pd: (
+            _tail15_readings(pd).iloc[:3].pivot(index="foo", columns="bar", values=["baz", "zoo"])
+        ),
+    ),
+    (
+        "pivot-count-beside-fraction",
+        "DataFrame.pivot",
+        ("index", "columns", "values"),
+        lambda pd: (
+            _tail15_readings(pd)
+            .assign(zoo=[0.5, 1.5, 2.5, 3.5])
+            .pivot(index="foo", columns="bar", values=["baz", "zoo"])
+        ),
+    ),
+    (
+        "pivot-top-level-count-beside-word",
+        "pandas.pivot",
+        ("data", "index", "columns", "values"),
+        lambda pd: pd.pivot(
+            _tail15_readings(pd), index="bar", columns="foo", values=["zoo", "baz"]
+        ),
+    ),
+    (
+        "timedelta-range-past-nanos",
+        "pandas.timedelta_range",
+        ("start", "periods", "freq", "unit"),
+        lambda pd: pd.timedelta_range("1 Day", periods=3, freq="100000D", unit="s"),
+    ),
+    (
+        "timedelta-range-seconds-step",
+        "pandas.timedelta_range",
+        ("start", "periods", "freq", "unit"),
+        lambda pd: pd.timedelta_range("1 Day", periods=4, freq="40000D", unit="s"),
+    ),
+    (
+        "astype-seconds-past-nanos",
+        "Series.astype",
+        ("dtype",),
+        lambda pd: pd.Series([86400, 8640086400]).astype("timedelta64[s]"),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -14745,6 +14811,7 @@ for _id, _api, _covers, _build in (
     + TAIL12_CASES
     + TAIL13_CASES
     + TAIL14_CASES
+    + TAIL15_CASES
 ):
     case(
         f"basics/{_id}",
