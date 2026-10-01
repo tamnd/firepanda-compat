@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Sixteen tail cases for a NaN in a float sort key on a series, a frame, an index and row labels, and a fill value against a single operand.
+- Board after firepanda #1538: 6676 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Twenty-four tail cases for mask with a short condition, regex replace by column, reductions of a frame with no columns, clip by bounds with a gap, crosstab rows by categories, a column resampler's mapping, apply's None groups and text beside numbers in set operations.
 - Board after firepanda #1536: 6660 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Seven tail cases for `pivot` with numbers beside text values, with a gap and beside fractions, and for `timedelta_range` and a seconds cast past the nanosecond range.

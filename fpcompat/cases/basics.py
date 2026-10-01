@@ -14975,6 +14975,125 @@ TAIL16_CASES = (
 )
 
 
+def _tail17_gappy(pd):
+    """Four floats under four letters, the first of them a NaN."""
+    return pd.Series([float("nan"), 1, 3, 2], index=list("abcd"))
+
+
+def _tail17_frame(pd):
+    """A float column with a NaN beside whole numbers, under labels five to eight."""
+    return pd.DataFrame({"a": [float("nan"), 1, 3, 1], "b": [1, 2, 3, 4]}, index=[5, 6, 7, 8])
+
+
+def _tail17_ones(pd):
+    """Three ones and a NaN under four letters."""
+    return pd.Series([1, 1, 1, float("nan")], index=list("abcd"))
+
+
+TAIL17_CASES = (
+    (
+        "sort-values-nan-descending",
+        "Series.sort_values",
+        ("ascending",),
+        lambda pd: _tail17_gappy(pd).sort_values(ascending=False),
+    ),
+    (
+        "sort-values-nan-front",
+        "Series.sort_values",
+        ("na_position",),
+        lambda pd: _tail17_gappy(pd).sort_values(na_position="first"),
+    ),
+    (
+        "sort-values-nan-descending-front",
+        "Series.sort_values",
+        ("ascending", "na_position"),
+        lambda pd: _tail17_gappy(pd).sort_values(ascending=False, na_position="first"),
+    ),
+    (
+        "sort-values-nan-renumbered",
+        "Series.sort_values",
+        ("ascending", "ignore_index"),
+        lambda pd: _tail17_gappy(pd).sort_values(ascending=False, ignore_index=True),
+    ),
+    (
+        "frame-sort-nan-descending",
+        "DataFrame.sort_values",
+        ("by", "ascending"),
+        lambda pd: _tail17_frame(pd).sort_values("a", ascending=False),
+    ),
+    (
+        "frame-sort-nan-two-keys-front",
+        "DataFrame.sort_values",
+        ("by", "ascending", "na_position"),
+        lambda pd: _tail17_frame(pd).sort_values(
+            ["a", "b"], ascending=[False, True], na_position="first"
+        ),
+    ),
+    (
+        "index-sort-nan-descending",
+        "Index.sort_values",
+        ("ascending",),
+        lambda pd: pd.Index([float("nan"), 1.0, 3.0]).sort_values(ascending=False),
+    ),
+    (
+        "index-sort-nan-front",
+        "Index.sort_values",
+        ("na_position",),
+        lambda pd: pd.Index([float("nan"), 1.0, 3.0]).sort_values(na_position="first"),
+    ),
+    (
+        "sort-index-nan-label-descending",
+        "Series.sort_index",
+        ("ascending",),
+        lambda pd: pd.Series([1, 2, 3, 4], index=[float("nan"), 2.0, 1.0, 3.0]).sort_index(
+            ascending=False
+        ),
+    ),
+    (
+        "mul-scalar-fill",
+        "Series.mul",
+        ("other", "fill_value"),
+        lambda pd: _tail17_ones(pd).mul(5, fill_value=0),
+    ),
+    (
+        "add-scalar-fill",
+        "Series.add",
+        ("other", "fill_value"),
+        lambda pd: _tail17_ones(pd).add(5, fill_value=0),
+    ),
+    (
+        "rsub-scalar-fill",
+        "Series.rsub",
+        ("other", "fill_value"),
+        lambda pd: _tail17_ones(pd).rsub(5, fill_value=0),
+    ),
+    (
+        "lt-scalar-fill",
+        "Series.lt",
+        ("other", "fill_value"),
+        lambda pd: _tail17_ones(pd).lt(5, fill_value=0),
+    ),
+    (
+        "add-missing-scalar-fill",
+        "Series.add",
+        ("other", "fill_value"),
+        lambda pd: _tail17_ones(pd).add(float("nan"), fill_value=2),
+    ),
+    (
+        "frame-add-scalar-fill",
+        "DataFrame.add",
+        ("other", "fill_value"),
+        lambda pd: pd.DataFrame({"x": [1.0, float("nan")]}).add(1, fill_value=10),
+    ),
+    (
+        "frame-mul-scalar-fill",
+        "DataFrame.mul",
+        ("other", "fill_value"),
+        lambda pd: pd.DataFrame({"x": [1.0, float("nan")]}).mul(2, fill_value=3),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -14992,6 +15111,7 @@ for _id, _api, _covers, _build in (
     + TAIL14_CASES
     + TAIL15_CASES
     + TAIL16_CASES
+    + TAIL17_CASES
 ):
     case(
         f"basics/{_id}",
