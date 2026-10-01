@@ -14398,6 +14398,85 @@ TAIL10_CASES = (
 )
 
 
+def _tail11_objects(pd, values):
+    """A column of objects holding the values."""
+    return pd.Series(values, dtype=object)
+
+
+def _tail11_in_place(pd):
+    """A frame given two columns by one eval in place."""
+    frame = pd.DataFrame({"a": [1, 2], "b": [1.5, 2.5]})
+    frame.eval("c = a + b\nd = c * 2", inplace=True)
+    return frame
+
+
+TAIL11_CASES = (
+    (
+        "objects-convert-whole",
+        "Series.convert_dtypes",
+        ("infer_objects",),
+        lambda pd: _tail11_objects(pd, [1, 2, 3]).convert_dtypes(),
+    ),
+    (
+        "objects-convert-floats",
+        "Series.convert_dtypes",
+        ("convert_floating",),
+        lambda pd: _tail11_objects(pd, [1.5, 2.0, 3]).convert_dtypes(),
+    ),
+    (
+        "objects-convert-whole-floats",
+        "Series.convert_dtypes",
+        ("convert_integer",),
+        lambda pd: _tail11_objects(pd, [1.0, 2.0]).convert_dtypes(),
+    ),
+    (
+        "objects-convert-no-whole",
+        "Series.convert_dtypes",
+        ("convert_integer",),
+        lambda pd: _tail11_objects(pd, [1, 2]).convert_dtypes(convert_integer=False),
+    ),
+    (
+        "objects-convert-text",
+        "Series.convert_dtypes",
+        ("convert_string",),
+        lambda pd: _tail11_objects(pd, ["x", "y"]).convert_dtypes(),
+    ),
+    (
+        "objects-convert-text-kept",
+        "Series.convert_dtypes",
+        ("convert_string",),
+        lambda pd: _tail11_objects(pd, ["x", "y"]).convert_dtypes(convert_string=False),
+    ),
+    (
+        "objects-convert-mixed",
+        "Series.convert_dtypes",
+        ("infer_objects",),
+        lambda pd: _tail11_objects(pd, ["x", 1]).convert_dtypes(),
+    ),
+    (
+        "frame-convert-object-column",
+        "DataFrame.convert_dtypes",
+        ("convert_string",),
+        lambda pd: pd.DataFrame(
+            {"a": pd.Series(["p", "q"], dtype=object), "b": pd.Series([4, 5], dtype=object)}
+        ).convert_dtypes(),
+    ),
+    (
+        "eval-two-lines",
+        "DataFrame.eval",
+        ("expr",),
+        lambda pd: pd.DataFrame({"a": [1, 2], "b": [1.5, 2.5]}).eval("c = a + b\nd = c * 2"),
+    ),
+    (
+        "eval-overwrite-line",
+        "DataFrame.eval",
+        ("expr",),
+        lambda pd: pd.DataFrame({"a": [1, 2], "b": [1.5, 2.5]}).eval("c = a * 3\na = b - 1"),
+    ),
+    ("eval-lines-in-place", "DataFrame.eval", ("inplace",), lambda pd: _tail11_in_place(pd)),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -14409,6 +14488,7 @@ for _id, _api, _covers, _build in (
     + TAIL8_CASES
     + TAIL9_CASES
     + TAIL10_CASES
+    + TAIL11_CASES
 ):
     case(
         f"basics/{_id}",
