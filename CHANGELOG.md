@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Twenty-four tail cases for mask with a short condition, regex replace by column, reductions of a frame with no columns, clip by bounds with a gap, crosstab rows by categories, a column resampler's mapping, apply's None groups and text beside numbers in set operations.
+- Board after firepanda #1536: 6660 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Seven tail cases for `pivot` with numbers beside text values, with a gap and beside fractions, and for `timedelta_range` and a seconds cast past the nanosecond range.
 - Board after firepanda #1534: 6636 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Thirteen tail cases for strftime's C composites, groupby fills on number column names, loc by a column of labels, to_timedelta on a numpy array, reindex with a text fill beside numbers, and a flat frame against a MultiIndex frame with `level=`.

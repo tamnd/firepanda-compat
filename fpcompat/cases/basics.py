@@ -14796,6 +14796,185 @@ TAIL15_CASES = (
 )
 
 
+def _tail16_words(pd):
+    """Three words in A and three in B, two of A's starting ba."""
+    return pd.DataFrame({"A": ["bat", "foo", "bait"], "B": ["abc", "bar", "xyz"]})
+
+
+def _tail16_numbers(pd):
+    """Five whole numbers either side of nought, in two columns."""
+    return pd.DataFrame({"col_0": [9, -3, 0, -1, 5], "col_1": [-2, -7, 6, 8, -5]})
+
+
+def _tail16_gappy_bounds(pd):
+    """Five bounds with a gap in the middle."""
+    return pd.Series([2, -4, float("nan"), 6, 3])
+
+
+def _tail16_categories(pd):
+    """A category key with a third category nobody holds, beside a plain key."""
+    foo = pd.Categorical(["a", "b"], categories=["a", "b", "c"])
+    return foo, ["d", "e"]
+
+
+def _tail16_seconds(pd):
+    """Five counts a second apart, binned two seconds at a time."""
+    labels = pd.date_range("20130101", periods=5, freq="s")
+    return pd.Series([1, 2, 3, 4, 5], index=labels).resample("2s")
+
+
+def _tail16_groups(pd):
+    """Three rows under two keys, the second key's first count being three."""
+    return pd.DataFrame({"A": ["a", "a", "b"], "B": [1, 2, 3], "C": [4, 6, 5]})
+
+
+TAIL16_CASES = (
+    (
+        "mask-short-condition",
+        "Series.mask",
+        ("cond", "other"),
+        lambda pd: pd.Series(range(5)).mask(pd.Series([True, False]), 99),
+    ),
+    (
+        "mask-short-condition-no-other",
+        "Series.mask",
+        ("cond",),
+        lambda pd: pd.Series(range(5)).mask(pd.Series([True, False])),
+    ),
+    (
+        "mask-frame-partial-condition",
+        "DataFrame.mask",
+        ("cond", "other"),
+        lambda pd: pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).mask(
+            pd.DataFrame({"a": [True, False]}), 0
+        ),
+    ),
+    (
+        "mask-frame-short-column-condition",
+        "DataFrame.mask",
+        ("cond", "other", "axis"),
+        lambda pd: pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).mask(
+            pd.Series([True, False]), 0, axis=0
+        ),
+    ),
+    (
+        "replace-pattern-text-per-column",
+        "DataFrame.replace",
+        ("to_replace", "value", "regex"),
+        lambda pd: _tail16_words(pd).replace({"A": r"^ba.$"}, {"A": "new"}, regex=True),
+    ),
+    (
+        "replace-patterns-texts-two-columns",
+        "DataFrame.replace",
+        ("to_replace", "value", "regex"),
+        lambda pd: _tail16_words(pd).replace(
+            {"A": r"^ba.$", "B": "^x"}, {"A": "new", "B": "y"}, regex=True
+        ),
+    ),
+    ("any-no-columns", "DataFrame.any", (), lambda pd: pd.DataFrame([]).any()),
+    ("all-no-columns", "DataFrame.all", (), lambda pd: pd.DataFrame([]).all()),
+    ("count-no-columns", "DataFrame.count", (), lambda pd: pd.DataFrame([]).count()),
+    (
+        "clip-gappy-bounds-frame",
+        "DataFrame.clip",
+        ("lower", "axis"),
+        lambda pd: _tail16_numbers(pd).clip(_tail16_gappy_bounds(pd), axis=0),
+    ),
+    (
+        "clip-gappy-ceiling-frame",
+        "DataFrame.clip",
+        ("upper", "axis"),
+        lambda pd: _tail16_numbers(pd).clip(upper=_tail16_gappy_bounds(pd), axis=0),
+    ),
+    (
+        "clip-gappy-bounds-column",
+        "Series.clip",
+        ("lower",),
+        lambda pd: _tail16_numbers(pd)["col_0"].clip(_tail16_gappy_bounds(pd)),
+    ),
+    (
+        "clip-whole-float-bounds-column",
+        "Series.clip",
+        ("lower",),
+        lambda pd: _tail16_numbers(pd)["col_0"].clip(pd.Series([2.0, -4, 1, 6, 3])),
+    ),
+    (
+        "crosstab-every-category",
+        "pandas.crosstab",
+        ("index", "columns", "dropna"),
+        lambda pd: pd.crosstab(*_tail16_categories(pd), dropna=False),
+    ),
+    (
+        "crosstab-observed-category",
+        "pandas.crosstab",
+        ("index", "columns"),
+        lambda pd: pd.crosstab(*_tail16_categories(pd)),
+    ),
+    (
+        "resample-column-agg-mapping",
+        "Resampler.agg",
+        ("func",),
+        lambda pd: _tail16_seconds(pd).agg({"total": "sum", "top": "max"}),
+    ),
+    (
+        "resample-column-agg-mapping-function",
+        "Resampler.agg",
+        ("func",),
+        lambda pd: _tail16_seconds(pd).agg({"spread": lambda x: x.max() - x.min(), "n": "count"}),
+    ),
+    (
+        "apply-none-for-a-group",
+        "GroupBy.apply",
+        ("func",),
+        lambda pd: (
+            _tail16_groups(pd)
+            .groupby("A", group_keys=False)
+            .apply(lambda x: None if x.iloc[0, 0] == 3 else x)
+        ),
+    ),
+    (
+        "apply-none-for-a-group-keyed",
+        "GroupBy.apply",
+        ("func",),
+        lambda pd: (
+            _tail16_groups(pd)
+            .groupby("A", group_keys=True)
+            .apply(lambda x: None if x.iloc[0, 0] == 3 else x)
+        ),
+    ),
+    (
+        "union-words-and-counts",
+        "Index.union",
+        ("other",),
+        lambda pd: pd.Index(["a", "b", "c", "d"]).union(pd.Index([1, 2, 3, 4])),
+    ),
+    (
+        "union-counts-and-words",
+        "Index.union",
+        ("other",),
+        lambda pd: pd.Index([1, 2, 3, 4]).union(pd.Index(["a", "b", "c", "d"])),
+    ),
+    (
+        "union-unsorted-words-repeated-counts",
+        "Index.union",
+        ("other",),
+        lambda pd: pd.Index(["b", "a", "a"]).union(pd.Index([2, 1, 2])),
+    ),
+    (
+        "difference-words-less-counts",
+        "Index.difference",
+        ("other",),
+        lambda pd: pd.Index(["d", "b", "a"]).difference(pd.Index([1, 2])),
+    ),
+    (
+        "symmetric-difference-words-counts",
+        "Index.symmetric_difference",
+        ("other",),
+        lambda pd: pd.Index(["a", "b"]).symmetric_difference(pd.Index([2, 1])),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -14812,6 +14991,7 @@ for _id, _api, _covers, _build in (
     + TAIL13_CASES
     + TAIL14_CASES
     + TAIL15_CASES
+    + TAIL16_CASES
 ):
     case(
         f"basics/{_id}",
