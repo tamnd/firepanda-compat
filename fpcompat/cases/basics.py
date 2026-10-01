@@ -14477,6 +14477,42 @@ TAIL11_CASES = (
 )
 
 
+def _tail12_moments(pd):
+    """Whole numbers beside three days two apart."""
+    return pd.DataFrame(
+        {"a": [1, 2, 3], "t": pd.to_datetime(["2020-01-01", "2020-01-03", "2020-01-05"])}
+    )
+
+
+TAIL12_CASES = (
+    (
+        "complex-sizes",
+        "Series.abs",
+        (),
+        lambda pd: pd.Series([3 + 4j, 1j, -2 + 0j], name="z").abs(),
+    ),
+    ("objects-abs-kept", "Series.abs", (), lambda pd: pd.Series([-1, 2.5, -3], dtype=object).abs()),
+    (
+        "frame-abs-complex-column",
+        "DataFrame.abs",
+        (),
+        lambda pd: pd.DataFrame({"z": [3 + 4j, 1j], "n": [-1, 2]}).abs(),
+    ),
+    (
+        "quantile-moments-beside",
+        "DataFrame.quantile",
+        ("numeric_only",),
+        lambda pd: _tail12_moments(pd).quantile(0.5, numeric_only=False),
+    ),
+    (
+        "quantile-moments-two",
+        "DataFrame.quantile",
+        ("q",),
+        lambda pd: _tail12_moments(pd).quantile([0.25, 0.75], numeric_only=False),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -14489,6 +14525,7 @@ for _id, _api, _covers, _build in (
     + TAIL9_CASES
     + TAIL10_CASES
     + TAIL11_CASES
+    + TAIL12_CASES
 ):
     case(
         f"basics/{_id}",

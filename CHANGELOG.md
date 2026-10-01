@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- TAIL12 basics cases for `abs` over complex numbers and objects, in a column and a frame, and `DataFrame.quantile` over numbers beside datetimes with one and two quantiles.
+- Board after firepanda #1529: 6602 pass, 0 unimplemented, 69 divergent, 0 fail.
 - TAIL11 basics cases for `convert_dtypes` on columns of objects, read by the kind pandas infers, and `DataFrame.eval` over several assignment lines, in place and not.
 - Board after firepanda #1528: 6597 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Twenty-one basics cases for dict operands in the flex operators, lists of arrays read as a MultiIndex on rows and columns, compound steps such as 1D20min, the M8[ns] spelling, numpy ufuncs over a Series and in transform, and writing pd.NA into a column.
