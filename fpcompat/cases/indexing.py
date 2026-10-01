@@ -2042,3 +2042,266 @@ case(
     note="positions inside a time window, ends open or closed, and a window over midnight. "
     + BUILT_INDEX,
 )
+
+
+def _slice_parts(found):
+    """A slice as its three plain bounds, so a numpy integer inside reads as a plain one."""
+    return [None if x is None else int(x) for x in (found.start, found.stop, found.step)]
+
+
+def _spelled_counts(counts):
+    """Counts with their labels spelled out, so a NaT label compares equal to another."""
+    return ([str(x) for x in counts.index], counts.tolist())
+
+
+def _three_pairs(pd: Any) -> Any:
+    return pd.MultiIndex.from_tuples([("a", 1), ("a", 2), ("b", 1)], names=["k", "n"])
+
+
+def _gappy_days(pd: Any) -> Any:
+    return pd.DatetimeIndex(["2024-01-03", "2024-01-01", "NaT", "2024-01-01"])
+
+
+case(
+    "indexing/multi-set-levels-options",
+    "MultiIndex.set_levels",
+    level="L3",
+    covers=("levels", "level", "verify_integrity"),
+    frames=("single",),
+    expr=lambda pd, df: _named(
+        _three_pairs(pd).set_levels(["x", "y"], level="k", verify_integrity=True)
+    ),
+    in_process=True,
+    note="one level's values swapped by name, the codes kept. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-set-levels-short",
+    "MultiIndex.set_levels",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: _three_pairs(pd).set_levels([1], level=0, verify_integrity=True),
+    raises=("ValueError", "code max (1) >= length of level (1)"),
+    in_process=True,
+    note="a level too short for its codes is refused when integrity is checked. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-set-codes-options",
+    "MultiIndex.set_codes",
+    level="L3",
+    covers=("codes", "level", "verify_integrity"),
+    frames=("single",),
+    expr=lambda pd, df: _named(
+        _three_pairs(pd).set_codes([1, 0, 0], level=1, verify_integrity=True)
+    ),
+    in_process=True,
+    note="one level's codes swapped by position. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-get-loc-level-options",
+    "MultiIndex.get_loc_level",
+    level="L3",
+    covers=("key", "level", "drop_level"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _slice_parts(_three_pairs(pd).get_loc_level("a", level="k", drop_level=False)[0]),
+        _three_pairs(pd).get_loc_level("a", level="k", drop_level=False)[1].tolist(),
+        _flat_answer(_three_pairs(pd).get_loc_level(1, level=1, drop_level=True)[0]),
+        _three_pairs(pd).get_loc_level(1, level=1, drop_level=True)[1].tolist(),
+    ],
+    in_process=True,
+    note="where a level holds a key, as a slice or a mask, and the rows with or without "
+    "the level. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-from-tuples-options",
+    "MultiIndex.from_tuples",
+    level="L3",
+    covers=("tuples", "sortorder", "names"),
+    frames=("single",),
+    expr=lambda pd, df: _flat_answer(
+        pd.MultiIndex.from_tuples([("a", 1), ("b", 2)], sortorder=0, names=["k", "n"]).names
+    ),
+    in_process=True,
+    note="pairs built into an index with its level names. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-from-product-options",
+    "MultiIndex.from_product",
+    level="L3",
+    covers=("iterables", "sortorder", "names"),
+    frames=("single",),
+    expr=lambda pd, df: _named(
+        pd.MultiIndex.from_product([["a", "b"], [1, 2]], sortorder=0, names=["k", "n"])
+    ),
+    in_process=True,
+    note="every pair of the two lists, first level slowest. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-slice-indexer-options",
+    "MultiIndex.slice_indexer",
+    level="L3",
+    covers=("start", "end", "step"),
+    frames=("single",),
+    expr=lambda pd, df: (
+        repr(_three_pairs(pd).slice_indexer(start=("a", 2), end=("b", 1), step=1))
+        .replace("np.int64(", "")
+        .replace("), ", ", ")
+    ),
+    in_process=True,
+    note="a slice of positions between two pairs. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-sort-values-options",
+    "MultiIndex.sort_values",
+    level="L3",
+    covers=("return_indexer", "ascending", "na_position", "key"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(
+            _key_pairs(pd).sort_values(return_indexer=True, ascending=False, na_position="last")
+        ),
+        _flat_answer(_key_pairs(pd).sort_values(key=lambda x: x)),
+    ],
+    in_process=True,
+    note="pairs sorted falling with the order handed back. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-get-indexer-options",
+    "MultiIndex.get_indexer",
+    level="L3",
+    covers=("target", "method", "limit"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(_three_pairs(pd).get_indexer([("a", 2), ("z", 1)], method=None)),
+        _flat_answer(
+            _three_pairs(pd).get_indexer(
+                [("a", 0), ("a", 1), ("a", 3), ("a", 4), ("b", 1), ("b", 2), ("b", 3)],
+                method="pad",
+                limit=1,
+            )
+        ),
+        _flat_answer(
+            _three_pairs(pd).get_indexer(
+                [("a", 0), ("a", 1), ("a", 3), ("a", 4), ("b", 1), ("b", 2), ("b", 3)],
+                method="bfill",
+                limit=2,
+            )
+        ),
+    ],
+    in_process=True,
+    note="a fill counts the inexact rows each pair fills and stops at the limit. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-get-indexer-limit-order",
+    "MultiIndex.get_indexer",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: _three_pairs(pd).get_indexer([("b", 0), ("a", 3)], method="pad", limit=1),
+    raises=("ValueError", "only well-defined if index and target are monotonic"),
+    in_process=True,
+    note="a limit needs the target in order. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-reindex-options",
+    "MultiIndex.reindex",
+    level="L3",
+    covers=("target", "method", "level", "limit"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(_three_pairs(pd).reindex([("a", 1), ("c", 3)])),
+        _flat_answer(_three_pairs(pd).reindex(["b", "a"], level="k")),
+        _flat_answer(
+            _three_pairs(pd).reindex([("a", 3), ("a", 4), ("b", 5)], method="ffill", limit=1)
+        ),
+    ],
+    in_process=True,
+    note="new pairs and where each was found, by a level or by filling. " + BUILT_INDEX,
+)
+case(
+    "indexing/datetime-value-counts-options",
+    "DatetimeIndex.value_counts",
+    level="L3",
+    covers=("normalize", "sort", "ascending", "dropna"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _spelled_counts(
+            _gappy_days(pd).value_counts(normalize=True, sort=True, ascending=True, dropna=False)
+        ),
+        _spelled_counts(_gappy_days(pd).value_counts(sort=False)),
+    ],
+    in_process=True,
+    note="moments counted, the gap counted when asked. " + BUILT_INDEX,
+)
+case(
+    "indexing/datetime-take-options",
+    "DatetimeIndex.take",
+    level="L3",
+    covers=("indices", "axis", "allow_fill", "fill_value"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(_days(pd).take([0, -1], axis=0, allow_fill=True, fill_value=None)),
+        _flat_answer(_days(pd).take([2, 1])),
+    ],
+    in_process=True,
+    note="moments at the given positions. " + BUILT_INDEX,
+)
+case(
+    "indexing/datetime-sortlevel-options",
+    "DatetimeIndex.sortlevel",
+    level="L3",
+    covers=("level", "ascending", "sort_remaining", "na_position"),
+    frames=("single",),
+    expr=lambda pd, df: _flat_answer(
+        _days(pd).sortlevel(level=0, ascending=False, sort_remaining=True, na_position="first")
+    ),
+    in_process=True,
+    note="moments sorted falling with the order handed back. " + BUILT_INDEX,
+)
+case(
+    "indexing/datetime-get-indexer-options",
+    "DatetimeIndex.get_indexer",
+    level="L3",
+    covers=("target", "method", "limit", "tolerance"),
+    frames=("single",),
+    expr=lambda pd, df: _flat_answer(
+        pd.DatetimeIndex(["2024-01-01", "2024-01-05"]).get_indexer(
+            pd.DatetimeIndex(["2024-01-02", "2024-01-09"]),
+            method="ffill",
+            limit=1,
+            tolerance=pd.Timedelta("2D"),
+        )
+    ),
+    in_process=True,
+    note="the moment before each target, within the tolerance. " + BUILT_INDEX,
+)
+case(
+    "indexing/datetime-reindex-options",
+    "DatetimeIndex.reindex",
+    level="L3",
+    covers=("target", "method", "limit", "tolerance"),
+    frames=("single",),
+    expr=lambda pd, df: _flat_answer(
+        pd.DatetimeIndex(["2024-01-01", "2024-01-05"]).reindex(
+            pd.DatetimeIndex(["2024-01-04"]), method="nearest", limit=1, tolerance="2D"
+        )
+    ),
+    in_process=True,
+    note="the nearest moment within the tolerance. " + BUILT_INDEX,
+)
+case(
+    "indexing/datetime-join-options",
+    "DatetimeIndex.join",
+    level="L3",
+    covers=("other", "how", "return_indexers", "sort"),
+    frames=("single",),
+    expr=lambda pd, df: _flat_answer(
+        pd.DatetimeIndex(["2024-01-03", "2024-01-01"]).join(
+            pd.DatetimeIndex(["2024-01-01", "2024-01-09"]),
+            how="outer",
+            return_indexers=True,
+            sort=True,
+        )
+    ),
+    in_process=True,
+    note="moments joined with the positions each side came from. " + BUILT_INDEX,
+)

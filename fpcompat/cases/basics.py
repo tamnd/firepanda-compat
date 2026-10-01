@@ -9574,3 +9574,464 @@ case(
     note="a gap kept as Stata's missing value, compared by class name and text, since "
     "the class lives in each library's own module. " + STATA_NOTE,
 )
+
+
+def _plain_answer(out):
+    """A tuple or array answer as plain lists, with NaN spelled so two of them compare."""
+    if isinstance(out, tuple):
+        return tuple(_plain_answer(x) for x in out)
+    if hasattr(out, "tolist") and not hasattr(out, "to_frame"):
+        out = out.tolist()
+    if isinstance(out, list):
+        return ["nan" if isinstance(x, float) and x != x else x for x in out]
+    return out
+
+
+def _zoned_steps(pd):
+    """Steps onto a repeated hour and onto a missing one, under each policy."""
+    fold = pd.Timestamp("2024-11-03 00:31", tz="US/Eastern")
+    gap = pd.Timestamp("2024-03-10 03:30", tz="US/Eastern")
+    return [
+        str(fold.ceil("h", ambiguous=True)),
+        str(fold.ceil("h", ambiguous=False)),
+        str(fold.ceil("h", ambiguous="NaT")),
+        str(gap.floor("2h", nonexistent="shift_forward")),
+        str(gap.floor("2h", nonexistent="shift_backward")),
+        str(gap.floor("2h", nonexistent="NaT")),
+        str(pd.Timestamp("2024-07-01 13:45:07", tz="Europe/Paris").round("min")),
+    ]
+
+
+ZONED_NOTE = (
+    "a zoned moment steps on its wall clock and takes its zone back through tz_localize, so "
+    "the two policies settle a step onto a repeated or missing hour. "
+)
+for _name in ("round", "floor", "ceil"):
+    case(
+        f"basics/timestamp-{_name}-zone-policies",
+        f"Timestamp.{_name}",
+        level="L3",
+        covers=("freq", "ambiguous", "nonexistent"),
+        frames=("single",),
+        expr=lambda pd, df, _name=_name: [
+            str(
+                getattr(pd.Timestamp("2024-11-03 00:31", tz="US/Eastern"), _name)(
+                    "h", ambiguous=False, nonexistent="shift_forward"
+                )
+            ),
+            str(
+                getattr(pd.Timestamp("2024-03-10 01:40", tz="US/Eastern"), _name)(
+                    "h", ambiguous=True, nonexistent="shift_backward"
+                )
+            ),
+        ],
+        in_process=True,
+        note=ZONED_NOTE + PARAMETER_IN_PROCESS,
+    )
+case(
+    "basics/timestamp-zone-steps",
+    "Timestamp.ceil",
+    level="L3",
+    covers=("ambiguous", "nonexistent"),
+    frames=("single",),
+    expr=lambda pd, df: _zoned_steps(pd),
+    in_process=True,
+    note=ZONED_NOTE + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/timestamp-ceil-repeated-hour",
+    "Timestamp.ceil",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: pd.Timestamp("2024-11-03 00:31", tz="US/Eastern").ceil("h"),
+    raises=("ValueError", "Cannot infer dst time"),
+    in_process=True,
+    note="a step onto a repeated hour raises under the default policy. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/timestamp-floor-missing-hour",
+    "Timestamp.floor",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: pd.Timestamp("2024-03-10 03:30", tz="US/Eastern").floor("2h"),
+    raises=("ValueError", "is a nonexistent time due to daylight savings time"),
+    in_process=True,
+    note="a step onto a missing hour raises under the default policy. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-drop-level",
+    "Series.drop",
+    level="L3",
+    covers=("labels", "index", "level", "errors"),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [
+            pd.Series(
+                [1, 2, 3],
+                index=pd.MultiIndex.from_tuples([("a", 1), ("b", 2), ("a", 3)], names=["k", "n"]),
+            ).drop("a", level=0),
+            pd.Series(
+                [1, 2, 3],
+                index=pd.MultiIndex.from_tuples([("a", 1), ("b", 2), ("a", 3)], names=["k", "n"]),
+            ).drop(index=[2, 3], level="n", errors="ignore"),
+            pd.Series(
+                [1, 2, 3], index=pd.MultiIndex.from_tuples([("a", 1), ("a", 1), ("b", 2)])
+            ).drop("a", level=0),
+        ]
+    ),
+    in_process=True,
+    note="rows dropped by one level's values, repeated rows included. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-drop-level-missing",
+    "Series.drop",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [1, 2], index=pd.MultiIndex.from_tuples([("a", 1), ("b", 2)])
+    ).drop(["a", "z"], level=0),
+    raises=("KeyError", "not found in level"),
+    in_process=True,
+    note="a label the level lacks is refused even beside one it has. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-drop-level-flat",
+    "Series.drop",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2]).drop(0, level=0),
+    raises=("AssertionError", "axis must be a MultiIndex"),
+    in_process=True,
+    note="a level on flat labels is pandas' assertion. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/frame-drop-level",
+    "DataFrame.drop",
+    level="L3",
+    covers=("labels", "axis", "columns", "level"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        pd.DataFrame(
+            [[1, 2, 3]], columns=pd.MultiIndex.from_tuples([("a", "p"), ("a", "q"), ("b", "p")])
+        )
+        .drop("p", axis=1, level=1)
+        .columns.tolist(),
+        pd.DataFrame(
+            [[1, 2, 3]], columns=pd.MultiIndex.from_tuples([("a", "p"), ("a", "q"), ("b", "p")])
+        )
+        .drop(columns="a", level=0)
+        .columns.tolist(),
+    ],
+    in_process=True,
+    note="columns dropped by one level of their labels. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-reindex-multi-fill",
+    "Series.reindex",
+    level="L3",
+    covers=("index", "method", "limit"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [1, 2, 3], index=pd.MultiIndex.from_tuples([("a", 1), ("a", 2), ("b", 1)])
+    ).reindex(pd.MultiIndex.from_tuples([("a", 3), ("a", 4), ("b", 5)]), method="ffill", limit=1),
+    in_process=True,
+    note="rows filled along a MultiIndex in tuple order, one inexact row per source. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-reindex-tolerance",
+    "Series.reindex",
+    level="L3",
+    covers=("index", "axis", "method", "tolerance"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1, 2], index=[0, 10]).reindex(
+        [1, 8], method="nearest", tolerance=2, axis=0
+    ),
+    in_process=True,
+    note="the nearest label within the tolerance. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-reductions-axis",
+    "Series.min",
+    level="L3",
+    covers=("axis", "skipna", "numeric_only"),
+    frames=("single",),
+    expr=lambda pd, df: _plain_answer(
+        [
+            pd.Series([3.0, float("nan"), 1.0]).min(axis=0, skipna=False, numeric_only=False),
+            pd.Series([3.0, float("nan"), 1.0]).min(axis=0, skipna=True),
+        ]
+    ),
+    in_process=True,
+    note="the smallest value, NaN when a gap is not skipped. " + PARAMETER_IN_PROCESS,
+)
+for _name, _data in (
+    ("max", [3.0, float("nan"), 1.0]),
+    ("median", [3.0, float("nan"), 1.0, 8.0]),
+    ("kurt", [3.0, 1.0, 2.0, 8.0, float("nan")]),
+    ("kurtosis", [3.0, 1.0, 2.0, 8.0, 5.0]),
+):
+    case(
+        f"basics/series-{_name}-axis",
+        f"Series.{_name}",
+        level="L3",
+        covers=("axis", "skipna", "numeric_only"),
+        frames=("single",),
+        expr=lambda pd, df, _name=_name, _data=_data: _plain_answer(
+            [
+                getattr(pd.Series(_data), _name)(axis=0, skipna=True, numeric_only=True),
+                getattr(pd.Series(_data), _name)(axis=0, skipna=False, numeric_only=False),
+            ]
+        ),
+        in_process=True,
+        note="the reduction with gaps skipped and not. " + PARAMETER_IN_PROCESS,
+        rules=Rules(tolerance=Tolerance.STATISTICAL, reason="a fourth moment squares twice"),
+    )
+case(
+    "basics/series-filter-options",
+    "Series.filter",
+    level="L3",
+    covers=("items", "like", "regex", "axis"),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [
+            pd.Series([1, 2, 3], index=["ab", "bc", "cd"]).filter(regex="^b", axis=0),
+            pd.Series([1, 2, 3], index=["ab", "bc", "cd"]).filter(items=["cd", "zz"]),
+            pd.Series([1, 2, 3], index=["ab", "bc", "cd"]).filter(like="a"),
+        ]
+    ),
+    in_process=True,
+    note="rows picked by a pattern, a list or a fragment of their label. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-dropna-options",
+    "Series.dropna",
+    level="L3",
+    covers=("axis", "how", "ignore_index"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series([1.0, float("nan"), 3.0]).dropna(
+        axis=0, how="any", ignore_index=True
+    ),
+    in_process=True,
+    note="gaps dropped and the labels counted again. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-bfill-options",
+    "Series.bfill",
+    level="L3",
+    covers=("axis", "limit", "limit_area"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [float("nan"), 1.0, float("nan"), float("nan"), 3.0, float("nan")]
+    ).bfill(axis=0, limit=1, limit_area="inside"),
+    in_process=True,
+    note="gaps between values filled from below, one at a time. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-at-time-options",
+    "Series.at_time",
+    level="L3",
+    covers=("time", "asof", "axis"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [1, 2, 3], index=pd.date_range("2024-01-01", periods=3, freq="12h")
+    ).at_time("12:00", asof=False, axis=0),
+    in_process=True,
+    note="the rows at a time of day. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-asfreq-options",
+    "Series.asfreq",
+    level="L3",
+    covers=("freq", "normalize", "fill_value"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(
+        [1.0, 2.0], index=pd.DatetimeIndex(["2024-01-01 06:00", "2024-01-03 06:00"])
+    ).asfreq("D", normalize=True, fill_value=0.0),
+    in_process=True,
+    note="a daily grid on midnight with the new rows filled. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-align-level",
+    "Series.align",
+    level="L3",
+    covers=("other", "join", "axis", "level", "copy"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        pd.Series([1, 2], index=pd.MultiIndex.from_tuples([("a", 1), ("b", 2)]))
+        .align(pd.Series([10, 20], index=["a", "b"]), level=0, axis=0, copy=None)[1]
+        .tolist(),
+        pd.Series([1, 2], index=pd.MultiIndex.from_tuples([("a", 1), ("b", 2)]))
+        .align(pd.Series([10], index=["b"]), join="inner", level=0)[1]
+        .tolist(),
+    ],
+    in_process=True,
+    note="a flat column spread over the rows of a level. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/series-to-timestamp-options",
+    "Series.to_timestamp",
+    level="L3",
+    covers=("freq", "how", "copy"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        pd.Series([1, 2], index=pd.period_range("2024-01", periods=2, freq="M"))
+        .to_timestamp(freq="D", how="end", copy=False)
+        .index.astype(str)
+        .tolist(),
+        pd.Series([1, 2], index=pd.period_range("2024-01", periods=2, freq="M"))
+        .to_timestamp(how="start")
+        .index.astype(str)
+        .tolist(),
+    ],
+    in_process=True,
+    note="periods read at their end or their start. " + PARAMETER_IN_PROCESS,
+)
+for _name in ("first", "last"):
+    case(
+        f"basics/resampler-{_name}-options",
+        f"Resampler.{_name}",
+        level="L3",
+        covers=("numeric_only", "min_count", "skipna"),
+        frames=("single",),
+        expr=lambda pd, df, _name=_name: pd.concat(
+            [
+                getattr(
+                    pd.Series(
+                        [1.0, float("nan"), 3.0, 4.0],
+                        index=pd.date_range("2024-01-01", periods=4, freq="12h"),
+                    ).resample("D"),
+                    _name,
+                )(numeric_only=False, min_count=2, skipna=True),
+                getattr(
+                    pd.Series(
+                        [1.0, float("nan"), 3.0, 4.0],
+                        index=pd.date_range("2024-01-01", periods=4, freq="12h"),
+                    ).resample("D"),
+                    _name,
+                )(numeric_only=True, min_count=1, skipna=False),
+            ],
+            axis=1,
+        ),
+        in_process=True,
+        note="the first or last value of each day, gaps skipped or not. " + PARAMETER_IN_PROCESS,
+    )
+case(
+    "basics/str-index-options",
+    "str.index",
+    level="L3",
+    covers=("sub", "start", "end"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(["abcab", "xbz", "bb"]).str.index("b", start=1, end=4),
+    in_process=True,
+    note="where the text first appears inside the bounds. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/str-rindex-options",
+    "str.rindex",
+    level="L3",
+    covers=("sub", "start", "end"),
+    frames=("single",),
+    expr=lambda pd, df: pd.Series(["abcab", "xbz", "bb"]).str.rindex("b", start=0, end=3),
+    in_process=True,
+    note="where the text last appears inside the bounds. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/str-decode-options",
+    "str.decode",
+    level="L3",
+    covers=("encoding", "errors", "dtype"),
+    frames=("single",),
+    expr=lambda pd, df: (
+        pd.Series([b"ab", b"\xff"]).str.decode("utf-8", errors="replace", dtype=object).tolist()
+    ),
+    in_process=True,
+    note="bytes read as text with a bad byte replaced. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/qcut-options",
+    "pandas.qcut",
+    level="L3",
+    covers=("x", "q", "retbins", "precision", "duplicates"),
+    frames=("single",),
+    expr=lambda pd, df: (
+        pd.qcut([1, 2, 3, 4, 5, 5, 5], 3, retbins=True, precision=2, duplicates="drop")[0]
+        .astype(str)
+        .tolist(),
+        _plain_answer(
+            pd.qcut([1, 2, 3, 4, 5, 5, 5], 3, retbins=True, precision=2, duplicates="drop")[1]
+        ),
+    ),
+    in_process=True,
+    note="quantile bins with a repeated edge dropped, and the edges handed back. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/cut-options",
+    "pandas.cut",
+    level="L3",
+    covers=("x", "bins", "labels", "precision", "duplicates", "ordered"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        pd.cut([1, 5, 9], [0, 5, 5, 10], precision=1, duplicates="drop", ordered=True)
+        .astype(str)
+        .tolist(),
+        list(pd.cut([1, 5, 9], 3, labels=["lo", "mid", "hi"], ordered=False)),
+    ],
+    in_process=True,
+    note="bins with a repeated edge dropped, and labels in no order. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/factorize-options",
+    "pandas.factorize",
+    level="L3",
+    covers=("values", "sort", "use_na_sentinel", "size_hint"),
+    frames=("single",),
+    expr=lambda pd, df: _plain_answer(
+        pd.factorize(
+            pd.Series(["b", "c", "a", "b"]), sort=True, use_na_sentinel=False, size_hint=10
+        )
+    ),
+    in_process=True,
+    note="codes against the sorted distinct values. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/lreshape-options",
+    "pandas.lreshape",
+    level="L3",
+    covers=("data", "groups", "dropna"),
+    frames=("single",),
+    expr=lambda pd, df: pd.lreshape(
+        pd.DataFrame({"id": [1, 2], "a1": [1.0, float("nan")], "a2": [3.0, 4.0]}),
+        {"a": ["a1", "a2"]},
+        dropna=False,
+    ),
+    in_process=True,
+    note="wide columns stacked long with the gaps kept. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/from-dummies-options",
+    "pandas.from_dummies",
+    level="L3",
+    covers=("data", "sep", "default_category"),
+    frames=("single",),
+    expr=lambda pd, df: pd.from_dummies(
+        pd.DataFrame({"c_x": [1, 0, 0], "c_y": [0, 1, 0]}), sep="_", default_category="z"
+    ),
+    in_process=True,
+    note="indicator columns read back into a category, the default for a row of zeros. "
+    + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/array-options",
+    "pandas.array",
+    level="L3",
+    covers=("data", "dtype", "copy"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        str(pd.array([1, 2, 3], dtype="Int32", copy=True).dtype),
+        list(pd.array([1, 2, 3], dtype="Int32", copy=True)),
+    ],
+    in_process=True,
+    note="a masked array of the named type. " + PARAMETER_IN_PROCESS,
+)

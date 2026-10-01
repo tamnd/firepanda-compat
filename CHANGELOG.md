@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 52 cases for MultiIndex and DatetimeIndex options (fill limits along tuples, set_levels, get_loc_level, slice_indexer, joins and takes), zoned Timestamp round, floor and ceil policies, drop by level, and Series, resampler, string, binning and factorize parameters.
+- Board after firepanda #1513: 5949 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 19 cases for window and time options: GroupBy.ewm and GroupBy.rolling settings with column picks and on labels, Rolling and Expanding var, std and rank options with numeric_only, Series.to_sql with every option, Timestamp.replace for the sub second parts, zone and fold, and Resampler.interpolate limits.
 - Board after firepanda #1512: 5897 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 23 index method cases: value_counts, take, sortlevel, sort_values, to_numpy, symmetric_difference, slice_locs, slice_indexer, reindex, get_indexer, join and searchsorted options on flat, multi and datetime indexes, plus DatetimeIndex std, mean and indexer_between_time.
