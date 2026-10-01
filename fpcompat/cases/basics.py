@@ -10505,7 +10505,570 @@ TAIL_CASES = (
         lambda pd: pd.eval("1 + 2", level=0),
     ),
 )
-for _id, _api, _covers, _build in TAIL_CASES:
+
+
+def _tail_groups(pd):
+    """Two groups of two float columns."""
+    return pd.DataFrame(
+        {
+            "g": ["a", "b", "a", "b", "a", "b"],
+            "x": [1.0, 2.0, 4.0, 3.0, 5.0, 7.0],
+            "y": [2.0, 1.0, 3.0, 5.0, 4.0, 6.0],
+        }
+    )
+
+
+def _tail_multi(pd):
+    """A named two-level index of text and whole numbers."""
+    return pd.MultiIndex.from_tuples([("a", 1), ("a", 2), ("b", 1), ("c", 3)], names=["k", "n"])
+
+
+def _tail_instants(pd):
+    """Three unsorted instants with times of day."""
+    return pd.DatetimeIndex(["2024-01-03 10:20", "2024-01-01 05:50", "2024-01-02 12:00"], name="t")
+
+
+def _tail_slice(found):
+    """A slice as plain whole numbers, which numpy ones print differently from."""
+    return [int(found.start), int(found.stop), int(found.step)]
+
+
+def _tail_wide(pd):
+    """Two float columns for the window cases."""
+    return pd.DataFrame({"x": [1.0, 2.0, 4.0, 3.0, 5.0], "y": [2.0, 1.0, 3.0, 5.0, 4.0]})
+
+
+def _tail_levels(index):
+    """A MultiIndex answer as the frame of its levels, which the comparator reads."""
+    return index.to_frame(index=False)
+
+
+TAIL2_CASES = (
+    (
+        "grouped-corrwith-options",
+        "GroupBy.corrwith",
+        ("other", "drop", "method", "numeric_only"),
+        lambda pd: (
+            _tail_groups(pd)
+            .groupby("g")
+            .corrwith(_tail_groups(pd)[["x"]], drop=True, method="pearson", numeric_only=True)
+        ),
+    ),
+    (
+        "expanding-cov-options",
+        "Expanding.cov",
+        ("other", "pairwise", "ddof", "numeric_only"),
+        lambda pd: (
+            _tail_wide(pd)
+            .expanding(2)
+            .cov(_tail_wide(pd)["y"], pairwise=False, ddof=0, numeric_only=True)
+        ),
+    ),
+    (
+        "expanding-corr-options",
+        "Expanding.corr",
+        ("other", "pairwise", "ddof", "numeric_only"),
+        lambda pd: (
+            _tail_wide(pd)
+            .expanding(2)
+            .corr(_tail_wide(pd)["y"], pairwise=False, ddof=1, numeric_only=True)
+        ),
+    ),
+    (
+        "rolling-cov-options",
+        "Rolling.cov",
+        ("pairwise", "ddof", "numeric_only"),
+        lambda pd: _tail_wide(pd).rolling(3).cov(pairwise=True, ddof=0, numeric_only=True),
+    ),
+    (
+        "rolling-corr-options",
+        "Rolling.corr",
+        ("ddof", "numeric_only"),
+        lambda pd: _tail_wide(pd).rolling(3).corr(_tail_wide(pd)["x"], ddof=1, numeric_only=True),
+    ),
+    (
+        "rolling-sem-options",
+        "Rolling.sem",
+        ("ddof", "numeric_only"),
+        lambda pd: _tail_wide(pd).rolling(3).sem(ddof=0, numeric_only=True),
+    ),
+    (
+        "rolling-quantile-options",
+        "Rolling.quantile",
+        ("interpolation", "numeric_only"),
+        lambda pd: (
+            _tail_wide(pd).rolling(3).quantile(0.4, interpolation="lower", numeric_only=True)
+        ),
+    ),
+    (
+        "rolling-mean-engine",
+        "Rolling.mean",
+        ("numeric_only", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).rolling(2).mean(numeric_only=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "rolling-max-engine",
+        "Rolling.max",
+        ("numeric_only", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).rolling(2).max(numeric_only=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "rolling-min-engine",
+        "Rolling.min",
+        ("numeric_only", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).rolling(2).min(numeric_only=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "rolling-median-engine",
+        "Rolling.median",
+        ("numeric_only", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).rolling(3).median(numeric_only=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "rolling-sum-engine",
+        "Rolling.sum",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_wide(pd).rolling(2).sum(engine="cython", engine_kwargs=None),
+    ),
+    (
+        "rolling-std-engine",
+        "Rolling.std",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_wide(pd).rolling(3).std(engine="cython", engine_kwargs=None),
+    ),
+    (
+        "rolling-var-engine",
+        "Rolling.var",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_wide(pd).rolling(3).var(engine="cython", engine_kwargs=None),
+    ),
+    (
+        "rolling-apply-engine",
+        "Rolling.apply",
+        ("raw", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).rolling(2).apply(sum, raw=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "expanding-mean-engine",
+        "Expanding.mean",
+        ("numeric_only", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).expanding().mean(numeric_only=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "expanding-sum-engine",
+        "Expanding.sum",
+        ("numeric_only", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).expanding().sum(numeric_only=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "expanding-max-engine",
+        "Expanding.max",
+        ("numeric_only", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).expanding().max(numeric_only=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "expanding-min-engine",
+        "Expanding.min",
+        ("numeric_only", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).expanding().min(numeric_only=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "expanding-median-engine",
+        "Expanding.median",
+        ("numeric_only", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd)
+            .expanding()
+            .median(numeric_only=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "expanding-var-engine",
+        "Expanding.var",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_wide(pd).expanding(2).var(engine="cython", engine_kwargs=None),
+    ),
+    (
+        "expanding-apply-engine",
+        "Expanding.apply",
+        ("raw", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).expanding().apply(max, raw=False, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "ewm-mean-engine",
+        "ExponentialMovingWindow.mean",
+        ("numeric_only", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).ewm(com=1).mean(numeric_only=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "ewm-sum-engine",
+        "ExponentialMovingWindow.sum",
+        ("numeric_only", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_wide(pd).ewm(com=1).sum(numeric_only=True, engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "ewm-var-bias",
+        "ExponentialMovingWindow.var",
+        ("bias", "numeric_only"),
+        lambda pd: _tail_wide(pd).ewm(com=1).var(bias=True, numeric_only=True),
+    ),
+    (
+        "ewm-std-bias",
+        "ExponentialMovingWindow.std",
+        ("bias", "numeric_only"),
+        lambda pd: _tail_wide(pd).ewm(com=1).std(bias=False, numeric_only=True),
+    ),
+    (
+        "ewm-cov-bias",
+        "ExponentialMovingWindow.cov",
+        ("bias", "numeric_only"),
+        lambda pd: _tail_wide(pd).ewm(com=1).cov(_tail_wide(pd)["x"], bias=True, numeric_only=True),
+    ),
+    (
+        "ewm-corr-pairwise",
+        "ExponentialMovingWindow.corr",
+        ("pairwise", "numeric_only"),
+        lambda pd: _tail_wide(pd).ewm(com=1).corr(pairwise=True, numeric_only=True),
+    ),
+    (
+        "grouped-cov-options",
+        "GroupBy.cov",
+        ("min_periods", "ddof", "numeric_only"),
+        lambda pd: _tail_groups(pd).groupby("g").cov(min_periods=2, ddof=0, numeric_only=True),
+    ),
+    (
+        "grouped-corr-options",
+        "GroupBy.corr",
+        ("method", "min_periods", "numeric_only"),
+        lambda pd: (
+            _tail_groups(pd).groupby("g").corr(method="pearson", min_periods=2, numeric_only=True)
+        ),
+    ),
+    (
+        "grouped-mean-engine",
+        "GroupBy.mean",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_groups(pd).groupby("g").mean(engine="cython", engine_kwargs=None),
+    ),
+    (
+        "grouped-sum-engine",
+        "GroupBy.sum",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_groups(pd).groupby("g").sum(engine="cython", engine_kwargs=None),
+    ),
+    (
+        "grouped-min-engine",
+        "GroupBy.min",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_groups(pd).groupby("g").min(engine="cython", engine_kwargs=None),
+    ),
+    (
+        "grouped-max-engine",
+        "GroupBy.max",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_groups(pd).groupby("g").max(engine="cython", engine_kwargs=None),
+    ),
+    (
+        "grouped-std-engine",
+        "GroupBy.std",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_groups(pd).groupby("g").std(engine="cython", engine_kwargs=None),
+    ),
+    (
+        "grouped-var-engine",
+        "GroupBy.var",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_groups(pd).groupby("g").var(engine="cython", engine_kwargs=None),
+    ),
+    (
+        "grouped-transform-engine",
+        "GroupBy.transform",
+        ("engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_groups(pd).groupby("g").transform("sum", engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "grouped-agg-engine",
+        "GroupBy.agg",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_groups(pd).groupby("g").agg("max", engine="cython", engine_kwargs=None),
+    ),
+    (
+        "grouped-aggregate-engine",
+        "GroupBy.aggregate",
+        ("func", "engine", "engine_kwargs"),
+        lambda pd: (
+            _tail_groups(pd).groupby("g").aggregate(func="min", engine="cython", engine_kwargs=None)
+        ),
+    ),
+    (
+        "grouped-first-min-count",
+        "GroupBy.first",
+        ("numeric_only", "min_count"),
+        lambda pd: _tail_groups(pd).groupby("g").first(numeric_only=True, min_count=4),
+    ),
+    (
+        "grouped-last-min-count",
+        "GroupBy.last",
+        ("numeric_only", "min_count"),
+        lambda pd: _tail_groups(pd).groupby("g").last(numeric_only=True, min_count=2),
+    ),
+    (
+        "grouped-kurt-options",
+        "GroupBy.kurt",
+        ("skipna", "numeric_only"),
+        lambda pd: _tail_groups(pd).groupby("g").kurt(skipna=True, numeric_only=True),
+    ),
+    (
+        "grouped-idxmin-options",
+        "GroupBy.idxmin",
+        ("skipna", "numeric_only"),
+        lambda pd: _tail_groups(pd).groupby("g").idxmin(skipna=True, numeric_only=True),
+    ),
+    (
+        "grouped-idxmax-options",
+        "GroupBy.idxmax",
+        ("skipna", "numeric_only"),
+        lambda pd: _tail_groups(pd).groupby("g").idxmax(skipna=True, numeric_only=True),
+    ),
+    (
+        "grouped-describe-options",
+        "GroupBy.describe",
+        ("percentiles", "exclude"),
+        lambda pd: _tail_groups(pd).groupby("g").describe(percentiles=[0.5], exclude=None),
+    ),
+    (
+        "grouped-value-counts-options",
+        "GroupBy.value_counts",
+        ("subset", "ascending"),
+        lambda pd: (
+            _tail_groups(pd)
+            .assign(x=[1.0, 2.0, 1.0, 3.0, 5.0, 2.0])
+            .groupby("g")
+            .value_counts(subset=["x"], ascending=True)
+        ),
+    ),
+    (
+        "grouped-pct-change-options",
+        "GroupBy.pct_change",
+        ("fill_method", "freq"),
+        lambda pd: _tail_groups(pd).groupby("g").pct_change(fill_method=None, freq=None),
+    ),
+    (
+        "grouped-expanding-options",
+        "GroupBy.expanding",
+        ("min_periods", "method"),
+        lambda pd: _tail_groups(pd).groupby("g").expanding(min_periods=2, method="single").sum(),
+    ),
+    (
+        "multi-index-from-frame-options",
+        "MultiIndex.from_frame",
+        ("df", "sortorder", "names"),
+        lambda pd: _tail_levels(
+            pd.MultiIndex.from_frame(
+                pd.DataFrame({"a": ["x", "y"], "b": [1, 2]}), sortorder=None, names=["p", "q"]
+            )
+        ),
+    ),
+    (
+        "multi-index-drop-options",
+        "MultiIndex.drop",
+        ("codes", "level", "errors"),
+        lambda pd: _tail_levels(_tail_multi(pd).drop(codes=["a", "z"], level="k", errors="ignore")),
+    ),
+    (
+        "multi-index-copy-options",
+        "MultiIndex.copy",
+        ("names", "deep", "name"),
+        lambda pd: _tail_levels(_tail_multi(pd).copy(names=["p", "q"], deep=True, name=None)),
+    ),
+    (
+        "multi-index-union-sort",
+        "MultiIndex.union",
+        ("other", "sort"),
+        lambda pd: _tail_levels(
+            _tail_multi(pd).union(pd.MultiIndex.from_tuples([("a", 0)]), sort=False)
+        ),
+    ),
+    (
+        "multi-index-intersection-sort",
+        "MultiIndex.intersection",
+        ("other", "sort"),
+        lambda pd: _tail_levels(_tail_multi(pd).intersection(_tail_multi(pd)[1:], sort=True)),
+    ),
+    (
+        "multi-index-difference-sort",
+        "MultiIndex.difference",
+        ("other", "sort"),
+        lambda pd: _tail_levels(_tail_multi(pd).difference(_tail_multi(pd)[:1], sort=False)),
+    ),
+    (
+        "multi-index-swaplevel-options",
+        "MultiIndex.swaplevel",
+        ("i", "j"),
+        lambda pd: _tail_levels(_tail_multi(pd).swaplevel(i="n", j="k")),
+    ),
+    (
+        "multi-index-set-names-level",
+        "MultiIndex.set_names",
+        ("names", "level"),
+        lambda pd: _tail_levels(_tail_multi(pd).set_names(names="m", level=1)),
+    ),
+    (
+        "multi-index-rename-level",
+        "MultiIndex.rename",
+        ("names", "level"),
+        lambda pd: _tail_levels(_tail_multi(pd).rename(names=["m"], level=[0])),
+    ),
+    (
+        "multi-index-repeat-axis",
+        "MultiIndex.repeat",
+        ("repeats", "axis"),
+        lambda pd: _tail_levels(_tail_multi(pd).repeat(repeats=2, axis=None)),
+    ),
+    (
+        "multi-index-isin-level",
+        "MultiIndex.isin",
+        ("values", "level"),
+        lambda pd: _tail_multi(pd).isin(values=[1], level="n").tolist(),
+    ),
+    (
+        "multi-index-insert-options",
+        "MultiIndex.insert",
+        ("loc", "item"),
+        lambda pd: _tail_levels(_tail_multi(pd).insert(loc=1, item=("z", 9))),
+    ),
+    (
+        "multi-index-slice-bound",
+        "MultiIndex.get_slice_bound",
+        ("label", "side"),
+        lambda pd: int(_tail_multi(pd).get_slice_bound(label=("b", 1), side="right")),
+    ),
+    (
+        "multi-index-from-arrays-named",
+        "MultiIndex.from_arrays",
+        ("arrays", "names"),
+        lambda pd: _tail_levels(
+            pd.MultiIndex.from_arrays(arrays=[["a", "b"], [1, 2]], names=["p", "q"])
+        ),
+    ),
+    (
+        "multi-index-astype-copy",
+        "MultiIndex.astype",
+        ("dtype", "copy"),
+        lambda pd: _tail_levels(_tail_multi(pd).astype(dtype="object", copy=True)),
+    ),
+    (
+        "multi-index-min-options",
+        "MultiIndex.min",
+        ("axis", "skipna"),
+        lambda pd: [str(part) for part in _tail_multi(pd).min(axis=None, skipna=True)],
+    ),
+    (
+        "multi-index-max-options",
+        "MultiIndex.max",
+        ("axis", "skipna"),
+        lambda pd: [str(part) for part in _tail_multi(pd).max(axis=None, skipna=True)],
+    ),
+    (
+        "multi-index-argmin-options",
+        "MultiIndex.argmin",
+        ("axis", "skipna"),
+        lambda pd: int(_tail_multi(pd).argmin(axis=None, skipna=True)),
+    ),
+    (
+        "multi-index-argmax-options",
+        "MultiIndex.argmax",
+        ("axis", "skipna"),
+        lambda pd: int(_tail_multi(pd).argmax(axis=None, skipna=True)),
+    ),
+    (
+        "multi-index-map-options",
+        "MultiIndex.map",
+        ("mapper", "na_action"),
+        lambda pd: _tail_multi(pd).map(mapper=str, na_action=None),
+    ),
+    (
+        "multi-index-take-fill",
+        "MultiIndex.take",
+        ("allow_fill", "fill_value"),
+        lambda pd: _tail_levels(_tail_multi(pd).take([2, 0], allow_fill=True, fill_value=None)),
+    ),
+    (
+        "datetime-index-sort-options",
+        "DatetimeIndex.sort_values",
+        ("return_indexer", "na_position", "key"),
+        lambda pd: _tail_instants(pd).sort_values(
+            return_indexer=False, na_position="first", key=None
+        ),
+    ),
+    (
+        "datetime-index-symmetric-difference",
+        "DatetimeIndex.symmetric_difference",
+        ("other", "result_name", "sort"),
+        lambda pd: _tail_instants(pd).symmetric_difference(
+            _tail_instants(pd)[:1], result_name="u", sort=None
+        ),
+    ),
+    (
+        "datetime-index-slice-indexer",
+        "DatetimeIndex.slice_indexer",
+        ("start", "end", "step"),
+        lambda pd: _tail_slice(
+            _tail_instants(pd)
+            .sort_values()
+            .slice_indexer(start="2024-01-02", end="2024-01-03 23:00", step=1)
+        ),
+    ),
+    (
+        "datetime-index-floor-options",
+        "DatetimeIndex.floor",
+        ("freq", "ambiguous", "nonexistent"),
+        lambda pd: _tail_instants(pd).floor(freq="h", ambiguous="raise", nonexistent="raise"),
+    ),
+    (
+        "datetime-index-ceil-options",
+        "DatetimeIndex.ceil",
+        ("freq", "ambiguous", "nonexistent"),
+        lambda pd: _tail_instants(pd).ceil(freq="D", ambiguous="raise", nonexistent="raise"),
+    ),
+    (
+        "offsets-year-end-month",
+        "offsets.YearEnd",
+        ("n", "normalize", "month"),
+        lambda pd: (
+            pd.Timestamp("2024-03-15 10:00") + pd.offsets.YearEnd(n=1, normalize=True, month=6)
+        ),
+    ),
+)
+
+
+for _id, _api, _covers, _build in TAIL_CASES + TAIL2_CASES:
     case(
         f"basics/{_id}",
         _api,
@@ -10517,6 +11080,16 @@ for _id, _api, _covers, _build in TAIL_CASES:
         note="the parameters named, on a small self-built input. " + PARAMETER_IN_PROCESS,
         rules=Rules(tolerance=Tolerance.STATISTICAL, reason="moments and correlations"),
     )
+case(
+    "basics/multi-index-where-refused",
+    "MultiIndex.where",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: _tail_multi(pd).where([True, False, True, True]),
+    raises=("NotImplementedError", ".where is not supported for MultiIndex operations"),
+    in_process=True,
+    note="where on a MultiIndex is refused as pandas refuses it. " + PARAMETER_IN_PROCESS,
+)
 case(
     "basics/timestamp-to-numpy-copy",
     "Timestamp.to_numpy",
