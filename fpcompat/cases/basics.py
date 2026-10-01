@@ -11068,7 +11068,833 @@ TAIL2_CASES = (
 )
 
 
-for _id, _api, _covers, _build in TAIL_CASES + TAIL2_CASES:
+def _tail_series(pd):
+    """Five floats with a gap under text labels."""
+    return pd.Series([3.0, 1.0, float("nan"), 4.0, 2.0], index=list("abcde"), name="v")
+
+
+def _tail_labels(pd):
+    """Six whole numbers with a repeat."""
+    return pd.Index([5, 2, 9, 2, 7, 1], name="i")
+
+
+def _tail_stamps(pd):
+    """Four daily instants."""
+    return pd.date_range("2024-01-01 09:00", periods=4, freq="D", name="t")
+
+
+def _tail_mixed(pd):
+    """Floats, whole numbers and text, for the frame cases."""
+    return pd.DataFrame(
+        {"a": [1.0, float("nan"), 3.0, 4.0], "b": [4, 3, 2, 1], "s": ["x", "y", "x", "z"]},
+        index=list("pqrs"),
+    )
+
+
+def _tail_hourly(pd):
+    """Six hourly readings."""
+    return pd.DataFrame(
+        {"v": [1.0, 2.0, 4.0, 3.0, 5.0, 7.0], "w": [1, 2, 3, 4, 5, 6]},
+        index=pd.date_range("2024-01-01", periods=6, freq="h"),
+    )
+
+
+TAIL3_CASES = (
+    (
+        "series-var-axis",
+        "Series.var",
+        ("axis", "numeric_only"),
+        lambda pd: float(_tail_series(pd).var(axis=0, numeric_only=False)),
+    ),
+    (
+        "series-std-axis",
+        "Series.std",
+        ("axis", "numeric_only"),
+        lambda pd: float(_tail_series(pd).std(axis=0, numeric_only=False)),
+    ),
+    (
+        "series-sem-axis",
+        "Series.sem",
+        ("axis", "numeric_only"),
+        lambda pd: float(_tail_series(pd).sem(axis="index", numeric_only=False)),
+    ),
+    (
+        "series-sum-axis",
+        "Series.sum",
+        ("axis", "numeric_only"),
+        lambda pd: float(_tail_series(pd).sum(axis=0, numeric_only=False)),
+    ),
+    (
+        "series-prod-axis",
+        "Series.prod",
+        ("axis", "numeric_only"),
+        lambda pd: float(_tail_series(pd).prod(axis=0, numeric_only=False)),
+    ),
+    (
+        "series-mean-axis",
+        "Series.mean",
+        ("axis", "numeric_only"),
+        lambda pd: float(_tail_series(pd).mean(axis=None, numeric_only=False)),
+    ),
+    (
+        "series-rank-axis",
+        "Series.rank",
+        ("axis", "numeric_only"),
+        lambda pd: _tail_series(pd).rank(axis=0, numeric_only=False),
+    ),
+    (
+        "series-idxmin-axis",
+        "Series.idxmin",
+        ("axis", "skipna"),
+        lambda pd: _tail_series(pd).idxmin(axis=0, skipna=True),
+    ),
+    (
+        "series-argmin-axis",
+        "Series.argmin",
+        ("axis", "skipna"),
+        lambda pd: int(_tail_series(pd).argmin(axis=None, skipna=True)),
+    ),
+    (
+        "series-argmax-axis",
+        "Series.argmax",
+        ("axis", "skipna"),
+        lambda pd: int(_tail_series(pd).argmax(axis=None, skipna=True)),
+    ),
+    (
+        "series-cumprod-axis",
+        "Series.cumprod",
+        ("axis", "skipna"),
+        lambda pd: _tail_series(pd).cumprod(axis=0, skipna=True),
+    ),
+    (
+        "series-cummin-axis",
+        "Series.cummin",
+        ("axis", "skipna"),
+        lambda pd: _tail_series(pd).cummin(axis=0, skipna=False),
+    ),
+    (
+        "series-cummax-axis",
+        "Series.cummax",
+        ("axis", "skipna"),
+        lambda pd: _tail_series(pd).cummax(axis="index", skipna=True),
+    ),
+    (
+        "series-all-axis",
+        "Series.all",
+        ("axis", "bool_only"),
+        lambda pd: bool((_tail_series(pd) > 0).all(axis=0, bool_only=False)),
+    ),
+    (
+        "series-aggregate-axis",
+        "Series.aggregate",
+        ("func", "axis"),
+        lambda pd: _tail_series(pd).aggregate(func=["min", "max"], axis=0),
+    ),
+    (
+        "series-add-suffix-axis",
+        "Series.add_suffix",
+        ("suffix", "axis"),
+        lambda pd: _tail_series(pd).add_suffix(suffix="_x", axis=0),
+    ),
+    (
+        "series-add-prefix-axis",
+        "Series.add_prefix",
+        ("prefix", "axis"),
+        lambda pd: _tail_series(pd).add_prefix(prefix="x_", axis="index"),
+    ),
+    (
+        "series-take-axis",
+        "Series.take",
+        ("indices", "axis"),
+        lambda pd: _tail_series(pd).take(indices=[3, 0], axis=0),
+    ),
+    (
+        "series-shift-axis",
+        "Series.shift",
+        ("axis", "suffix"),
+        lambda pd: _tail_series(pd).shift(1, axis=0, suffix=None),
+    ),
+    (
+        "series-get-default",
+        "Series.get",
+        ("key", "default"),
+        lambda pd: _tail_series(pd).get(key="zz", default=-1.0),
+    ),
+    (
+        "series-ffill-axis",
+        "Series.ffill",
+        ("axis", "limit"),
+        lambda pd: _tail_series(pd).ffill(axis=0, limit=1),
+    ),
+    (
+        "series-droplevel-axis",
+        "Series.droplevel",
+        ("level", "axis"),
+        lambda pd: pd.Series(
+            [1, 2], index=pd.MultiIndex.from_tuples([("a", 1), ("b", 2)])
+        ).droplevel(level=0, axis=0),
+    ),
+    (
+        "series-describe-include",
+        "Series.describe",
+        ("include", "exclude"),
+        lambda pd: _tail_series(pd).describe(include=None, exclude=None),
+    ),
+    (
+        "series-cov-options",
+        "Series.cov",
+        ("min_periods", "ddof"),
+        lambda pd: float(
+            _tail_series(pd).cov(
+                _tail_series(pd)[::-1].reset_index(drop=True).set_axis(list("abcde")),
+                min_periods=2,
+                ddof=0,
+            )
+        ),
+    ),
+    (
+        "series-combine-func",
+        "Series.combine",
+        ("other", "func"),
+        lambda pd: _tail_series(pd).combine(other=2.5, func=max),
+    ),
+    (
+        "series-asof-where",
+        "Series.asof",
+        ("where", "subset"),
+        lambda pd: pd.Series([1.0, float("nan"), 3.0], index=[10, 20, 30]).asof(
+            where=[15, 25, 35], subset=None
+        ),
+    ),
+    (
+        "series-argsort-order",
+        "Series.argsort",
+        ("order", "stable"),
+        lambda pd: _tail_series(pd).fillna(0).argsort(order=None, stable=None).tolist(),
+    ),
+    (
+        "series-sort-index-level",
+        "Series.sort_index",
+        ("level", "sort_remaining"),
+        lambda pd: pd.Series(
+            [1, 2, 3], index=pd.MultiIndex.from_tuples([("b", 2), ("a", 9), ("b", 1)])
+        ).sort_index(level=1, sort_remaining=False),
+    ),
+    (
+        "series-set-axis-copy",
+        "Series.set_axis",
+        ("axis", "copy"),
+        lambda pd: _tail_series(pd).set_axis(list("vwxyz"), axis=0, copy=False),
+    ),
+    (
+        "series-rename-axis-copy",
+        "Series.rename_axis",
+        ("axis", "copy"),
+        lambda pd: _tail_series(pd).rename_axis("k", axis=0, copy=False),
+    ),
+    (
+        "series-truncate-axis",
+        "Series.truncate",
+        ("axis", "copy"),
+        lambda pd: _tail_series(pd).truncate("b", "d", axis=0, copy=False),
+    ),
+    (
+        "series-to-numpy-dtype",
+        "Series.to_numpy",
+        ("dtype", "copy"),
+        lambda pd: _tail_series(pd).fillna(0).to_numpy(dtype="int64", copy=True).tolist(),
+    ),
+    (
+        "series-to-period-copy",
+        "Series.to_period",
+        ("freq", "copy"),
+        lambda pd: pd.Series(
+            [1, 2], index=pd.date_range("2024-01-31", periods=2, freq="ME")
+        ).to_period(freq="M", copy=False),
+    ),
+    (
+        "series-tz-convert-level",
+        "Series.tz_convert",
+        ("level", "copy"),
+        lambda pd: pd.Series(
+            [1, 2], index=pd.date_range("2024-01-01", periods=2, freq="h", tz="UTC")
+        ).tz_convert("Asia/Tokyo", level=None, copy=False),
+    ),
+    (
+        "series-where-axis",
+        "Series.where",
+        ("axis", "level"),
+        lambda pd: _tail_series(pd).where(_tail_series(pd) > 2, 0.0, axis=0, level=None),
+    ),
+    (
+        "series-mask-axis",
+        "Series.mask",
+        ("axis", "level"),
+        lambda pd: _tail_series(pd).mask(_tail_series(pd) > 2, -1.0, axis=0, level=None),
+    ),
+    (
+        "series-expanding-method",
+        "Series.expanding",
+        ("min_periods", "method"),
+        lambda pd: _tail_series(pd).expanding(min_periods=2, method="single").sum(),
+    ),
+    (
+        "series-ewm-times",
+        "Series.ewm",
+        ("times", "method"),
+        lambda pd: (
+            pd.Series([1.0, 2.0, 4.0])
+            .ewm(
+                halflife="1D",
+                times=pd.date_range("2024-01-01", periods=3, freq="D"),
+                method="single",
+            )
+            .mean()
+        ),
+    ),
+    (
+        "index-union-sort",
+        "Index.union",
+        ("other", "sort"),
+        lambda pd: _tail_labels(pd).unique().union(pd.Index([3, 2]), sort=False),
+    ),
+    (
+        "index-intersection-sort",
+        "Index.intersection",
+        ("other", "sort"),
+        lambda pd: _tail_labels(pd).intersection(pd.Index([9, 1, 4]), sort=True),
+    ),
+    (
+        "index-difference-sort",
+        "Index.difference",
+        ("other", "sort"),
+        lambda pd: _tail_labels(pd).difference(pd.Index([2]), sort=False),
+    ),
+    (
+        "index-repeat-axis",
+        "Index.repeat",
+        ("repeats", "axis"),
+        lambda pd: _tail_labels(pd).repeat(repeats=2, axis=None),
+    ),
+    (
+        "index-putmask-value",
+        "Index.putmask",
+        ("mask", "value"),
+        lambda pd: _tail_labels(pd).putmask(mask=[True, False, False, True, False, False], value=0),
+    ),
+    (
+        "index-min-axis",
+        "Index.min",
+        ("axis", "skipna"),
+        lambda pd: int(_tail_labels(pd).min(axis=None, skipna=True)),
+    ),
+    (
+        "index-max-axis",
+        "Index.max",
+        ("axis", "skipna"),
+        lambda pd: int(_tail_labels(pd).max(axis=None, skipna=True)),
+    ),
+    (
+        "index-argmin-axis",
+        "Index.argmin",
+        ("axis", "skipna"),
+        lambda pd: int(_tail_labels(pd).argmin(axis=None, skipna=True)),
+    ),
+    (
+        "index-argmax-axis",
+        "Index.argmax",
+        ("axis", "skipna"),
+        lambda pd: int(_tail_labels(pd).argmax(axis=None, skipna=True)),
+    ),
+    (
+        "index-insert-item",
+        "Index.insert",
+        ("loc", "item"),
+        lambda pd: _tail_labels(pd).insert(loc=2, item=11),
+    ),
+    (
+        "index-slice-bound-side",
+        "Index.get_slice_bound",
+        ("label", "side"),
+        lambda pd: int(pd.Index([1, 3, 5, 7]).get_slice_bound(label=5, side="left")),
+    ),
+    (
+        "index-factorize-options",
+        "Index.factorize",
+        ("sort", "use_na_sentinel"),
+        lambda pd: [
+            part.tolist() for part in _tail_labels(pd).factorize(sort=True, use_na_sentinel=True)
+        ],
+    ),
+    (
+        "index-drop-errors",
+        "Index.drop",
+        ("labels", "errors"),
+        lambda pd: _tail_labels(pd).drop(labels=[9, 99], errors="ignore"),
+    ),
+    (
+        "index-astype-copy",
+        "Index.astype",
+        ("dtype", "copy"),
+        lambda pd: _tail_labels(pd).astype(dtype="float64", copy=True),
+    ),
+    (
+        "index-shift-periods",
+        "Index.shift",
+        ("periods", "freq"),
+        lambda pd: pd.date_range("2024-01-01", periods=3, freq="D").shift(periods=2, freq="h"),
+    ),
+    (
+        "datetime-index-max-axis",
+        "DatetimeIndex.max",
+        ("axis", "skipna"),
+        lambda pd: _tail_stamps(pd).max(axis=None, skipna=True),
+    ),
+    (
+        "datetime-index-min-axis",
+        "DatetimeIndex.min",
+        ("axis", "skipna"),
+        lambda pd: _tail_stamps(pd).min(axis=None, skipna=True),
+    ),
+    (
+        "datetime-index-argmin-axis",
+        "DatetimeIndex.argmin",
+        ("axis", "skipna"),
+        lambda pd: int(_tail_stamps(pd).argmin(axis=None, skipna=True)),
+    ),
+    (
+        "datetime-index-argmax-axis",
+        "DatetimeIndex.argmax",
+        ("axis", "skipna"),
+        lambda pd: int(_tail_stamps(pd).argmax(axis=None, skipna=True)),
+    ),
+    (
+        "datetime-index-map-action",
+        "DatetimeIndex.map",
+        ("mapper", "na_action"),
+        lambda pd: _tail_stamps(pd).map(mapper=lambda t: t.day, na_action=None),
+    ),
+    (
+        "datetime-index-isin-level",
+        "DatetimeIndex.isin",
+        ("values", "level"),
+        lambda pd: [
+            bool(x) for x in _tail_stamps(pd).isin(values=_tail_stamps(pd)[:2], level=None)
+        ],
+    ),
+    (
+        "datetime-index-intersection-sort",
+        "DatetimeIndex.intersection",
+        ("other", "sort"),
+        lambda pd: _tail_stamps(pd).intersection(_tail_stamps(pd)[1:], sort=False),
+    ),
+    (
+        "datetime-index-union-sort",
+        "DatetimeIndex.union",
+        ("other", "sort"),
+        lambda pd: _tail_stamps(pd)[2:].union(_tail_stamps(pd)[:1], sort=None),
+    ),
+    (
+        "datetime-index-difference-sort",
+        "DatetimeIndex.difference",
+        ("other", "sort"),
+        lambda pd: _tail_stamps(pd).difference(_tail_stamps(pd)[1:2], sort=False),
+    ),
+    (
+        "datetime-index-insert-item",
+        "DatetimeIndex.insert",
+        ("loc", "item"),
+        lambda pd: _tail_stamps(pd).insert(loc=1, item=pd.Timestamp("2023-12-31")),
+    ),
+    (
+        "datetime-index-at-time-asof",
+        "DatetimeIndex.indexer_at_time",
+        ("time", "asof"),
+        lambda pd: [int(x) for x in _tail_stamps(pd).indexer_at_time(time="09:00", asof=False)],
+    ),
+    (
+        "datetime-index-slice-bound",
+        "DatetimeIndex.get_slice_bound",
+        ("label", "side"),
+        lambda pd: int(_tail_stamps(pd).get_slice_bound(label="2024-01-02", side="right")),
+    ),
+    (
+        "datetime-index-factorize-options",
+        "DatetimeIndex.factorize",
+        ("sort", "use_na_sentinel"),
+        lambda pd: _tail_stamps(pd).factorize(sort=True, use_na_sentinel=True)[0].tolist(),
+    ),
+    (
+        "datetime-index-astype-copy",
+        "DatetimeIndex.astype",
+        ("dtype", "copy"),
+        lambda pd: _tail_stamps(pd).astype(dtype="datetime64[s]", copy=True),
+    ),
+    (
+        "datetime-index-as-unit-round",
+        "DatetimeIndex.as_unit",
+        ("unit", "round_ok"),
+        lambda pd: _tail_stamps(pd).as_unit(unit="s", round_ok=True),
+    ),
+    (
+        "datetime-index-shift-freq",
+        "DatetimeIndex.shift",
+        ("periods", "freq"),
+        lambda pd: _tail_stamps(pd).shift(periods=1, freq="2h"),
+    ),
+    (
+        "datetime-index-set-names-level",
+        "DatetimeIndex.set_names",
+        ("names", "level"),
+        lambda pd: _tail_stamps(pd).set_names(names="u", level=None),
+    ),
+    (
+        "datetime-index-repeat-axis",
+        "DatetimeIndex.repeat",
+        ("repeats", "axis"),
+        lambda pd: _tail_stamps(pd).repeat(repeats=2, axis=None),
+    ),
+    (
+        "datetime-index-putmask-value",
+        "DatetimeIndex.putmask",
+        ("mask", "value"),
+        lambda pd: _tail_stamps(pd).putmask(
+            mask=[False, True, False, False], value=pd.Timestamp("2020-01-01 09:00")
+        ),
+    ),
+    (
+        "datetime-index-where-other",
+        "DatetimeIndex.where",
+        ("cond", "other"),
+        lambda pd: _tail_stamps(pd).where(
+            cond=[True, False, True, True], other=pd.Timestamp("2020-01-01")
+        ),
+    ),
+    (
+        "datetime-index-to-numpy-options",
+        "DatetimeIndex.to_numpy",
+        ("dtype", "copy", "na_value"),
+        lambda pd: [
+            str(x)
+            for x in _tail_stamps(pd).to_numpy(dtype="datetime64[D]", copy=True, na_value=None)
+        ],
+    ),
+    (
+        "frame-le-axis",
+        "DataFrame.le",
+        ("other", "axis", "level"),
+        lambda pd: _tail_mixed(pd)[["a", "b"]].le(other=[2, 3], axis=1, level=None),
+    ),
+    (
+        "frame-gt-axis",
+        "DataFrame.gt",
+        ("other", "axis", "level"),
+        lambda pd: _tail_mixed(pd)[["a", "b"]].gt(other=_tail_mixed(pd)["b"], axis=0, level=None),
+    ),
+    (
+        "frame-eq-axis",
+        "DataFrame.eq",
+        ("other", "axis", "level"),
+        lambda pd: _tail_mixed(pd)[["a", "b"]].eq(other=3, axis="columns", level=None),
+    ),
+    (
+        "frame-where-axis",
+        "DataFrame.where",
+        ("axis", "level"),
+        lambda pd: _tail_mixed(pd)[["a", "b"]].where(
+            _tail_mixed(pd)[["a", "b"]] > 2, 0, axis=None, level=None
+        ),
+    ),
+    (
+        "frame-mask-axis",
+        "DataFrame.mask",
+        ("axis", "level"),
+        lambda pd: _tail_mixed(pd)[["a", "b"]].mask(
+            _tail_mixed(pd)[["a", "b"]] > 2, -1, axis=None, level=None
+        ),
+    ),
+    (
+        "frame-tz-localize-axis",
+        "DataFrame.tz_localize",
+        ("axis", "copy"),
+        lambda pd: _tail_hourly(pd).tz_localize("UTC", axis=0, copy=False),
+    ),
+    (
+        "frame-tz-convert-axis",
+        "DataFrame.tz_convert",
+        ("axis", "copy"),
+        lambda pd: (
+            _tail_hourly(pd).tz_localize("UTC").tz_convert("Europe/Paris", axis=0, copy=False)
+        ),
+    ),
+    (
+        "frame-truncate-axis",
+        "DataFrame.truncate",
+        ("axis", "copy"),
+        lambda pd: _tail_mixed(pd).truncate("a", "b", axis=1, copy=False),
+    ),
+    (
+        "frame-stack-dropna",
+        "DataFrame.stack",
+        ("dropna", "sort"),
+        lambda pd: _tail_mixed(pd)[["a", "b"]].stack(future_stack=False, dropna=True, sort=True),
+    ),
+    (
+        "frame-sort-values-key",
+        "DataFrame.sort_values",
+        ("axis", "key"),
+        lambda pd: _tail_mixed(pd).sort_values("s", axis=0, key=lambda c: c.str.upper()),
+    ),
+    (
+        "frame-skew-options",
+        "DataFrame.skew",
+        ("skipna", "numeric_only"),
+        lambda pd: _tail_mixed(pd).skew(skipna=True, numeric_only=True),
+    ),
+    (
+        "frame-kurt-options",
+        "DataFrame.kurt",
+        ("skipna", "numeric_only"),
+        lambda pd: _tail_mixed(pd).kurt(skipna=True, numeric_only=True),
+    ),
+    (
+        "frame-min-options",
+        "DataFrame.min",
+        ("skipna", "numeric_only"),
+        lambda pd: _tail_mixed(pd).min(skipna=False, numeric_only=True),
+    ),
+    (
+        "frame-median-options",
+        "DataFrame.median",
+        ("skipna", "numeric_only"),
+        lambda pd: _tail_mixed(pd).median(skipna=True, numeric_only=True),
+    ),
+    (
+        "frame-idxmin-options",
+        "DataFrame.idxmin",
+        ("skipna", "numeric_only"),
+        lambda pd: _tail_mixed(pd).idxmin(skipna=True, numeric_only=True),
+    ),
+    (
+        "frame-count-axis",
+        "DataFrame.count",
+        ("axis", "numeric_only"),
+        lambda pd: _tail_mixed(pd).count(axis=1, numeric_only=True),
+    ),
+    (
+        "frame-cov-options",
+        "DataFrame.cov",
+        ("min_periods", "ddof"),
+        lambda pd: _tail_mixed(pd).cov(min_periods=2, ddof=0, numeric_only=True),
+    ),
+    (
+        "frame-fillna-axis",
+        "DataFrame.fillna",
+        ("axis", "limit"),
+        lambda pd: _tail_mixed(pd)[["a", "b"]].fillna(0.5, axis=0, limit=1),
+    ),
+    (
+        "frame-ffill-area",
+        "DataFrame.ffill",
+        ("limit", "limit_area"),
+        lambda pd: _tail_mixed(pd)[["a", "b"]].ffill(limit=1, limit_area="inside"),
+    ),
+    (
+        "frame-pct-change-options",
+        "DataFrame.pct_change",
+        ("fill_method", "freq"),
+        lambda pd: _tail_mixed(pd)[["a", "b"]].pct_change(fill_method=None, freq=None),
+    ),
+    (
+        "frame-reorder-levels-axis",
+        "DataFrame.reorder_levels",
+        ("order", "axis"),
+        lambda pd: pd.DataFrame(
+            {"v": [1, 2]}, index=pd.MultiIndex.from_tuples([("a", 1), ("b", 2)], names=["k", "n"])
+        ).reorder_levels(order=["n", "k"], axis=0),
+    ),
+    ("frame-isetitem-loc", "DataFrame.isetitem", ("loc", "value"), lambda pd: _tail_isetitem(pd)),
+    (
+        "frame-asof-subset",
+        "DataFrame.asof",
+        ("where", "subset"),
+        lambda pd: pd.DataFrame(
+            {"a": [1.0, float("nan"), 3.0], "b": [1.0, 2.0, 3.0]}, index=[10, 20, 30]
+        ).asof(where=[25, 35], subset=["a"]),
+    ),
+    (
+        "frame-aggregate-axis",
+        "DataFrame.aggregate",
+        ("func", "axis"),
+        lambda pd: _tail_mixed(pd)[["a", "b"]].aggregate(func=["sum", "max"], axis=0),
+    ),
+    (
+        "frame-add-suffix-axis",
+        "DataFrame.add_suffix",
+        ("suffix", "axis"),
+        lambda pd: _tail_mixed(pd).add_suffix(suffix="_r", axis=0),
+    ),
+    (
+        "frame-add-prefix-axis",
+        "DataFrame.add_prefix",
+        ("prefix", "axis"),
+        lambda pd: _tail_mixed(pd).add_prefix(prefix="c_", axis=1),
+    ),
+    (
+        "frame-convert-dtypes-options",
+        "DataFrame.convert_dtypes",
+        ("convert_boolean", "dtype_backend"),
+        lambda pd: _tail_mixed(pd).convert_dtypes(
+            convert_boolean=False, dtype_backend="numpy_nullable"
+        ),
+    ),
+    (
+        "resampler-var-options",
+        "Resampler.var",
+        ("ddof", "numeric_only"),
+        lambda pd: _tail_hourly(pd).resample("3h").var(ddof=0, numeric_only=True),
+    ),
+    (
+        "resampler-std-options",
+        "Resampler.std",
+        ("ddof", "numeric_only"),
+        lambda pd: _tail_hourly(pd).resample("3h").std(ddof=1, numeric_only=True),
+    ),
+    (
+        "resampler-sem-options",
+        "Resampler.sem",
+        ("ddof", "numeric_only"),
+        lambda pd: _tail_hourly(pd).resample("3h").sem(ddof=1, numeric_only=True),
+    ),
+    (
+        "resampler-sum-min-count",
+        "Resampler.sum",
+        ("numeric_only", "min_count"),
+        lambda pd: _tail_hourly(pd).resample("4h").sum(numeric_only=True, min_count=3),
+    ),
+    (
+        "resampler-prod-min-count",
+        "Resampler.prod",
+        ("numeric_only", "min_count"),
+        lambda pd: _tail_hourly(pd).resample("4h").prod(numeric_only=True, min_count=3),
+    ),
+    (
+        "resampler-min-min-count",
+        "Resampler.min",
+        ("numeric_only", "min_count"),
+        lambda pd: _tail_hourly(pd).resample("4h").min(numeric_only=True, min_count=3),
+    ),
+    (
+        "resampler-max-min-count",
+        "Resampler.max",
+        ("numeric_only", "min_count"),
+        lambda pd: _tail_hourly(pd).resample("4h").max(numeric_only=True, min_count=1),
+    ),
+    (
+        "expanding-std-engine",
+        "Expanding.std",
+        ("engine", "engine_kwargs"),
+        lambda pd: _tail_hourly(pd).expanding(2).std(engine="cython", engine_kwargs=None),
+    ),
+    (
+        "expanding-sem-options",
+        "Expanding.sem",
+        ("ddof", "numeric_only"),
+        lambda pd: _tail_hourly(pd).expanding(2).sem(ddof=0, numeric_only=True),
+    ),
+    (
+        "expanding-quantile-options",
+        "Expanding.quantile",
+        ("interpolation", "numeric_only"),
+        lambda pd: (
+            _tail_hourly(pd).expanding().quantile(0.25, interpolation="higher", numeric_only=True)
+        ),
+    ),
+    (
+        "grouped-shift-freq",
+        "GroupBy.shift",
+        ("freq", "suffix"),
+        lambda pd: (
+            _tail_hourly(pd)
+            .assign(g=[1, 2, 1, 2, 1, 2])
+            .groupby("g")
+            .shift(1, freq="h", suffix=None)
+        ),
+    ),
+    (
+        "dt-round-policies",
+        "dt.round",
+        ("ambiguous", "nonexistent"),
+        lambda pd: pd.Series(_tail_stamps(pd)).dt.round(
+            "h", ambiguous="raise", nonexistent="raise"
+        ),
+    ),
+    (
+        "interval-dtype-subtype",
+        "api.types.IntervalDtype",
+        ("subtype", "closed"),
+        lambda pd: str(pd.api.types.IntervalDtype(subtype="int64", closed="left")),
+    ),
+    (
+        "zoned-dtype-unit",
+        "api.types.DatetimeTZDtype",
+        ("unit", "tz"),
+        lambda pd: str(pd.api.types.DatetimeTZDtype(unit="ms", tz="UTC")),
+    ),
+    (
+        "category-dtype-ordered",
+        "api.types.CategoricalDtype",
+        ("categories", "ordered"),
+        lambda pd: pd.api.types.CategoricalDtype(
+            categories=["lo", "hi"], ordered=True
+        ).categories.tolist(),
+    ),
+    (
+        "timestamp-strptime-format",
+        "Timestamp.strptime",
+        ("date_string", "format"),
+        lambda pd: _tail_strptime(pd),
+    ),
+    (
+        "timestamp-combine-parts",
+        "Timestamp.combine",
+        ("date", "time"),
+        lambda pd: _tail_combine(pd),
+    ),
+    (
+        "interval-index-dtype",
+        "pandas.IntervalIndex",
+        ("dtype", "copy"),
+        lambda pd: pd.IntervalIndex(
+            pd.IntervalIndex.from_breaks([0, 1, 2]), dtype="interval[float64, right]", copy=True
+        ),
+    ),
+)
+
+
+def _tail_isetitem(pd):
+    """A frame with a column put in by position."""
+    frame = _tail_mixed(pd).copy()
+    frame.isetitem(loc=1, value=[9, 8, 7, 6])
+    return frame
+
+
+def _tail_strptime(pd):
+    """strptime, which pandas refuses, as the error it raises."""
+    try:
+        return str(pd.Timestamp.strptime(date_string="2024-01-02", format="%Y-%m-%d"))
+    except NotImplementedError as error:
+        return str(error)
+
+
+def _tail_combine(pd):
+    """One instant from a date and a time of day."""
+    import datetime
+
+    return pd.Timestamp.combine(date=datetime.date(2024, 1, 2), time=datetime.time(3, 4))
+
+
+for _id, _api, _covers, _build in TAIL_CASES + TAIL2_CASES + TAIL3_CASES:
     case(
         f"basics/{_id}",
         _api,

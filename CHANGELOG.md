@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 119 more parameter tail cases: Series axis, skipna and copy variants of the reductions, cumulatives, labels and reshaping methods, Index and DatetimeIndex set operations, bounds, extremes, putmask, where and conversions, frame comparison, masking, zone, stack, statistics and fill options, Resampler ddof and min_count, Expanding sem and quantile, dtype constructors, Timestamp combine and strptime, and IntervalIndex from an index.
+- Board after firepanda #1517: 6203 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 76 more parameter tail cases: window and expanding engine, ddof, bias and pairwise options, group cov, corr, corrwith, first, last, kurt, idx, describe, value_counts and engine options, MultiIndex set operations and level methods read through their level frames, DatetimeIndex rounding, sorting and slicing, YearEnd month, and the MultiIndex.where refusal.
 - Board after firepanda #1516: 6084 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 59 parameter tail cases: frame options for bfill, combine, align, astype, asfreq and kin, str find and match bounds, to_numeric backends, concat levels, zoned rounding policies, dtype constructors, and the Timestamp and Timedelta to_numpy refusals.
