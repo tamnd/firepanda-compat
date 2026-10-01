@@ -8991,3 +8991,390 @@ case(
     in_process=True,
     note="JSON lines written in the default mode",
 )
+
+
+def _sql_filled(pd, **options):
+    """A sqlite3 database in memory with table `t` written by the engine's own `to_sql`."""
+    import sqlite3
+
+    con = sqlite3.connect(":memory:")
+    frame = pd.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": ["x", "y", "z"],
+            "t": ["2024-01-02", "2024-01-03", "2024-01-04"],
+            "c": [1.5, float("nan"), 2.5],
+        }
+    )
+    frame.to_sql(name="t", con=con, **({"index": False} | options))
+    con.execute("create table g (i integer, f real, s text)")
+    con.execute("insert into g values (1, 1.5, 'x'), (null, null, null), (3, 2.0, 'z')")
+    return con
+
+
+def _sql_back(pd, query="select * from t", **options):
+    """Table `t` written with `options` and read back whole."""
+    return pd.read_sql_query(query, _sql_filled(pd, **options))
+
+
+def _sql_append(pd):
+    """Table `t` replaced, then appended to in chunks with multi-row inserts."""
+    con = _sql_filled(pd)
+    frame = pd.DataFrame({"a": [7, 8, 9]})
+    frame.to_sql("t", con, if_exists="replace", index=False)
+    frame.to_sql("t", con, if_exists="append", index=False, chunksize=2, method="multi")
+    return pd.read_sql_query("select * from t", con)
+
+
+def _sql_read_types(pd):
+    """The types of table `g` under each backend, and with a column cast."""
+    read = [
+        pd.read_sql("select * from g", _sql_filled(pd), dtype_backend=backend).dtypes
+        for backend in ("numpy_nullable", "pyarrow")
+    ]
+    read.append(pd.read_sql("select * from g", _sql_filled(pd), dtype={"f": "float32"}).dtypes)
+    return [types.astype(str).tolist() for types in read]
+
+
+def _sql_chunk_types(pd):
+    """The Arrow types of the first chunk, and the labels of every chunk joined."""
+    chunks = pd.read_sql_query(
+        "select * from g", _sql_filled(pd), chunksize=2, dtype_backend="pyarrow"
+    )
+    return next(iter(chunks)).dtypes.astype(str).tolist(), _sql_chunks(
+        pd, pd.read_sql_query
+    ).index.tolist()
+
+
+def _sql_chunks(pd, read, **options):
+    """Every chunk a chunked read hands back, joined in order."""
+    return pd.concat(list(read("select * from t", _sql_filled(pd), chunksize=2, **options)))
+
+
+SQL_NOTE = (
+    "the SQL functions live in firepanda's Python layer and talk to sqlite3 there, so a "
+    "driver entry could only emit the frame it was handed"
+)
+
+case(
+    "basics/sql-roundtrip",
+    "DataFrame.to_sql",
+    level="L3",
+    covers=("name", "con", "index"),
+    frames=("single",),
+    expr=lambda pd, df: _sql_back(pd),
+    in_process=True,
+    note="a frame written and read back. " + SQL_NOTE,
+)
+case(
+    "basics/sql-write-labels",
+    "DataFrame.to_sql",
+    level="L3",
+    covers=("index", "index_label"),
+    frames=("single",),
+    expr=lambda pd, df: _sql_back(pd, index=True, index_label="ix"),
+    in_process=True,
+    note="the row labels written as a named column. " + SQL_NOTE,
+)
+case(
+    "basics/sql-write-replace",
+    "DataFrame.to_sql",
+    level="L3",
+    covers=("if_exists", "chunksize", "method"),
+    frames=("single",),
+    expr=lambda pd, df: _sql_append(pd),
+    in_process=True,
+    note="a table replaced, then appended to in chunks with one statement each. " + SQL_NOTE,
+)
+case(
+    "basics/sql-write-types",
+    "DataFrame.to_sql",
+    level="L3",
+    covers=("dtype", "schema"),
+    frames=("single",),
+    expr=lambda pd, df: _sql_back(pd, dtype={"a": "REAL"}, schema="main"),
+    in_process=True,
+    note="a column's SQL type named, in the main schema. " + SQL_NOTE,
+)
+case(
+    "basics/sql-write-count",
+    "DataFrame.to_sql",
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2]}).to_sql(
+        "n", __import__("sqlite3").connect(":memory:")
+    ),
+    in_process=True,
+    note="the number of rows written. " + SQL_NOTE,
+)
+case(
+    "basics/sql-write-taken",
+    "DataFrame.to_sql",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1]}).to_sql("t", _sql_filled(pd)),
+    in_process=True,
+    note=SQL_NOTE,
+    raises=("ValueError", "Table 't' already exists."),
+)
+case(
+    "basics/sql-read",
+    "pandas.read_sql",
+    level="L3",
+    covers=("sql", "con", "index_col", "parse_dates"),
+    frames=("single",),
+    expr=lambda pd, df: pd.read_sql(
+        sql="select * from t", con=_sql_filled(pd), index_col="a", parse_dates=["t"]
+    ),
+    in_process=True,
+    note="a column moved to the labels and one read as instants. " + SQL_NOTE,
+)
+case(
+    "basics/sql-read-params",
+    "pandas.read_sql",
+    level="L3",
+    covers=("params", "columns", "coerce_float"),
+    frames=("single",),
+    expr=lambda pd, df: pd.read_sql(
+        "select a, b from t where a > :low",
+        _sql_filled(pd),
+        params={"low": 1},
+        columns=["a"],
+        coerce_float=False,
+    ),
+    in_process=True,
+    note="a named parameter; columns is unused over sqlite3, as in pandas. " + SQL_NOTE,
+)
+case(
+    "basics/sql-read-types",
+    "pandas.read_sql",
+    level="L3",
+    covers=("dtype", "dtype_backend"),
+    frames=("single",),
+    expr=lambda pd, df: _sql_read_types(pd),
+    in_process=True,
+    note="whole numbers with a gap stay whole under both backends. " + SQL_NOTE,
+)
+case(
+    "basics/sql-read-nullable",
+    "pandas.read_sql",
+    level="L3",
+    covers=("dtype_backend",),
+    frames=("single",),
+    expr=lambda pd, df: pd.read_sql(
+        "select * from g", _sql_filled(pd), dtype_backend="numpy_nullable"
+    ),
+    in_process=True,
+    note="the nullable values themselves. " + SQL_NOTE,
+)
+case(
+    "basics/sql-read-chunks",
+    "pandas.read_sql",
+    level="L3",
+    covers=("chunksize",),
+    frames=("single",),
+    expr=lambda pd, df: _sql_chunks(pd, pd.read_sql),
+    in_process=True,
+    note="chunks of two rows, joined. " + SQL_NOTE,
+)
+case(
+    "basics/sql-query",
+    "pandas.read_sql_query",
+    level="L3",
+    covers=("sql", "con", "params", "index_col"),
+    frames=("single",),
+    expr=lambda pd, df: pd.read_sql_query(
+        "select * from t where a > ?", _sql_filled(pd), params=(1,), index_col="b"
+    ),
+    in_process=True,
+    note="a positional parameter. " + SQL_NOTE,
+)
+case(
+    "basics/sql-query-dates",
+    "pandas.read_sql_query",
+    level="L3",
+    covers=("parse_dates", "coerce_float", "dtype"),
+    frames=("single",),
+    expr=lambda pd, df: pd.read_sql_query(
+        "select * from t",
+        _sql_filled(pd),
+        parse_dates={"t": "%Y-%m-%d"},
+        coerce_float=False,
+        dtype={"a": "float64"},
+    ),
+    in_process=True,
+    note="instants read with a format and a column cast. " + SQL_NOTE,
+)
+case(
+    "basics/sql-query-chunks",
+    "pandas.read_sql_query",
+    level="L3",
+    covers=("chunksize", "dtype_backend"),
+    frames=("single",),
+    expr=lambda pd, df: _sql_chunk_types(pd),
+    in_process=True,
+    note="each chunk in Arrow types, and the labels of the joined chunks. " + SQL_NOTE,
+)
+case(
+    "basics/sql-query-missing",
+    "pandas.read_sql_query",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: pd.read_sql_query("select * from nothere", _sql_filled(pd)),
+    in_process=True,
+    note=SQL_NOTE,
+    raises=("DatabaseError", "no such table: nothere"),
+)
+case(
+    "basics/sql-table-missing",
+    "pandas.read_sql_table",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: pd.read_sql_table("nothere", _sql_filled(pd)),
+    in_process=True,
+    note="over sqlite3 a table is read by name only through SQLAlchemy. " + SQL_NOTE,
+    raises=("ValueError", "Table nothere not found"),
+)
+
+
+def _stata_written(pd, **options):
+    """A small frame written to Stata in memory by the engine's own `to_stata`."""
+    import datetime
+
+    frame = pd.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": ["x", "y", "z"],
+            "c": [1.5, float("nan"), 2.5],
+            "d": pd.to_datetime(["2024-01-02", "2024-01-03", "2024-01-04"]),
+        }
+    )
+    buffer = io.BytesIO()
+    frame.to_stata(buffer, time_stamp=datetime.datetime(2024, 5, 6, 7, 8), **options)
+    buffer.seek(0)
+    return buffer
+
+
+def _stata_back(pd, read=None, **options):
+    """A frame written to Stata with `options` and read back with `read`."""
+    return pd.read_stata(_stata_written(pd, **options), **(read or {}))
+
+
+def _stata_labels(pd):
+    """The labels a Stata file carries, read through the reader object."""
+    written = _stata_written(
+        pd,
+        data_label="hello",
+        variable_labels={"a": "A label"},
+        value_labels={"a": {1: "one", 2: "two", 3: "three"}},
+    )
+    with pd.read_stata(written, iterator=True) as reader:
+        return reader.data_label, reader.variable_labels(), reader.value_labels()
+
+
+STATA_NOTE = (
+    "the Stata reader and writer live in firepanda's Python layer, which reads and "
+    "writes the bytes itself, so a driver entry could only emit the frame it was handed"
+)
+NAMED = {"a": {1: "one", 2: "two", 3: "three"}}
+
+STATAS = {
+    "roundtrip": ({}, {}, ("path",), ()),
+    "no-labels": ({"write_index": False}, {}, ("write_index",), ()),
+    "day-dates": ({"convert_dates": {"d": "td"}, "write_index": False}, {}, ("convert_dates",), ()),
+    "raw-dates": (
+        {"convert_dates": {"d": "tc"}},
+        {"convert_dates": False},
+        ("convert_dates",),
+        ("convert_dates",),
+    ),
+    "version-117": ({"version": 117}, {}, ("version",), ()),
+    "long-text": ({"version": 118, "convert_strl": ["b"]}, {}, ("version", "convert_strl"), ()),
+    "version-119": ({"version": 119}, {}, ("version",), ()),
+    "big-endian": ({"version": 114, "byteorder": "big"}, {}, ("version", "byteorder"), ()),
+    "value-labels": ({"value_labels": NAMED}, {}, ("value_labels",), ()),
+    "codes": (
+        {"value_labels": NAMED},
+        {"convert_categoricals": False},
+        ("value_labels",),
+        ("convert_categoricals",),
+    ),
+    "unordered": (
+        {"value_labels": NAMED},
+        {"order_categoricals": False},
+        ("value_labels",),
+        ("order_categoricals",),
+    ),
+    "index-col": ({}, {"index_col": "index"}, (), ("index_col",)),
+    "columns": ({}, {"columns": ["b", "a"]}, (), ("columns",)),
+    "widened": ({}, {"preserve_dtypes": False}, (), ("preserve_dtypes",)),
+    "plain-read": ({}, {"compression": None}, (), ("compression",)),
+}
+
+for name, (write, read, writes, reads) in STATAS.items():
+    if writes:
+        case(
+            f"basics/stata-write-{name}",
+            "DataFrame.to_stata",
+            level="L3",
+            covers=("time_stamp", *writes),
+            frames=("single",),
+            expr=lambda pd, df, write=write, read=read: _stata_back(pd, read, **write),
+            in_process=True,
+            note="written and read back by the same engine. " + STATA_NOTE,
+        )
+    if reads:
+        case(
+            f"basics/stata-read-{name}",
+            "pandas.read_stata",
+            level="L3",
+            covers=("filepath_or_buffer", *reads),
+            frames=("single",),
+            expr=lambda pd, df, write=write, read=read: _stata_back(pd, read, **write),
+            in_process=True,
+            note="written and read back by the same engine. " + STATA_NOTE,
+        )
+
+case(
+    "basics/stata-write-labels",
+    "DataFrame.to_stata",
+    level="L3",
+    covers=("data_label", "variable_labels", "value_labels"),
+    frames=("single",),
+    expr=lambda pd, df: _stata_labels(pd),
+    in_process=True,
+    note="the labels read back through the reader object. " + STATA_NOTE,
+)
+case(
+    "basics/stata-read-iterator",
+    "pandas.read_stata",
+    level="L3",
+    covers=("iterator",),
+    frames=("single",),
+    expr=lambda pd, df: pd.read_stata(_stata_written(pd), iterator=True).read(2),
+    in_process=True,
+    note="a reader handed back and asked for two rows. " + STATA_NOTE,
+)
+case(
+    "basics/stata-read-chunks",
+    "pandas.read_stata",
+    level="L3",
+    covers=("chunksize",),
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(list(pd.read_stata(_stata_written(pd), chunksize=2))),
+    in_process=True,
+    note="chunks of two rows, joined. " + STATA_NOTE,
+)
+case(
+    "basics/stata-read-missing-kept",
+    "pandas.read_stata",
+    level="L3",
+    covers=("convert_missing",),
+    frames=("single",),
+    expr=lambda pd, df: [
+        (type(value).__name__, str(value))
+        for value in _stata_back(pd, {"convert_missing": True})["c"].tolist()
+    ],
+    in_process=True,
+    note="a gap kept as Stata's missing value, compared by class name and text, since "
+    "the class lives in each library's own module. " + STATA_NOTE,
+)

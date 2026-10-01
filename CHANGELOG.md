@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 16 SQL cases over sqlite3 and 22 Stata cases. They cover `to_sql` with `if_exists`, `index_label`, `chunksize`, `method`, `dtype` and `schema`, and `read_sql` and `read_sql_query` with params, dates, chunks and both `dtype_backend`s. On the Stata side they cover `to_stata` versions, byte order, long text, date formats and labels, and `read_stata` with `index_col`, `columns`, categoricals, missing values, iterator and chunks. A query sqlite3 cannot run joins `engine/pandas-exception-classes`.
+- Board after firepanda #1508: 5838 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 33 I/O parameter cases: `read_json` lines with `nrows` and `chunksize`, `read_table` and `read_fwf` readers and chunks, `read_fwf` `colspecs` and `infer_nrows`, Parquet, Feather and ORC `dtype_backend` and write options, Parquet `filters` and `partition_cols`, pickle keywords and protocols, `Series.to_csv` and `Series.to_json` options, and `wide_to_long` by keyword.
 - Board after firepanda #1506: 5801 pass, 0 unimplemented, 68 divergent, 0 fail.
 - 14 basics cases for writer parameters no case reached: to_html of a MultiIndex with sparsify, index_names and cut rows, to_html columns, formatters, justify, decimal, buf and render_links, Series and DataFrame to_csv quoting, quotechar, chunksize, columns, mode, encoding, errors and compression, Series and DataFrame to_json date_format, double_precision, force_ascii, date_unit, default_handler, lines and index, to_string and to_dict targets.
