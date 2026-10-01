@@ -10035,3 +10035,517 @@ case(
     in_process=True,
     note="a masked array of the named type. " + PARAMETER_IN_PROCESS,
 )
+
+
+def _tail_frame(pd):
+    """Floats with a gap, whole numbers and text, for the parameter cases below."""
+    return pd.DataFrame(
+        {"a": [1.0, float("nan"), 3.0, 4.0], "b": [4, 3, 2, 1], "s": ["x", "y", "x", "z"]}
+    )
+
+
+def _tail_numbers(pd):
+    """The two number columns of `_tail_frame`."""
+    return _tail_frame(pd)[["a", "b"]]
+
+
+def _tail_pairs(pd):
+    """A frame on three key pairs."""
+    return pd.DataFrame(
+        {"x": [1, 2, 3]},
+        index=pd.MultiIndex.from_tuples([("a", 1), ("a", 2), ("b", 1)], names=["k", "n"]),
+    )
+
+
+def _tail_days(pd):
+    """Three rows twelve hours apart."""
+    return pd.DataFrame(
+        {"x": [1.0, 2.0, 3.0]}, index=pd.date_range("2024-01-01", periods=3, freq="12h")
+    )
+
+
+def _bigger(x, y):
+    """The larger of two columns, row by row."""
+    return x.where(x > y, y)
+
+
+TAIL_CASES = (
+    (
+        "frame-to-records-options",
+        "DataFrame.to_records",
+        ("index", "column_dtypes", "index_dtypes"),
+        lambda pd: [
+            _tail_frame(pd).to_records(index=False, column_dtypes={"b": "int32"}).dtype.descr,
+            _tail_numbers(pd).to_records(index_dtypes="<U2").dtype.descr,
+        ],
+    ),
+    (
+        "frame-to-period-options",
+        "DataFrame.to_period",
+        ("freq", "axis", "copy"),
+        lambda pd: (
+            pd.DataFrame({"x": [1]}, index=pd.DatetimeIndex(["2024-03-05"]))
+            .to_period(freq="M", axis=0, copy=False)
+            .index.astype(str)
+            .tolist()
+        ),
+    ),
+    (
+        "frame-to-numpy-options",
+        "DataFrame.to_numpy",
+        ("dtype", "copy", "na_value"),
+        lambda pd: _tail_numbers(pd).to_numpy(dtype="float32", copy=True, na_value=-1).tolist(),
+    ),
+    (
+        "frame-swaplevel-options",
+        "DataFrame.swaplevel",
+        ("i", "j", "axis"),
+        lambda pd: _tail_pairs(pd).swaplevel(i="k", j="n", axis=0),
+    ),
+    (
+        "frame-stack-future",
+        "DataFrame.stack",
+        ("future_stack",),
+        lambda pd: pd.DataFrame({"x": [1], "y": [2]}).stack(future_stack=True),
+    ),
+    (
+        "frame-ne-level",
+        "DataFrame.ne",
+        ("other", "axis", "level"),
+        lambda pd: _tail_pairs(pd).ne(pd.Series([1, 9], index=["a", "b"]), axis=0, level=0),
+    ),
+    (
+        "frame-lt-across",
+        "DataFrame.lt",
+        ("other", "axis"),
+        lambda pd: _tail_numbers(pd).lt(pd.Series([2, 2], index=["a", "b"]), axis=1),
+    ),
+    (
+        "frame-ge-down",
+        "DataFrame.ge",
+        ("other", "axis"),
+        lambda pd: _tail_numbers(pd).ge([2, 2, 2, 2], axis=0),
+    ),
+    (
+        "frame-kurtosis-options",
+        "DataFrame.kurtosis",
+        ("axis", "skipna", "numeric_only"),
+        lambda pd: _tail_numbers(pd).kurtosis(axis=0, skipna=False, numeric_only=True),
+    ),
+    (
+        "frame-from-records-options",
+        "DataFrame.from_records",
+        ("data", "columns", "coerce_float", "nrows"),
+        lambda pd: pd.DataFrame.from_records(
+            [(1, "1.5"), (2, "2.5"), (3, "x")], columns=["i", "f"], coerce_float=True, nrows=2
+        ),
+    ),
+    (
+        "frame-corrwith-options",
+        "DataFrame.corrwith",
+        ("other", "axis", "numeric_only", "min_periods"),
+        lambda pd: pd.concat(
+            [
+                _tail_numbers(pd).corrwith(
+                    pd.Series([1.0, 2.0, 3.0, 5.0]), axis=0, numeric_only=True, min_periods=3
+                ),
+                _tail_numbers(pd).corrwith(_tail_numbers(pd) * 2, axis=1),
+            ]
+        ),
+    ),
+    (
+        "frame-combine-options",
+        "DataFrame.combine",
+        ("other", "func", "overwrite"),
+        lambda pd: _tail_numbers(pd).combine(
+            pd.DataFrame({"a": [9.0, 9.0, float("nan"), float("nan")]}), _bigger, overwrite=False
+        ),
+    ),
+    (
+        "frame-bfill-options",
+        "DataFrame.bfill",
+        ("axis", "limit", "limit_area"),
+        lambda pd: pd.concat(
+            [
+                _tail_numbers(pd).bfill(axis=0, limit=1, limit_area="inside"),
+                _tail_numbers(pd).bfill(axis=1),
+            ],
+            keys=["down", "across"],
+        ),
+    ),
+    (
+        "frame-at-time-options",
+        "DataFrame.at_time",
+        ("time", "asof", "axis"),
+        lambda pd: _tail_days(pd).at_time("12:00", asof=False, axis=0),
+    ),
+    (
+        "frame-astype-options",
+        "DataFrame.astype",
+        ("dtype", "copy", "errors"),
+        lambda pd: [
+            _tail_frame(pd).astype({"b": "float32"}, copy=False).dtypes.astype(str).tolist(),
+            _tail_frame(pd).astype("int64", errors="ignore").dtypes.astype(str).tolist(),
+        ],
+    ),
+    (
+        "frame-asfreq-options",
+        "DataFrame.asfreq",
+        ("freq", "how", "normalize", "fill_value"),
+        lambda pd: pd.DataFrame(
+            {"x": [1.0, 2.0]}, index=pd.DatetimeIndex(["2024-01-01 06:00", "2024-01-03 06:00"])
+        ).asfreq("D", how="start", normalize=True, fill_value=0.0),
+    ),
+    (
+        "frame-align-column-fill",
+        "DataFrame.align",
+        ("other", "axis", "copy", "fill_value"),
+        lambda pd: [
+            part.to_dict()
+            for part in _tail_numbers(pd).align(
+                pd.Series([1, 2], index=["a", "z"]), axis=1, copy=None, fill_value=0
+            )
+        ],
+    ),
+    (
+        "str-rfind-bounds",
+        "str.rfind",
+        ("sub", "start", "end"),
+        lambda pd: pd.Series(["abcab", "xb"]).str.rfind("b", start=1, end=4),
+    ),
+    (
+        "str-find-bounds",
+        "str.find",
+        ("sub", "start", "end"),
+        lambda pd: pd.Series(["abcab", "xb"]).str.find("b", start=2, end=5),
+    ),
+    (
+        "str-match-flags",
+        "str.match",
+        ("pat", "flags", "na"),
+        lambda pd: pd.Series(["Ab", "ab", "b"]).str.match("a", flags=2, na=False),
+    ),
+    (
+        "str-fullmatch-flags",
+        "str.fullmatch",
+        ("pat", "flags", "na"),
+        lambda pd: pd.Series(["AB", "ab", "b"]).str.fullmatch("ab", flags=2, na=True),
+    ),
+    (
+        "str-encode-replace",
+        "str.encode",
+        ("encoding", "errors"),
+        lambda pd: pd.Series(["aé"]).str.encode("ascii", errors="replace").tolist(),
+    ),
+    (
+        "to-numeric-backends",
+        "pandas.to_numeric",
+        ("arg", "errors", "dtype_backend"),
+        lambda pd: [
+            str(pd.to_numeric(pd.Series(["1", "2"]), dtype_backend="numpy_nullable").dtype),
+            str(pd.to_numeric(pd.Series(["1", "2.5"]), dtype_backend="pyarrow").dtype),
+            str(
+                pd.to_numeric(
+                    pd.Series(["1", "x"]), errors="coerce", dtype_backend="numpy_nullable"
+                ).dtype
+            ),
+            str(pd.to_numeric(pd.Series([1, 2], dtype="Int64"), dtype_backend="pyarrow").dtype),
+        ],
+    ),
+    (
+        "json-normalize-ignore",
+        "pandas.json_normalize",
+        ("data", "record_path", "meta", "errors"),
+        lambda pd: pd.json_normalize(
+            [{"a": {"b": 1}}, {"a": {"c": 2}}], meta=[["a", "b"]], errors="ignore", record_path=None
+        ),
+    ),
+    (
+        "interval-range-named",
+        "pandas.interval_range",
+        ("start", "end", "name", "closed"),
+        lambda pd: pd.interval_range(0, 3, name="r", closed="left").astype(str).tolist(),
+    ),
+    (
+        "date-range-normalize-unit",
+        "pandas.date_range",
+        ("start", "periods", "normalize", "unit"),
+        lambda pd: [
+            pd.date_range("2024-01-01 05:00", periods=2, normalize=True, unit="s")
+            .astype(str)
+            .tolist(),
+            str(pd.date_range("2024-01-01", periods=2, unit="ms").dtype),
+        ],
+    ),
+    (
+        "crosstab-margins-named",
+        "pandas.crosstab",
+        ("index", "columns", "margins", "margins_name", "dropna"),
+        lambda pd: pd.crosstab(
+            _tail_frame(pd)["s"],
+            _tail_frame(pd)["s"].str.upper(),
+            margins=True,
+            margins_name="Tot",
+            dropna=False,
+        ),
+    ),
+    (
+        "concat-levels-keys",
+        "pandas.concat",
+        ("objs", "keys", "levels", "copy"),
+        lambda pd: pd.concat(
+            [pd.Series([1, 2]), pd.Series([3])], keys=["p", "q"], levels=[["q", "p"]], copy=False
+        ),
+    ),
+    (
+        "timedelta-index-freq",
+        "pandas.TimedeltaIndex",
+        ("data", "freq", "copy"),
+        lambda pd: str(pd.TimedeltaIndex(["1D", "2D"], freq="D", copy=True).freq),
+    ),
+    (
+        "string-dtype-options",
+        "pandas.StringDtype",
+        ("storage", "na_value"),
+        lambda pd: [
+            str(pd.StringDtype(storage="python", na_value=float("nan"))),
+            repr(pd.StringDtype("pyarrow")),
+        ],
+    ),
+    (
+        "series-built-named",
+        "pandas.Series",
+        ("data", "name", "copy"),
+        lambda pd: pd.Series([1, 2], name="z", copy=True),
+    ),
+    (
+        "range-index-dtype",
+        "pandas.RangeIndex",
+        ("start", "dtype", "copy"),
+        lambda pd: repr(pd.RangeIndex(3, dtype="int64", copy=False)),
+    ),
+    (
+        "named-agg-fields",
+        "pandas.NamedAgg",
+        ("column", "aggfunc"),
+        lambda pd: _tail_frame(pd).groupby("s").agg(t=pd.NamedAgg(column="b", aggfunc="sum")),
+    ),
+    (
+        "index-built-named",
+        "pandas.Index",
+        ("data", "copy", "name"),
+        lambda pd: repr(pd.Index([1, 2], copy=True, name="w")),
+    ),
+    (
+        "multi-index-built",
+        "pandas.MultiIndex",
+        ("levels", "codes", "copy", "name"),
+        lambda pd: (
+            pd.MultiIndex(levels=[["a"], [1]], codes=[[0], [0]], copy=True, name=["k", "n"]).names
+        ),
+    ),
+    (
+        "interval-dtype-options",
+        "pandas.IntervalDtype",
+        ("subtype", "closed"),
+        lambda pd: str(pd.IntervalDtype(subtype="int64", closed="left")),
+    ),
+    (
+        "zoned-dtype-options",
+        "pandas.DatetimeTZDtype",
+        ("unit", "tz"),
+        lambda pd: str(pd.DatetimeTZDtype(unit="ms", tz="UTC")),
+    ),
+    (
+        "category-index-dtype",
+        "pandas.CategoricalIndex",
+        ("data", "dtype"),
+        lambda pd: repr(
+            pd.CategoricalIndex(data=["a", "b"], dtype=pd.CategoricalDtype(["b", "a"]))
+        ),
+    ),
+    (
+        "category-dtype-options",
+        "pandas.CategoricalDtype",
+        ("categories", "ordered"),
+        lambda pd: str(pd.CategoricalDtype(categories=["a", "b"], ordered=True)),
+    ),
+    (
+        "set-categories-options",
+        "cat.set_categories",
+        ("new_categories", "ordered", "rename"),
+        lambda pd: [
+            pd.Series(["a", "b"], dtype="category")
+            .cat.set_categories(["b", "a", "c"], ordered=True, rename=False)
+            .cat.categories.tolist(),
+            pd.Series(["a", "b"], dtype="category")
+            .cat.set_categories(["x", "y"], rename=True)
+            .tolist(),
+        ],
+    ),
+    (
+        "is-list-like-sets",
+        "api.types.is_list_like",
+        ("obj", "allow_sets"),
+        lambda pd: [
+            pd.api.types.is_list_like({1}, allow_sets=False),
+            pd.api.types.is_list_like(obj=[1]),
+        ],
+    ),
+    (
+        "is-hashable-obj",
+        "api.types.is_hashable",
+        ("obj",),
+        lambda pd: [pd.api.types.is_hashable(obj=(1,)), pd.api.types.is_hashable([1])],
+    ),
+    (
+        "is-dtype-equal-named",
+        "api.types.is_dtype_equal",
+        ("source", "target"),
+        lambda pd: pd.api.types.is_dtype_equal(source="int64", target="int64"),
+    ),
+    (
+        "infer-dtype-gaps",
+        "api.types.infer_dtype",
+        ("value", "skipna"),
+        lambda pd: [
+            pd.api.types.infer_dtype(value=[1, float("nan")], skipna=False),
+            pd.api.types.infer_dtype([1, float("nan")], skipna=True),
+        ],
+    ),
+    (
+        "timestamp-to-numpy-plain",
+        "Timestamp.to_numpy",
+        ("dtype", "copy"),
+        lambda pd: str(pd.Timestamp("2024-01-01").to_numpy(dtype=None, copy=False)),
+    ),
+    (
+        "timestamp-isoformat-options",
+        "Timestamp.isoformat",
+        ("sep", "timespec"),
+        lambda pd: pd.Timestamp("2024-01-02 03:04:05.123").isoformat(sep=" ", timespec="seconds"),
+    ),
+    (
+        "timestamp-fromtimestamp-zone",
+        "Timestamp.fromtimestamp",
+        ("ts", "tz"),
+        lambda pd: str(pd.Timestamp.fromtimestamp(ts=0, tz="UTC")),
+    ),
+    (
+        "timestamp-fromordinal-zone",
+        "Timestamp.fromordinal",
+        ("ordinal", "tz"),
+        lambda pd: str(pd.Timestamp.fromordinal(ordinal=738000, tz="UTC")),
+    ),
+    (
+        "timestamp-as-unit-round",
+        "Timestamp.as_unit",
+        ("unit", "round_ok"),
+        lambda pd: str(pd.Timestamp("2024-01-01 00:00:00.5").as_unit("s", round_ok=True)),
+    ),
+    (
+        "timedelta-as-unit-round",
+        "Timedelta.as_unit",
+        ("unit", "round_ok"),
+        lambda pd: str(pd.Timedelta("1.5s").as_unit("s", round_ok=True)),
+    ),
+    (
+        "flags-built",
+        "pandas.Flags",
+        ("obj", "allows_duplicate_labels"),
+        lambda pd: (
+            pd.Flags(obj=_tail_frame(pd), allows_duplicate_labels=False).allows_duplicate_labels
+        ),
+    ),
+    (
+        "sparse-dtype-options",
+        "pandas.SparseDtype",
+        ("dtype", "fill_value"),
+        lambda pd: str(pd.SparseDtype(dtype="float64", fill_value=0.0)),
+    ),
+    (
+        "dt-ceil-zone-policies",
+        "dt.ceil",
+        ("freq", "ambiguous", "nonexistent"),
+        lambda pd: (
+            pd.Series(pd.to_datetime(["2024-11-03 00:31"]))
+            .dt.tz_localize("US/Eastern")
+            .dt.ceil("h", ambiguous=[False], nonexistent="raise")
+            .astype(str)
+            .tolist()
+        ),
+    ),
+    (
+        "dt-floor-zone-policies",
+        "dt.floor",
+        ("freq", "ambiguous", "nonexistent"),
+        lambda pd: (
+            pd.Series(pd.to_datetime(["2024-03-10 03:30"]))
+            .dt.tz_localize("US/Eastern")
+            .dt.floor("2h", nonexistent="shift_forward", ambiguous="raise")
+            .astype(str)
+            .tolist()
+        ),
+    ),
+    (
+        "datetime-index-round-policies",
+        "DatetimeIndex.round",
+        ("freq", "ambiguous", "nonexistent"),
+        lambda pd: (
+            pd.DatetimeIndex(["2024-11-03 00:31"], tz="US/Eastern")
+            .round("h", ambiguous="NaT", nonexistent="raise")
+            .astype(str)
+            .tolist()
+        ),
+    ),
+    (
+        "eval-level",
+        "pandas.eval",
+        ("expr", "level"),
+        lambda pd: pd.eval("1 + 2", level=0),
+    ),
+)
+for _id, _api, _covers, _build in TAIL_CASES:
+    case(
+        f"basics/{_id}",
+        _api,
+        level="L3",
+        covers=_covers,
+        frames=("single",),
+        expr=lambda pd, df, _build=_build: _build(pd),
+        in_process=True,
+        note="the parameters named, on a small self-built input. " + PARAMETER_IN_PROCESS,
+        rules=Rules(tolerance=Tolerance.STATISTICAL, reason="moments and correlations"),
+    )
+case(
+    "basics/timestamp-to-numpy-copy",
+    "Timestamp.to_numpy",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: pd.Timestamp("2024-01-01").to_numpy(copy=True),
+    raises=("ValueError", "dtype and copy arguments are ignored"),
+    in_process=True,
+    note="a copy of one instant is refused as pandas refuses it. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/timedelta-to-numpy-dtype",
+    "Timedelta.to_numpy",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: pd.Timedelta("1s").to_numpy(dtype="timedelta64[ms]"),
+    raises=("ValueError", "dtype and copy arguments are ignored"),
+    in_process=True,
+    note="a dtype for one span is refused as pandas refuses it. " + PARAMETER_IN_PROCESS,
+)
+case(
+    "basics/concat-levels-missing-key",
+    "pandas.concat",
+    level="L4",
+    frames=("single",),
+    expr=lambda pd, df: pd.concat(
+        [pd.Series([1]), pd.Series([2])], keys=["p", "q"], levels=[["q"]]
+    ),
+    raises=("ValueError", "Values not found in passed level"),
+    in_process=True,
+    note="a key its given level lacks is refused. " + PARAMETER_IN_PROCESS,
+)

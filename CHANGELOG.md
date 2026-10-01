@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 59 parameter tail cases: frame options for bfill, combine, align, astype, asfreq and kin, str find and match bounds, to_numeric backends, concat levels, zoned rounding policies, dtype constructors, and the Timestamp and Timedelta to_numpy refusals.
+- Board after firepanda #1515: 6008 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 52 cases for MultiIndex and DatetimeIndex options (fill limits along tuples, set_levels, get_loc_level, slice_indexer, joins and takes), zoned Timestamp round, floor and ceil policies, drop by level, and Series, resampler, string, binning and factorize parameters.
 - Board after firepanda #1513: 5949 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 19 cases for window and time options: GroupBy.ewm and GroupBy.rolling settings with column picks and on labels, Rolling and Expanding var, std and rank options with numeric_only, Series.to_sql with every option, Timestamp.replace for the sub second parts, zone and fold, and Resampler.interpolate limits.
