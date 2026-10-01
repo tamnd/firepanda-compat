@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 77 textread cases for parameters no case reached: 21 read_csv options (delimiter, engine, skipinitialspace, skipfooter, na_filter, skip_blank_lines, date_format, dayfirst, cache_dates, lineterminator, quoting, doublequote, escapechar, float_precision, dtype_backend, encoding_errors, compression, dialect, iterator), the whole read_csv table run again through read_table, and 12 read_json cases for dtype, convert_axes, keep_default_dates, precise_float, date_unit, encoding_errors and dtype_backend.
+- Board after firepanda #1503: 5754 pass, 0 unimplemented, 68 divergent, 0 fail.
 - 32 basics cases for parameters no case reached: a frame built from mappings of row label to value, from_dict orient, columns and dtype, tz_convert level, tz_localize ambiguous and nonexistent, between_time inclusive, update join, overwrite, filter_func and errors, product and skew flags, rename level and errors, insert allow_duplicates, compare align_axis, keep_shape, keep_equal and result_names, to_timestamp freq and how, reindex on an inner and an outer level, swaplevel, reset_index, rename_axis and sort_values kind, key and ignore_index.
 - Board after firepanda #1502: 5677 pass, 0 unimplemented, 68 divergent, 0 fail.
 - 46 basics cases for the flex arithmetic and comparison methods on a Series and a DataFrame given level= and fill_value=, a flat operand read by one level of a MultiIndex with a gap on one side filled, NaN included.

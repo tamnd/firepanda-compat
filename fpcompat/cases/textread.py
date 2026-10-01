@@ -14,6 +14,7 @@ Every case runs in process, for the reason the pickle cases do.
 
 from __future__ import annotations
 
+import csv
 import io
 
 from fpcompat.cases import case, section
@@ -74,6 +75,58 @@ READS = {
     "short-rows": ("a,b,c\n1,2\n3,4,5\n", {}, ()),
     "padded-numbers": ("a,b\n 1, 2\n3,4\n", {}, ()),
     "bad-lines-skip": ("a,b\n1,2\n3,4,5\n6,7\n", {"on_bad_lines": "skip"}, ("on_bad_lines",)),
+    "delimiter": ("a|b\n1|2\n", {"delimiter": "|"}, ("delimiter",)),
+    "python-engine": (TEXT, {"engine": "python"}, ("engine",)),
+    "c-engine-options": (
+        TEXT,
+        {"engine": "c", "low_memory": False, "memory_map": False},
+        ("engine", "low_memory", "memory_map"),
+    ),
+    "skipinitialspace": ("a, b\n1, 2\n", {"skipinitialspace": True}, ("skipinitialspace",)),
+    "skipfooter": (
+        "a,b\n1,2\n3,4\nfooter\n",
+        {"skipfooter": 1, "engine": "python"},
+        ("skipfooter", "engine"),
+    ),
+    "na-filter-off": ("a,b\nNA,1\n", {"na_filter": False}, ("na_filter",)),
+    "blank-lines-kept": ("a,b\n1,2\n\n3,4\n", {"skip_blank_lines": False}, ("skip_blank_lines",)),
+    "date-format": (
+        "a\n02/01/2024\n03/04/2024\n",
+        {"parse_dates": ["a"], "date_format": "%d/%m/%Y"},
+        ("parse_dates", "date_format"),
+    ),
+    "dayfirst": (
+        "a\n02/01/2024\n13/04/2024\n",
+        {"parse_dates": ["a"], "dayfirst": True},
+        ("parse_dates", "dayfirst"),
+    ),
+    "cache-dates-off": (
+        "a\n2024-01-02\n",
+        {"parse_dates": ["a"], "cache_dates": False},
+        ("parse_dates", "cache_dates"),
+    ),
+    "lineterminator": ("a,b~1,2~3,4~", {"lineterminator": "~"}, ("lineterminator",)),
+    "quote-all": ('a,b\n"x",1\n', {"quoting": csv.QUOTE_ALL}, ("quoting",)),
+    "doublequote": ('a,b\n"x""y",1\n', {"doublequote": True}, ("doublequote",)),
+    "escapechar": (
+        'a,b\n"x\\"y",1\n',
+        {"doublequote": False, "escapechar": "\\"},
+        ("doublequote", "escapechar"),
+    ),
+    "round-trip-precision": (
+        "a,b\n1.123456789012345678,2\n",
+        {"float_precision": "round_trip"},
+        ("float_precision",),
+    ),
+    "nullable-backend": (TEXT, {"dtype_backend": "numpy_nullable"}, ("dtype_backend",)),
+    "arrow-backend": (TEXT, {"dtype_backend": "pyarrow"}, ("dtype_backend",)),
+    "encoding-errors": (
+        "a,b\n1,2\n",
+        {"encoding": "utf-8", "encoding_errors": "strict"},
+        ("encoding", "encoding_errors"),
+    ),
+    "no-compression": ("a,b\n1,2\n", {"compression": None}, ("compression",)),
+    "dialect": ("a;b\n1;2\n", {"dialect": csv.excel, "sep": ";"}, ("dialect", "sep")),
 }
 
 for name, (text, options, covers) in READS.items():
@@ -87,6 +140,83 @@ for name, (text, options, covers) in READS.items():
         expr=lambda pd, df, text=text, options=options: _csv(pd, text, **options),
     )
 
+for name, (text, options, covers) in READS.items():
+    case(
+        f"textread/table-{name}",
+        "pandas.read_table",
+        frames=("two",),
+        covers=covers,
+        in_process=True,
+        note="the read_csv table read with read_table, a comma given as the separator. "
+        + IN_PROCESS_NOTE,
+        expr=lambda pd, df, text=text, options=options: pd.read_table(
+            io.StringIO(text), **({} if "delimiter" in options else {"sep": ","}) | options
+        ),
+    )
+
+DATED = '{"a":{"0":1,"1":2},"b":{"0":"2024-01-02","1":"2024-01-03"},"c":{"0":1.5,"1":2.25}}'
+FLAGGED = '[{"a":1,"b":"x","c":1.5,"d":true},{"a":null,"b":null,"c":null,"d":false}]'
+
+JSONS = {
+    "dtype": (DATED, {"dtype": {"a": "float64"}}, ("dtype",)),
+    "dtype-off": (DATED, {"dtype": False}, ("dtype",)),
+    "convert-axes-off": (DATED, {"convert_axes": False}, ("convert_axes",)),
+    "named-dates": (
+        DATED,
+        {"convert_dates": ["b"], "keep_default_dates": False},
+        ("convert_dates", "keep_default_dates"),
+    ),
+    "default-dates-off": (
+        '{"modified":{"0":1704153600000}}',
+        {"keep_default_dates": False},
+        ("keep_default_dates",),
+    ),
+    "precise-float": (
+        '{"a":{"0":1.123456789012345678}}',
+        {"precise_float": True},
+        ("precise_float",),
+    ),
+    "date-unit": (
+        '{"a":{"0":1704153600}}',
+        {"convert_dates": ["a"], "date_unit": "s"},
+        ("convert_dates", "date_unit"),
+    ),
+    "encoding-errors": (
+        DATED,
+        {"encoding": "utf-8", "encoding_errors": "strict"},
+        ("encoding", "encoding_errors"),
+    ),
+    "nullable-backend": (FLAGGED, {"dtype_backend": "numpy_nullable"}, ("dtype_backend",)),
+    "arrow-backend": (FLAGGED, {"dtype_backend": "pyarrow"}, ("dtype_backend",)),
+    "arrow-backend-dates": (
+        DATED,
+        {"dtype_backend": "pyarrow", "convert_dates": ["b"]},
+        ("dtype_backend", "convert_dates"),
+    ),
+}
+
+for name, (text, options, covers) in JSONS.items():
+    case(
+        f"textread/json-{name}",
+        "pandas.read_json",
+        frames=("two",),
+        covers=covers,
+        in_process=True,
+        note=IN_PROCESS_NOTE,
+        expr=lambda pd, df, text=text, options=options: pd.read_json(io.StringIO(text), **options),
+    )
+
+case(
+    "textread/json-series-backend",
+    "pandas.read_json",
+    frames=("two",),
+    covers=("typ", "dtype_backend"),
+    in_process=True,
+    note="a column read with a gap, in Arrow's integer type. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.read_json(
+        io.StringIO('{"0":1,"1":null}'), typ="series", dtype_backend="pyarrow"
+    ),
+)
 case(
     "textread/csv-roundtrip",
     "pandas.read_csv",
@@ -103,6 +233,15 @@ case(
     in_process=True,
     note="each chunk is typed from its own rows and the labels carry on. " + IN_PROCESS_NOTE,
     expr=lambda pd, df: pd.concat(list(_csv(pd, "a\n1\n2\n3\n", chunksize=2))),
+)
+case(
+    "textread/csv-iterator",
+    "pandas.read_csv",
+    frames=("two",),
+    covers=("iterator",),
+    in_process=True,
+    note="a reader handed back and asked for two rows. " + IN_PROCESS_NOTE,
+    expr=lambda pd, df: pd.read_csv(io.StringIO(TEXT), iterator=True).get_chunk(2),
 )
 case(
     "textread/csv-bad-line",
