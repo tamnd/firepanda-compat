@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- 23 index method cases: value_counts, take, sortlevel, sort_values, to_numpy, symmetric_difference, slice_locs, slice_indexer, reindex, get_indexer, join and searchsorted options on flat, multi and datetime indexes, plus DatetimeIndex std, mean and indexer_between_time.
+- Board after firepanda #1511: 5878 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 17 `read_xml` cases with the standard library's parser, covering every parameter. They include `xpath`, `namespaces`, `elems_only`, `attrs_only`, `names`, `dtype`, `converters`, `parse_dates`, `encoding`, `iterparse`, `compression` and both `dtype_backend`s. Three are refusals: a stylesheet without lxml, `storage_options` with a handle, and a list for `iterparse`.
 - Board after firepanda #1510: 5855 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 16 SQL cases over sqlite3 and 22 Stata cases. They cover `to_sql` with `if_exists`, `index_label`, `chunksize`, `method`, `dtype` and `schema`, and `read_sql` and `read_sql_query` with params, dates, chunks and both `dtype_backend`s. On the Stata side they cover `to_stata` versions, byte order, long text, date formats and labels, and `read_stata` with `index_col`, `columns`, categoricals, missing values, iterator and chunks. A query sqlite3 cannot run joins `engine/pandas-exception-classes`.

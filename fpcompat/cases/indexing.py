@@ -1633,3 +1633,412 @@ case(
     note="an index prints its labels in brackets, wrapped and cut as pandas does, then its "
     "type, name and length, and a frame's untouched labels print as a RangeIndex",
 )
+
+
+def _flat_answer(out: Any) -> Any:
+    """An index method's answer as plain lists and ints, so an array and a list compare."""
+    if isinstance(out, tuple):
+        return tuple(_flat_answer(x) for x in out)
+    if out is None or isinstance(out, (str, float)):
+        return out
+    if hasattr(out, "tolist"):
+        out = out.tolist()
+        if isinstance(out, list):
+            return [_flat_cell(x) for x in out]
+        return out
+    return int(out) if type(out).__name__.startswith("int") else out
+
+
+def _flat_cell(x: Any) -> Any:
+    if type(x).__name__.startswith("int"):
+        return int(x)
+    return "nan" if isinstance(x, float) and x != x else x
+
+
+def _counted(counts: Any) -> Any:
+    return (_flat_answer(counts.index), _flat_answer(counts), counts.name)
+
+
+def _named(index: Any) -> Any:
+    return (_flat_answer(index), index.name)
+
+
+def _awkward_ints(pd: Any) -> Any:
+    return pd.Index([3, 1, 2, 3, None, 1, 1])
+
+
+def _key_pairs(pd: Any) -> Any:
+    return pd.MultiIndex.from_tuples([("a", 1), ("b", 2), ("a", 2), ("b", 1)], names=["k", "n"])
+
+
+def _days(pd: Any) -> Any:
+    return pd.DatetimeIndex(["2024-01-03", "2024-01-01", "2024-01-02", "2024-01-01"])
+
+
+BUILT_INDEX = "In process because the index is built by the case and asked directly"
+case(
+    "indexing/index-value-counts-options",
+    "Index.value_counts",
+    level="L3",
+    covers=("normalize", "sort", "ascending", "dropna", "bins"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _counted(
+            _awkward_ints(pd).value_counts(normalize=True, sort=True, ascending=True, dropna=False)
+        ),
+        _counted(_awkward_ints(pd).value_counts(sort=False, dropna=True)),
+        pd.Index([1, 2, 3, 4, 5]).value_counts(bins=2).tolist(),
+    ],
+    in_process=True,
+    note="shares, the gap counted or not, first seen order without sorting, and bins. "
+    + BUILT_INDEX,
+)
+case(
+    "indexing/multi-value-counts-options",
+    "MultiIndex.value_counts",
+    level="L3",
+    covers=("normalize", "sort", "ascending", "dropna"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _counted(
+            _key_pairs(pd).value_counts(normalize=True, sort=True, ascending=True, dropna=False)
+        ),
+        _counted(_key_pairs(pd).value_counts(sort=False)),
+    ],
+    in_process=True,
+    note="a pair of labels counted as a row, in label order when sorting is off. " + BUILT_INDEX,
+)
+case(
+    "indexing/index-take-options",
+    "Index.take",
+    level="L3",
+    covers=("indices", "axis", "allow_fill", "fill_value"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(_awkward_ints(pd).take([0, 2], axis=0)),
+        _flat_answer(_days(pd).take([0, 2], axis=0)),
+        _flat_answer(pd.Index(["b", "a", "c"]).take([0, -1], allow_fill=True, fill_value=None)),
+    ],
+    in_process=True,
+    note="positions taken, and minus one read as the last label when no fill is given. "
+    + BUILT_INDEX,
+)
+case(
+    "indexing/multi-take-options",
+    "MultiIndex.take",
+    level="L3",
+    covers=("indices", "axis"),
+    frames=("single",),
+    expr=lambda pd, df: _key_pairs(pd).take([0, 2], axis=0).tolist(),
+    in_process=True,
+    note="the pairs at the given positions. " + BUILT_INDEX,
+)
+case(
+    "indexing/index-sortlevel-options",
+    "Index.sortlevel",
+    level="L3",
+    covers=("level", "ascending", "sort_remaining", "na_position"),
+    frames=("single",),
+    expr=lambda pd, df: _flat_answer(
+        pd.Index(["b", "a", "c", "a"]).sortlevel(
+            level=0, ascending=False, sort_remaining=True, na_position="last"
+        )
+    ),
+    in_process=True,
+    note="a flat index sorts by its labels and hands back the order it used. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-sortlevel-options",
+    "MultiIndex.sortlevel",
+    level="L3",
+    covers=("level", "ascending", "sort_remaining", "na_position"),
+    frames=("single",),
+    expr=lambda pd, df: _flat_answer(
+        _key_pairs(pd).sortlevel(level=0, ascending=False, sort_remaining=True, na_position="last")
+    ),
+    in_process=True,
+    note="pairs sorted by the first level falling, ties broken by the rest. " + BUILT_INDEX,
+)
+case(
+    "indexing/index-sort-values-options",
+    "Index.sort_values",
+    level="L3",
+    covers=("return_indexer", "ascending", "na_position", "key"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(
+            _awkward_ints(pd).sort_values(return_indexer=True, ascending=False, na_position="first")
+        ),
+        _flat_answer(_days(pd).sort_values(return_indexer=True)),
+        _flat_answer(pd.Index(["b", "a", "c"]).sort_values(key=lambda v: v)),
+    ],
+    in_process=True,
+    note="labels sorted with the gap placed first, the order handed back on request. "
+    + BUILT_INDEX,
+)
+case(
+    "indexing/index-to-numpy-options",
+    "Index.to_numpy",
+    level="L3",
+    covers=("dtype", "copy"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(pd.Index(["b", "a"]).to_numpy(dtype=object, copy=True)),
+        _flat_answer(_days(pd).to_numpy(dtype=object, copy=True)),
+    ],
+    in_process=True,
+    note="labels as plain objects, a moment as a Timestamp. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-to-numpy-options",
+    "MultiIndex.to_numpy",
+    level="L3",
+    covers=("dtype", "copy"),
+    frames=("single",),
+    expr=lambda pd, df: _flat_answer(_key_pairs(pd).to_numpy(dtype=object, copy=True)),
+    in_process=True,
+    note="each pair as a tuple. " + BUILT_INDEX,
+)
+case(
+    "indexing/index-symmetric-difference-options",
+    "Index.symmetric_difference",
+    level="L3",
+    covers=("other", "result_name", "sort"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _named(
+            pd.Index(["b", "a", "c", "a"]).symmetric_difference(
+                pd.Index(["b", "z"]), result_name="r", sort=False
+            )
+        ),
+        _days(pd).symmetric_difference(_days(pd)[1:3], sort=None).tolist(),
+    ],
+    in_process=True,
+    note="labels in one side only, named as asked, sorted or in first seen order. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-symmetric-difference-options",
+    "MultiIndex.symmetric_difference",
+    level="L3",
+    covers=("other", "result_name", "sort"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _key_pairs(pd).symmetric_difference(_key_pairs(pd)[:2], result_name=["x", "y"]).tolist(),
+        _key_pairs(pd).symmetric_difference(_key_pairs(pd)[1:3], sort=False).tolist(),
+    ],
+    in_process=True,
+    note="pairs in one side only. " + BUILT_INDEX,
+)
+case(
+    "indexing/index-slice-locs-options",
+    "Index.slice_locs",
+    level="L3",
+    covers=("start", "end", "step"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(pd.Index([1, 2, 3, 4, 5]).slice_locs(start=2, end=4, step=1)),
+        _flat_answer(pd.Index([5, 4, 3, 2, 1]).slice_locs(start=4, end=2, step=-1)),
+    ],
+    in_process=True,
+    note="the positions bounding a label range, forward and backward. " + BUILT_INDEX,
+)
+case(
+    "indexing/datetime-slice-locs-options",
+    "DatetimeIndex.slice_locs",
+    level="L3",
+    covers=("start", "end"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(_days(pd).sort_values().slice_locs(start="2024-01-01", end="2024-01-02")),
+        _flat_answer(_days(pd).sort_values().slice_locs(pd.Timestamp("2024-01-02"), None)),
+        _flat_answer(_days(pd).sort_values().slice_locs("2024-01", "2024-01")),
+    ],
+    in_process=True,
+    note="a date string, a Timestamp and a month string bound the range. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-slice-locs-options",
+    "MultiIndex.slice_locs",
+    level="L3",
+    covers=("start", "end"),
+    frames=("single",),
+    expr=lambda pd, df: _flat_answer(
+        _key_pairs(pd).sort_values().slice_locs(start=("a", 2), end=("b", 1))
+    ),
+    in_process=True,
+    note="pairs bound the range in a sorted multi index. " + BUILT_INDEX,
+)
+case(
+    "indexing/index-slice-indexer-options",
+    "Index.slice_indexer",
+    level="L3",
+    covers=("start", "end", "step"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        repr(pd.Index([1, 2, 3, 4, 5]).slice_indexer(start=2, end=4, step=2)),
+        repr(_days(pd).sort_values().slice_indexer(start="2024-01-02", end=None, step=1)),
+    ],
+    in_process=True,
+    note="a slice of positions for a label range. " + BUILT_INDEX,
+)
+case(
+    "indexing/index-reindex-options",
+    "Index.reindex",
+    level="L3",
+    covers=("target", "method", "limit", "tolerance"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(
+            pd.Index([1, 2, 4]).reindex([1, 3, 4], method="nearest", limit=1, tolerance=1)
+        ),
+        _flat_answer(pd.Index([1, 2, 4]).reindex([0, 3, 5], method="ffill")),
+    ],
+    in_process=True,
+    note="the new labels and where each was found, filling from a neighbour. " + BUILT_INDEX,
+)
+case(
+    "indexing/index-get-indexer-options",
+    "Index.get_indexer",
+    level="L3",
+    covers=("target", "method", "limit", "tolerance"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(
+            pd.Index([1, 2, 4]).get_indexer([0, 3, 5], method="bfill", limit=1, tolerance=2)
+        ),
+        _flat_answer(
+            pd.DatetimeIndex(["2024-01-01", "2024-01-03"]).get_indexer(
+                pd.DatetimeIndex(["2024-01-02"]), method="nearest", tolerance="2D"
+            )
+        ),
+    ],
+    in_process=True,
+    note="the position of the next or nearest label within the tolerance. " + BUILT_INDEX,
+)
+case(
+    "indexing/index-join-options",
+    "Index.join",
+    level="L3",
+    covers=("other", "how", "level", "return_indexers", "sort"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(
+            pd.Index([1, 2, 3]).join(
+                pd.Index([2, 3, 4]), how="outer", return_indexers=True, sort=True
+            )
+        ),
+        _flat_answer(pd.Index([3, 1, 2]).join(pd.Index([2, 3, 4]), how="inner", sort=False)),
+        _flat_answer(
+            pd.Index([2, 1, 5], name="n").join(
+                _key_pairs(pd), how="inner", level="n", return_indexers=True
+            )
+        ),
+    ],
+    in_process=True,
+    note="labels joined with the positions each side came from, a multi index other joined "
+    "on its level. " + BUILT_INDEX,
+)
+case(
+    "indexing/multi-join-options",
+    "MultiIndex.join",
+    level="L3",
+    covers=("other", "how", "level", "return_indexers", "sort"),
+    frames=("single",),
+    expr=lambda pd, df: (
+        [
+            _flat_answer(
+                _key_pairs(pd).join(
+                    pd.Index([2, 1, 5], name="n"), how=how, level="n", return_indexers=True
+                )
+            )
+            for how in ("left", "right", "inner", "outer")
+        ]
+        + [
+            _flat_answer(
+                _key_pairs(pd).join(
+                    pd.MultiIndex.from_tuples([("b", 2), ("c", 3), ("a", 1)], names=["k", "n"]),
+                    how="outer",
+                    return_indexers=True,
+                    sort=True,
+                )
+            )
+        ]
+    ),
+    in_process=True,
+    note="a flat index joined on a named level for each way, and two multi indexes joined. "
+    + BUILT_INDEX,
+)
+case(
+    "indexing/datetime-searchsorted-options",
+    "DatetimeIndex.searchsorted",
+    level="L3",
+    covers=("value", "side", "sorter"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(
+            _days(pd).sort_values().searchsorted(pd.Timestamp("2024-01-02"), side="right")
+        ),
+        _flat_answer(_days(pd).sort_values().searchsorted("2024-01-02")),
+        _flat_answer(
+            _days(pd)
+            .sort_values()
+            .searchsorted([pd.Timestamp("2024-01-02"), pd.Timestamp("2025-01-01")])
+        ),
+        _flat_answer(
+            _days(pd).searchsorted(
+                pd.Timestamp("2024-01-02"), side="left", sorter=_days(pd).argsort()
+            )
+        ),
+    ],
+    in_process=True,
+    note="where a moment would go, on either side, through a sorter. " + BUILT_INDEX,
+)
+case(
+    "indexing/datetime-std-options",
+    "DatetimeIndex.std",
+    level="L3",
+    covers=("axis", "ddof", "skipna"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        str(_days(pd).std(skipna=True, ddof=0)),
+        str(pd.DatetimeIndex(["2024-01-01", None, "2024-01-03"]).std(skipna=False)),
+        str(_days(pd).std(axis=0, ddof=1)),
+    ],
+    in_process=True,
+    note="the spread of moments as a Timedelta, NaT when a gap is not skipped. " + BUILT_INDEX,
+)
+case(
+    "indexing/datetime-mean-options",
+    "DatetimeIndex.mean",
+    level="L3",
+    covers=("skipna",),
+    frames=("single",),
+    expr=lambda pd, df: [
+        str(pd.DatetimeIndex(["2024-01-01", None]).mean(skipna=False)),
+        str(pd.DatetimeIndex([]).mean()),
+    ],
+    in_process=True,
+    note="NaT for an unskipped gap and for no moments at all. " + BUILT_INDEX,
+)
+case(
+    "indexing/datetime-between-time-options",
+    "DatetimeIndex.indexer_between_time",
+    level="L3",
+    covers=("start_time", "end_time", "include_start", "include_end"),
+    frames=("single",),
+    expr=lambda pd, df: [
+        _flat_answer(
+            pd.date_range("2024-01-01", periods=6, freq="h").indexer_between_time(
+                "01:00", "03:00", include_start=False, include_end=True
+            )
+        ),
+        _flat_answer(
+            pd.date_range("2024-01-01", periods=6, freq="h").indexer_between_time(
+                start_time="04:00", end_time="01:00"
+            )
+        ),
+    ],
+    in_process=True,
+    note="positions inside a time window, ends open or closed, and a window over midnight. "
+    + BUILT_INDEX,
+)
