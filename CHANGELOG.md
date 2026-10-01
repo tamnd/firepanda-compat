@@ -9,7 +9,7 @@ divergence registry format.
 ### Added
 
 - 14 cases for SeriesGroupBy nlargest, nsmallest, unique and monotonic flags, TimedeltaIndex sum, mean, median and std, drop by a MultiIndex tuple, equals across int and float labels, and combine with np.minimum.
-- Board after firepanda #1521: 6515 pass, the 14 new cases all passing.
+- Board after firepanda #1521: 6515 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 103 more parameter tail cases for MultiIndex, Index and DatetimeIndex lookups, set operations, naming and conversions by keyword, frame copy options, dt and cat options, Timestamp now and today, and GroupBy sample weights, plus row slice cases for df[::-1], df[1:5:2] and a backward loc label slice on every frame shape.
 - Board after firepanda #1519: 6501 pass, 0 unimplemented, 69 divergent, 0 fail.
 - 43 more parameter tail cases: searchsorted side and sorter, set_flags, rolling, expanding and ewm method, MultiIndex putmask and factorize, asof_locs, grouped resample, DatetimeIndex std, frame describe percentiles, skipna, numeric_only, axis, keep, level, validate and limit options, and union_categoricals with sort_categories and ignore_order.
