@@ -15844,6 +15844,65 @@ TAIL25_CASES = (
 )
 
 
+def _tail26_counted(pd):
+    """Two rows of three whole numbers under the default columns."""
+    return pd.DataFrame([[1, 2, 3], [4, 5, 6]])
+
+
+def _tail26_named(pd):
+    """Two rows of three whole numbers under the columns 0, 1 and 2 written out."""
+    return pd.DataFrame([[1, 2, 3], [4, 5, 6]], columns=[0, 1, 2])
+
+
+TAIL26_CASES = (
+    (
+        "default-row-labels-are-range",
+        "pandas.DataFrame",
+        ("data",),
+        lambda pd: pd.DataFrame({"a": [3, 1, 2]}).index,
+    ),
+    (
+        "column-row-labels-are-range",
+        "DataFrame.__getitem__",
+        (),
+        lambda pd: pd.DataFrame({"a": [3, 1, 2]})["a"].index,
+    ),
+    ("counted-columns-sum-labels", "DataFrame.sum", (), lambda pd: _tail26_counted(pd).sum().index),
+    ("written-columns-sum-labels", "DataFrame.sum", (), lambda pd: _tail26_named(pd).sum().index),
+    (
+        "counted-columns-mean-labels",
+        "DataFrame.mean",
+        (),
+        lambda pd: _tail26_counted(pd).mean().index,
+    ),
+    (
+        "written-columns-count-labels",
+        "DataFrame.count",
+        (),
+        lambda pd: _tail26_named(pd).count().index,
+    ),
+    (
+        "counted-columns-dtypes-labels",
+        "DataFrame.dtypes",
+        (),
+        lambda pd: _tail26_counted(pd).dtypes.index,
+    ),
+    (
+        "written-columns-dtypes-labels",
+        "DataFrame.dtypes",
+        (),
+        lambda pd: _tail26_named(pd).dtypes.index,
+    ),
+    (
+        "counted-row-by-position-labels",
+        "DataFrame.iloc",
+        (),
+        lambda pd: _tail26_counted(pd).iloc[0].index,
+    ),
+    ("written-row-by-label-labels", "DataFrame.loc", (), lambda pd: _tail26_named(pd).loc[1].index),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -15870,6 +15929,7 @@ for _id, _api, _covers, _build in (
     + TAIL23_CASES
     + TAIL24_CASES
     + TAIL25_CASES
+    + TAIL26_CASES
 ):
     case(
         f"basics/{_id}",
