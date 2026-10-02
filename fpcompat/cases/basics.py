@@ -15903,6 +15903,81 @@ TAIL26_CASES = (
 )
 
 
+def _tail27_keyed(pd):
+    """Four rows in two groups under the keys a and b, with text row labels."""
+    return pd.DataFrame({"k": list("abab"), "v": [1, 2, 3, 4]}, index=list("wxyz"))
+
+
+TAIL27_CASES = (
+    (
+        "apply-sum-labels-counted-columns",
+        "DataFrame.apply",
+        ("func",),
+        lambda pd: pd.DataFrame([[1, 2, 3], [4, 5, 6]]).apply(lambda c: c.sum()).index,
+    ),
+    (
+        "apply-max-keeps-columns-name",
+        "DataFrame.apply",
+        ("func",),
+        lambda pd: (
+            pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+            .rename_axis(columns="k")
+            .apply(lambda c: c.max())
+        ),
+    ),
+    (
+        "groups-one-key-printed",
+        "GroupBy.groups",
+        (),
+        lambda pd: pd.Series([repr(_tail27_keyed(pd).groupby("k").groups)]),
+    ),
+    (
+        "groups-one-key-labels",
+        "GroupBy.groups",
+        (),
+        lambda pd: _tail27_keyed(pd).groupby("k").groups["b"],
+    ),
+    (
+        "groups-two-keys-labels",
+        "GroupBy.groups",
+        (),
+        lambda pd: _tail27_keyed(pd).groupby(["k", "v"]).groups[("a", 3)],
+    ),
+    (
+        "whole-number-heads-printed",
+        "DataFrame.to_string",
+        (),
+        lambda pd: pd.Series([pd.DataFrame([[1, 2]], columns=[5, 100]).to_string()]),
+    ),
+    (
+        "decimal-heads-printed",
+        "DataFrame.to_string",
+        (),
+        lambda pd: pd.Series([pd.DataFrame([[1.5, 2]], columns=[1.5, 100.25]).to_string()]),
+    ),
+    (
+        "text-under-whole-heads-printed",
+        "DataFrame.to_string",
+        (),
+        lambda pd: pd.Series([pd.DataFrame([["a", "b"]], columns=[1, 100]).to_string()]),
+    ),
+    (
+        "wide-whole-heads-printed",
+        "DataFrame.to_string",
+        ("max_cols",),
+        lambda pd: pd.Series([pd.DataFrame([list(range(30))]).to_string(max_cols=20)]),
+    ),
+    (
+        "formatter-by-position-printed",
+        "DataFrame.to_string",
+        ("formatters",),
+        lambda pd: pd.Series(
+            [pd.DataFrame([[1, 2], [3, 4]], columns=[1, 22]).to_string(formatters={1: str})]
+        ),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -15930,6 +16005,7 @@ for _id, _api, _covers, _build in (
     + TAIL24_CASES
     + TAIL25_CASES
     + TAIL26_CASES
+    + TAIL27_CASES
 ):
     case(
         f"basics/{_id}",

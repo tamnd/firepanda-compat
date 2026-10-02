@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Ten basics cases on `apply` labelling its answer by the columns, `groups` printing its labels as lists over one key, and number column names printing to one width, with formatters found by position first.
+- Board after firepanda #1555: 6805 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Ten basics cases on which row labels are a RangeIndex: a default frame and its columns, and the labels of `sum`, `mean`, `count`, `dtypes`, `iloc` and `loc` rows over counted columns against columns written out.
 - Board after firepanda #1552: 6795 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Twelve tail cases for whole number columns written out, set on, renamed or transposed staying a plain index, that index carried through selection, concat and arithmetic, and the first and last valid labels as numpy scalars.
