@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Twelve tail cases for Index.asof answering numpy scalars, set operations with a list or a column keeping this side's name, intersection sorting under sort=None, and putmask with a replacement of another kind.
+- Board after firepanda #1550: 6773 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Ten tail cases for Index.insert of a label of another kind (text, a float among whole numbers, a number among text), MultiIndex.to_flat_index as a flat index and as column labels, and Index.slice_locs bounds searched, held, backward and over dates.
 - Board after firepanda #1549: 6761 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Seventeen tail cases for masked whole numbers floored and taken the remainder of by zero, frame reductions and describe over masked columns, masked floats and whole numbers printed beside a minus, round, clip, rank, isin and a numpy flag from any.

@@ -15677,6 +15677,87 @@ TAIL23_CASES = (
 )
 
 
+def _tail24_keys(pd):
+    """A named index of three whole numbers out of order."""
+    return pd.Index([3, 1, 2], name="k")
+
+
+TAIL24_CASES = (
+    (
+        "index-asof-between-labels",
+        "Index.asof",
+        ("label",),
+        lambda pd: pd.Series([pd.Index([1, 3, 5]).asof(4)]),
+    ),
+    (
+        "index-asof-held-label",
+        "Index.asof",
+        ("label",),
+        lambda pd: pd.Series([pd.Index([1.5, 3.5]).asof(3.5)]),
+    ),
+    (
+        "index-difference-list-keeps-name",
+        "Index.difference",
+        ("other", "sort"),
+        lambda pd: _tail24_keys(pd).difference([1], sort=False),
+    ),
+    (
+        "index-symdiff-list-keeps-name",
+        "Index.symmetric_difference",
+        ("other",),
+        lambda pd: _tail24_keys(pd).symmetric_difference([2, 5]),
+    ),
+    (
+        "index-symdiff-other-name-drops",
+        "Index.symmetric_difference",
+        ("other",),
+        lambda pd: _tail24_keys(pd).symmetric_difference(pd.Index([2, 5], name="j")),
+    ),
+    (
+        "index-union-list-keeps-name",
+        "Index.union",
+        ("other", "sort"),
+        lambda pd: _tail24_keys(pd).union([0], sort=False),
+    ),
+    (
+        "index-union-of-a-column",
+        "Index.union",
+        ("other",),
+        lambda pd: _tail24_keys(pd).union(pd.Series([2, 5], name="j")),
+    ),
+    (
+        "index-intersection-sorted",
+        "Index.intersection",
+        ("other", "sort"),
+        lambda pd: _tail24_keys(pd).intersection([2, 3, 9], sort=None),
+    ),
+    (
+        "index-intersection-same-labels",
+        "Index.intersection",
+        ("other", "sort"),
+        lambda pd: _tail24_keys(pd).intersection(pd.Index([3, 1, 2]), sort=None),
+    ),
+    (
+        "index-putmask-float",
+        "Index.putmask",
+        ("mask", "value"),
+        lambda pd: pd.Index([1, 2, 3]).putmask([False, True, False], 2.5),
+    ),
+    (
+        "index-putmask-text-label",
+        "Index.putmask",
+        ("mask", "value"),
+        lambda pd: _tail24_keys(pd).putmask([True, False, False], "x"),
+    ),
+    (
+        "index-putmask-number-in-text",
+        "Index.putmask",
+        ("mask", "value"),
+        lambda pd: pd.Index(["a", "b"]).putmask([False, True], 1),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -15701,6 +15782,7 @@ for _id, _api, _covers, _build in (
     + TAIL21_CASES
     + TAIL22_CASES
     + TAIL23_CASES
+    + TAIL24_CASES
 ):
     case(
         f"basics/{_id}",
