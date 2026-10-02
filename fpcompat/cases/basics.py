@@ -15758,6 +15758,92 @@ TAIL24_CASES = (
 )
 
 
+def _tail25_grid(pd):
+    """Two rows of three whole numbers under the columns 0, 1 and 2 written out."""
+    return pd.DataFrame([[1, 2, 3], [4, 5, 6]], columns=[0, 1, 2])
+
+
+def _tail25_gappy(pd):
+    """A float column with a gap in the middle, under row labels 10, 20 and 30."""
+    return pd.DataFrame({"b": [1.5, None, 2.5], "c": ["x", "y", "x"]}, index=[10, 20, 30])
+
+
+TAIL25_CASES = (
+    (
+        "columns-written-out-stay-plain",
+        "pandas.DataFrame",
+        ("data", "columns"),
+        lambda pd: _tail25_grid(pd).columns,
+    ),
+    (
+        "columns-stepping-by-ten-stay-plain",
+        "pandas.DataFrame",
+        ("data", "columns"),
+        lambda pd: pd.DataFrame([[1, 2, 3]], columns=[10, 20, 30]).columns,
+    ),
+    (
+        "set-axis-whole-number-columns",
+        "DataFrame.set_axis",
+        ("labels", "axis"),
+        lambda pd: pd.DataFrame([[1, 2]]).set_axis([0, 1], axis=1).columns,
+    ),
+    (
+        "rename-whole-number-columns",
+        "DataFrame.rename",
+        ("columns",),
+        lambda pd: pd.DataFrame([[1, 2]]).rename(columns={0: 5, 1: 6}).columns,
+    ),
+    (
+        "transpose-keeps-row-index-kind",
+        "DataFrame.transpose",
+        (),
+        lambda pd: pd.DataFrame({"a": [3, 1, 2]}, index=[10, 20, 30]).transpose().columns,
+    ),
+    (
+        "transpose-keeps-row-index-name",
+        "DataFrame.transpose",
+        (),
+        lambda pd: pd.DataFrame({"a": [3, 1]}, index=pd.Index([0, 1], name="n")).transpose(),
+    ),
+    (
+        "plain-columns-through-selection",
+        "DataFrame.head",
+        ("n",),
+        lambda pd: _tail25_grid(pd)[[0, 1]].head(1).columns,
+    ),
+    (
+        "plain-columns-through-concat",
+        "pandas.concat",
+        ("objs",),
+        lambda pd: pd.concat([_tail25_grid(pd), _tail25_grid(pd)]).columns,
+    ),
+    (
+        "plain-columns-through-arithmetic",
+        "DataFrame.add",
+        ("other",),
+        lambda pd: _tail25_grid(pd).add(1),
+    ),
+    (
+        "frame-first-valid-label",
+        "DataFrame.first_valid_index",
+        (),
+        lambda pd: pd.Series([_tail25_gappy(pd)[["b"]].first_valid_index()]),
+    ),
+    (
+        "frame-last-valid-label",
+        "DataFrame.last_valid_index",
+        (),
+        lambda pd: pd.Series([_tail25_gappy(pd).last_valid_index()]),
+    ),
+    (
+        "column-first-valid-label",
+        "Series.first_valid_index",
+        (),
+        lambda pd: pd.Series([_tail25_gappy(pd)["b"].first_valid_index()]),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -15783,6 +15869,7 @@ for _id, _api, _covers, _build in (
     + TAIL22_CASES
     + TAIL23_CASES
     + TAIL24_CASES
+    + TAIL25_CASES
 ):
     case(
         f"basics/{_id}",
