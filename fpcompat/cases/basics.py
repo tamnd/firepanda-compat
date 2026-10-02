@@ -16023,6 +16023,100 @@ TAIL28_CASES = (
 )
 
 
+def _tail29_evens(pd):
+    """The even numbers from zero up to eighteen, held as a range named n."""
+    return pd.RangeIndex(0, 20, 2, name="n")
+
+
+TAIL29_CASES = (
+    (
+        "range-slice-stays-range",
+        "Index.__getitem__",
+        (),
+        lambda pd: pd.Series([repr(_tail29_evens(pd)[2:8])]),
+    ),
+    (
+        "range-reversed-slice",
+        "Index.__getitem__",
+        (),
+        lambda pd: pd.Series([repr(_tail29_evens(pd)[::-1])]),
+    ),
+    (
+        "range-even-take",
+        "Index.take",
+        (),
+        lambda pd: pd.Series([repr(pd.RangeIndex(10).take([1, 3, 5]))]),
+    ),
+    (
+        "range-uneven-take-is-plain",
+        "Index.take",
+        (),
+        lambda pd: pd.Series([repr(pd.RangeIndex(10).take([1, 2, 5]))]),
+    ),
+    (
+        "range-delete-front",
+        "Index.delete",
+        (),
+        lambda pd: pd.Series([repr(pd.RangeIndex(5).delete(0))]),
+    ),
+    (
+        "range-insert-at-end",
+        "Index.insert",
+        (),
+        lambda pd: pd.Series([repr(pd.RangeIndex(5).insert(5, 5))]),
+    ),
+    (
+        "range-sorted-down",
+        "Index.sort_values",
+        (),
+        lambda pd: pd.Series([repr(_tail29_evens(pd).sort_values(ascending=False))]),
+    ),
+    (
+        "range-append-keeps-name",
+        "Index.append",
+        (),
+        lambda pd: pd.Series([repr(pd.RangeIndex(3, name="n").append(pd.Index([3, 4])))]),
+    ),
+    (
+        "range-union-touching",
+        "Index.union",
+        (),
+        lambda pd: pd.Series([repr(pd.RangeIndex(0, 5).union(pd.RangeIndex(5, 9)))]),
+    ),
+    (
+        "range-meet-two-steps",
+        "Index.intersection",
+        (),
+        lambda pd: pd.Series([repr(pd.RangeIndex(0, 10, 2).intersection(pd.RangeIndex(0, 10, 3)))]),
+    ),
+    (
+        "range-meet-offset-steps",
+        "Index.intersection",
+        (),
+        lambda pd: pd.Series([repr(pd.RangeIndex(0, 20, 4).intersection(pd.RangeIndex(2, 30, 6)))]),
+    ),
+    (
+        "range-times-three",
+        "pandas.RangeIndex",
+        (),
+        lambda pd: pd.Series([repr(pd.RangeIndex(1, 5) * 3)]),
+    ),
+    ("range-negated", "pandas.RangeIndex", (), lambda pd: pd.Series([repr(-pd.RangeIndex(1, 5))])),
+    (
+        "range-max-type",
+        "Index.max",
+        (),
+        lambda pd: pd.Series([type(pd.RangeIndex(3, 30, 3).max()).__name__]),
+    ),
+    (
+        "range-repeat-is-plain",
+        "Index.repeat",
+        (),
+        lambda pd: pd.Series([repr(pd.RangeIndex(2).repeat(2))]),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -16052,6 +16146,7 @@ for _id, _api, _covers, _build in (
     + TAIL26_CASES
     + TAIL27_CASES
     + TAIL28_CASES
+    + TAIL29_CASES
 ):
     case(
         f"basics/{_id}",

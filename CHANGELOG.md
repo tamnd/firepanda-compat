@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Fifteen basics cases for RangeIndex methods that keep a range: slices, take, delete, insert, sort, append, union, intersection by pandas' range arithmetic, integer arithmetic, max as a Python int, and repeat falling back to a plain Index.
+- Board after firepanda #1559: 6826 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Six basics cases on `&`, `|` and `^` between whole numbers and flags, which pandas answers bit by bit and reads as flags, so a two and a true is false.
 - Board after firepanda #1557: 6811 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Ten basics cases on `apply` labelling its answer by the columns, `groups` printing its labels as lists over one key, and number column names printing to one width, with formatters found by position first.
