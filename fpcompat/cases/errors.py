@@ -112,6 +112,46 @@ case(
     note="pandas sorts the missing names before it lists them",
 )
 case(
+    "errors/ascending-not-a-flag",
+    "Series.sort_values",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df[df.columns[0]].sort_values(ascending="yes"),
+    raises=("ValueError", 'For argument "ascending" expected type bool, received type str.'),
+)
+case(
+    "errors/sort-index-ascending-not-a-flag",
+    "DataFrame.sort_index",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.sort_index(ascending="yes"),
+    raises=("ValueError", 'For argument "ascending" expected type bool'),
+)
+case(
+    "errors/diff-periods-not-whole",
+    "Series.diff",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df[df.columns[0]].diff(1.5),
+    raises=("ValueError", "periods must be an integer"),
+)
+case(
+    "errors/duplicated-keep-wording",
+    "Series.duplicated",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df[df.columns[0]].duplicated(keep="middle"),
+    raises=("ValueError", 'keep must be either "first", "last" or False'),
+)
+case(
+    "errors/replace-regex-not-a-flag",
+    "Series.replace",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df[df.columns[0]].replace(1, 2, regex=5),
+    raises=("ValueError", "'to_replace' must be 'None' if 'regex' is not a bool"),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",

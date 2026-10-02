@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Five errors cases for argument checks in pandas' words: ascending that is not a flag for sort_values and sort_index, diff periods that are not whole, the keep wording of duplicated, and a regex that is not a flag.
+- Board after firepanda #1562: 6841 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Six errors cases that pin pandas' wording for positions off the end (an iloc column, a list of columns, one cell, take) and for a group by narrowed to columns it does not have.
 - Board after firepanda #1561: 6836 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Four errors cases that pin pandas' missing column messages: which names of a list are not in the index, the whole key repeated when none are, set_index naming the missing columns, and sort_values by a missing column.
