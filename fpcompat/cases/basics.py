@@ -15517,6 +15517,92 @@ TAIL21_CASES = (
 )
 
 
+def _tail22_whole(pd):
+    """Four masked whole numbers, one of them zero."""
+    return pd.Series([1, -3, 0, 7], dtype="Int64")
+
+
+def _tail22_pair(pd):
+    """A frame of a masked whole number column beside a masked float column."""
+    return pd.DataFrame(
+        {
+            "a": pd.Series([1, 3, 4], dtype="Int64"),
+            "b": pd.Series([1.5, -2.5, 6.0], dtype="Float64"),
+        }
+    )
+
+
+TAIL22_CASES = (
+    (
+        "masked-floordiv-zero",
+        "Series.floordiv",
+        ("other",),
+        lambda pd: _tail22_whole(pd).floordiv(0),
+    ),
+    ("masked-mod-zero", "Series.mod", ("other",), lambda pd: _tail22_whole(pd).mod(0)),
+    (
+        "masked-floordiv-zero-column",
+        "Series.floordiv",
+        ("other",),
+        lambda pd: _tail22_whole(pd).floordiv(pd.Series([0, 2, 0, 3], dtype="Int64")),
+    ),
+    (
+        "masked-unsigned-floordiv-zero",
+        "Series.floordiv",
+        ("other",),
+        lambda pd: pd.Series([1, 2], dtype="UInt8").floordiv(0),
+    ),
+    ("masked-frame-sum", "DataFrame.sum", (), lambda pd: _tail22_pair(pd).sum()),
+    ("masked-frame-mean", "DataFrame.mean", (), lambda pd: _tail22_pair(pd).mean()),
+    ("masked-frame-max", "DataFrame.max", (), lambda pd: _tail22_pair(pd).max()),
+    ("masked-frame-std", "DataFrame.std", ("ddof",), lambda pd: _tail22_pair(pd).std(ddof=0)),
+    (
+        "masked-frame-whole-sum",
+        "DataFrame.sum",
+        (),
+        lambda pd: pd.DataFrame({"a": pd.Series([1, 3], dtype="Int64"), "n": [2, 5]}).sum(),
+    ),
+    ("masked-frame-describe", "DataFrame.describe", (), lambda pd: _tail22_pair(pd).describe()),
+    (
+        "masked-negative-floats",
+        "pandas.DataFrame",
+        ("dtype",),
+        lambda pd: pd.DataFrame({"a": [-1.5, 2.0]}, dtype="Float64"),
+    ),
+    (
+        "masked-round-half-even",
+        "Series.round",
+        ("decimals",),
+        lambda pd: pd.Series([1.5, -2.5, 0.125], dtype="Float64").round(2),
+    ),
+    (
+        "masked-clip-bounds",
+        "Series.clip",
+        ("lower", "upper"),
+        lambda pd: _tail22_whole(pd).clip(lower=0, upper=5),
+    ),
+    (
+        "masked-rank-average",
+        "Series.rank",
+        (),
+        lambda pd: pd.Series([3, 1, 3, 2], dtype="Int64").rank(),
+    ),
+    (
+        "masked-rank-min-whole",
+        "Series.rank",
+        ("method",),
+        lambda pd: pd.Series([3, 1, 3, 2], dtype="Int64").rank(method="min"),
+    ),
+    ("masked-isin-flags", "Series.isin", ("values",), lambda pd: _tail22_whole(pd).isin([0, 7])),
+    (
+        "masked-any-numpy-flag",
+        "Series.any",
+        (),
+        lambda pd: pd.Series([pd.Series([True, False], dtype="boolean").any()]),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -15539,6 +15625,7 @@ for _id, _api, _covers, _build in (
     + TAIL19_CASES
     + TAIL20_CASES
     + TAIL21_CASES
+    + TAIL22_CASES
 ):
     case(
         f"basics/{_id}",
