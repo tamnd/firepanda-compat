@@ -15222,6 +15222,105 @@ TAIL18_CASES = (
 )
 
 
+def _tail19_days(pd):
+    """Three days, the middle one missing."""
+    return pd.DatetimeIndex(["2020-01-01", None, "2021-03-31"])
+
+
+def _tail19_objects(pd):
+    """An object column of whole numbers beside a float column."""
+    return pd.DataFrame({"a": pd.Series([1, 2], dtype="object"), "b": [1.5, 2.5]})
+
+
+TAIL19_CASES = (
+    (
+        "unique-numbers-array",
+        "Series.unique",
+        (),
+        lambda pd: pd.Series(pd.Series([2, 1, 3, 3]).unique()),
+    ),
+    (
+        "unique-floats-one-nan",
+        "Series.unique",
+        (),
+        lambda pd: pd.Series(pd.Series([1.5, float("nan"), 1.5]).unique()),
+    ),
+    (
+        "top-unique-numbers",
+        "pandas.unique",
+        ("values",),
+        lambda pd: pd.Series(pd.unique(pd.Series([2, 1, 2]))),
+    ),
+    (
+        "get-loc-scattered-mask",
+        "Index.get_loc",
+        ("key",),
+        lambda pd: pd.Series(pd.Index(list("abab")).get_loc("b")),
+    ),
+    ("index-values-numbers", "Index.values", (), lambda pd: pd.Series(pd.Index([3, 1, 2]).values)),
+    (
+        "equals-int-uint",
+        "Index.equals",
+        ("other",),
+        lambda pd: pd.Series([pd.Index([1, 2]).equals(pd.Index([1, 2], dtype="uint64"))]),
+    ),
+    (
+        "equals-int-float",
+        "Index.equals",
+        ("other",),
+        lambda pd: pd.Series([pd.Index([1, 2]).equals(pd.Index([1.0, 2.0]))]),
+    ),
+    (
+        "equals-int-object",
+        "Index.equals",
+        ("other",),
+        lambda pd: pd.Series([pd.Index([1, 2]).equals(pd.Index([1, 2], dtype="object"))]),
+    ),
+    (
+        "equals-text-numbers",
+        "Index.equals",
+        ("other",),
+        lambda pd: pd.Series([pd.Index(["1", "2"]).equals(pd.Index([1, 2]))]),
+    ),
+    (
+        "leap-year-flags-gap",
+        "DatetimeIndex.is_leap_year",
+        (),
+        lambda pd: pd.Series(_tail19_days(pd).is_leap_year),
+    ),
+    (
+        "month-start-flags-gap",
+        "DatetimeIndex.is_month_start",
+        (),
+        lambda pd: pd.Series(_tail19_days(pd).is_month_start),
+    ),
+    (
+        "quarter-end-flags-gap",
+        "DatetimeIndex.is_quarter_end",
+        (),
+        lambda pd: pd.Series(_tail19_days(pd).is_quarter_end),
+    ),
+    (
+        "frame-infer-object-numbers",
+        "DataFrame.infer_objects",
+        (),
+        lambda pd: _tail19_objects(pd).infer_objects(),
+    ),
+    (
+        "index-infer-object-floats",
+        "Index.infer_objects",
+        (),
+        lambda pd: pd.Index([1.5, 2], dtype="object", name="n").infer_objects(),
+    ),
+    (
+        "categorical-array-categories",
+        "Series.array",
+        (),
+        lambda pd: pd.Series(["b", "a", "b"], dtype="category").array.categories,
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -15241,6 +15340,7 @@ for _id, _api, _covers, _build in (
     + TAIL16_CASES
     + TAIL17_CASES
     + TAIL18_CASES
+    + TAIL19_CASES
 ):
     case(
         f"basics/{_id}",
