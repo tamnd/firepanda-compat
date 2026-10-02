@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Fourteen tail cases for column names of mixed kinds, reset_index with a number name, an index keeping a number name, time indexers as positions, datetime and zoned index values, unnamed level dtypes on a MultiIndex, isocalendar with a gap and asof on a single number.
+- Board after firepanda #1545: 6719 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Fifteen tail cases for numeric uniques, label values and masks, `Index.equals` across number types, datetime index flags with a gap, `infer_objects` on frames and indexes, and the categories of a categorical array.
 - Board after firepanda #1543: 6705 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Fourteen tail cases for tight dicts with named levels, record arrays in `from_records`, replace on mixed objects and with a numpy scalar, loc and reindex by a named index, arithmetic and comparison with a numpy grid, and droplevel on columns keeping the name.

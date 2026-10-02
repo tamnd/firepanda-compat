@@ -15321,6 +15321,108 @@ TAIL19_CASES = (
 )
 
 
+def _tail20_hours(pd):
+    """Four labels five hours apart from midnight."""
+    return pd.date_range("2020-01-01 00:00", periods=4, freq="5h")
+
+
+def _tail20_numbered(pd):
+    """Two values under row labels named by the number seven."""
+    return pd.Series([1, 2], index=pd.Index([3, 4], name=7))
+
+
+TAIL20_CASES = (
+    (
+        "frame-mixed-kind-names",
+        "pandas.DataFrame",
+        ("data",),
+        lambda pd: pd.DataFrame({7: [1, 2], "a": [3, 4]}),
+    ),
+    (
+        "frame-mixed-kind-names-sum",
+        "DataFrame.sum",
+        (),
+        lambda pd: pd.DataFrame({7: [1, 2], "a": [3, 4]}).sum(),
+    ),
+    (
+        "reset-index-number-name",
+        "Series.reset_index",
+        (),
+        lambda pd: _tail20_numbered(pd).reset_index(),
+    ),
+    (
+        "reset-index-unnamed-zero",
+        "Series.reset_index",
+        (),
+        lambda pd: pd.Series([5, 6]).reset_index(),
+    ),
+    (
+        "reset-index-number-value-name",
+        "Series.reset_index",
+        ("name",),
+        lambda pd: pd.Series([5, 6], name="v").reset_index(name=3),
+    ),
+    (
+        "frame-reset-number-name",
+        "DataFrame.reset_index",
+        (),
+        lambda pd: pd.DataFrame({"a": [1, 2]}, index=pd.Index([3, 4], name=7)).reset_index(),
+    ),
+    (
+        "index-number-name-kept",
+        "pandas.Series",
+        ("index",),
+        lambda pd: pd.Series([_tail20_numbered(pd).index.name]),
+    ),
+    (
+        "indexer-at-time-positions",
+        "DatetimeIndex.indexer_at_time",
+        ("time",),
+        lambda pd: pd.Series(_tail20_hours(pd).indexer_at_time("10:00")),
+    ),
+    (
+        "indexer-between-time-positions",
+        "DatetimeIndex.indexer_between_time",
+        ("start_time", "end_time", "include_end"),
+        lambda pd: pd.Series(
+            _tail20_hours(pd).indexer_between_time("00:00", "06:00", include_end=False)
+        ),
+    ),
+    (
+        "datetime-index-values-series",
+        "DatetimeIndex.values",
+        (),
+        lambda pd: pd.Series(pd.date_range("2020-01-01", periods=3).values),
+    ),
+    (
+        "zoned-index-values-utc",
+        "DatetimeIndex.values",
+        (),
+        lambda pd: pd.Series(pd.date_range("2020-01-01", periods=2, tz="US/Eastern").values),
+    ),
+    (
+        "multi-dtypes-unnamed-levels",
+        "MultiIndex.dtypes",
+        (),
+        lambda pd: pd.MultiIndex.from_arrays([[1, 2], [1.5, 2.5]]).dtypes.index.to_series(),
+    ),
+    (
+        "isocalendar-gap-row",
+        "Series.dt.isocalendar",
+        (),
+        lambda pd: pd.Series(pd.to_datetime(["2019-12-29", None, "2020-01-06"])).dt.isocalendar(),
+    ),
+    (
+        "asof-single-number",
+        "Series.asof",
+        ("where",),
+        lambda pd: pd.Series(
+            [pd.Series([1.0, 2.0, float("nan"), 4.0], index=[10, 20, 30, 40]).asof(35)]
+        ),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -15341,6 +15443,7 @@ for _id, _api, _covers, _build in (
     + TAIL17_CASES
     + TAIL18_CASES
     + TAIL19_CASES
+    + TAIL20_CASES
 ):
     case(
         f"basics/{_id}",
