@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Six basics cases on `&`, `|` and `^` between whole numbers and flags, which pandas answers bit by bit and reads as flags, so a two and a true is false.
+- Board after firepanda #1557: 6811 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Ten basics cases on `apply` labelling its answer by the columns, `groups` printing its labels as lists over one key, and number column names printing to one width, with formatters found by position first.
 - Board after firepanda #1555: 6805 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Ten basics cases on which row labels are a RangeIndex: a default frame and its columns, and the labels of `sum`, `mean`, `count`, `dtypes`, `iloc` and `loc` rows over counted columns against columns written out.

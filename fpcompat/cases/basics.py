@@ -15978,6 +15978,51 @@ TAIL27_CASES = (
 )
 
 
+def _tail28_whole(pd):
+    """Three whole numbers, one of them a two, whose low bit is clear."""
+    return pd.Series([2, 1, 3])
+
+
+TAIL28_CASES = (
+    (
+        "whole-and-flags-bit-by-bit",
+        "Series.__and__",
+        (),
+        lambda pd: _tail28_whole(pd) & pd.Series([True, True, False]),
+    ),
+    (
+        "flags-or-whole-bit-by-bit",
+        "Series.__or__",
+        (),
+        lambda pd: pd.Series([True, False, True]) | pd.Series([2, 0, 0]),
+    ),
+    (
+        "flags-and-two-is-false",
+        "Series.__and__",
+        (),
+        lambda pd: pd.Series([True, True]) & pd.Series([2, 3]),
+    ),
+    (
+        "whole-xor-flags-bit-by-bit",
+        "Series.__xor__",
+        (),
+        lambda pd: _tail28_whole(pd) ^ pd.Series([True, False, True]),
+    ),
+    (
+        "small-unsigned-and-flags",
+        "Series.__and__",
+        (),
+        lambda pd: pd.Series([2, 1], dtype="uint8") & pd.Series([True, True]),
+    ),
+    (
+        "frame-whole-and-flags",
+        "DataFrame.__and__",
+        (),
+        lambda pd: pd.DataFrame({"a": [2, 1]}) & pd.DataFrame({"a": [True, True]}),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -16006,6 +16051,7 @@ for _id, _api, _covers, _build in (
     + TAIL25_CASES
     + TAIL26_CASES
     + TAIL27_CASES
+    + TAIL28_CASES
 ):
     case(
         f"basics/{_id}",
