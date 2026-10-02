@@ -15603,6 +15603,80 @@ TAIL22_CASES = (
 )
 
 
+def _tail23_whole(pd):
+    """A named index of two whole numbers."""
+    return pd.Index([1, 2], name="k")
+
+
+def _tail23_pairs(pd):
+    """A two level index of a number and a letter."""
+    return pd.MultiIndex.from_tuples([(1, "a"), (2, "b"), (3, "c")], names=["x", "y"])
+
+
+TAIL23_CASES = (
+    (
+        "index-insert-text-label",
+        "Index.insert",
+        ("loc", "item"),
+        lambda pd: _tail23_whole(pd).insert(1, "x"),
+    ),
+    (
+        "index-insert-text-label-from-end",
+        "Index.insert",
+        ("loc", "item"),
+        lambda pd: _tail23_whole(pd).insert(-1, "z"),
+    ),
+    (
+        "index-insert-float-label",
+        "Index.insert",
+        ("loc", "item"),
+        lambda pd: _tail23_whole(pd).insert(1, 2.5),
+    ),
+    (
+        "index-insert-number-in-text",
+        "Index.insert",
+        ("loc", "item"),
+        lambda pd: pd.Index(["a", "b"]).insert(2, 3),
+    ),
+    (
+        "flat-index-of-pairs",
+        "MultiIndex.to_flat_index",
+        (),
+        lambda pd: _tail23_pairs(pd).to_flat_index(),
+    ),
+    (
+        "flat-index-labels-a-column",
+        "MultiIndex.to_flat_index",
+        (),
+        lambda pd: pd.Series([5, 6, 7], index=_tail23_pairs(pd).to_flat_index()),
+    ),
+    (
+        "slice-locs-searched-bounds",
+        "Index.slice_locs",
+        ("start", "end"),
+        lambda pd: pd.Series(list(pd.Index([1, 3, 5]).slice_locs(2, 4))),
+    ),
+    (
+        "slice-locs-held-start",
+        "Index.slice_locs",
+        ("start",),
+        lambda pd: pd.Series(list(pd.Index([1, 3, 5]).slice_locs(3))),
+    ),
+    (
+        "slice-locs-backward",
+        "Index.slice_locs",
+        ("start", "end", "step"),
+        lambda pd: pd.Series(list(pd.Index([1, 3, 5]).slice_locs(4, 2, step=-1))),
+    ),
+    (
+        "slice-locs-dates",
+        "DatetimeIndex.slice_locs",
+        ("start",),
+        lambda pd: pd.Series(list(pd.date_range("2020-01-01", periods=3).slice_locs("2020-01-02"))),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -15626,6 +15700,7 @@ for _id, _api, _covers, _build in (
     + TAIL20_CASES
     + TAIL21_CASES
     + TAIL22_CASES
+    + TAIL23_CASES
 ):
     case(
         f"basics/{_id}",
