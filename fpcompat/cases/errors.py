@@ -44,6 +44,40 @@ case(
     raises=("KeyError", "not_a_column"),
 )
 case(
+    "errors/missing-column-list-says-which",
+    "DataFrame.__getitem__",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df[["a", "nope"]],
+    raises=("KeyError", "['nope'] not in index"),
+    note="pandas lists the names it could not find when some of the list is there",
+)
+case(
+    "errors/missing-column-list-none-there",
+    "DataFrame.__getitem__",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df[["nope", "nada"]],
+    raises=("KeyError", "None of [Index(['nope', 'nada']"),
+    note="when none of the list is there pandas repeats the whole key as an index",
+)
+case(
+    "errors/set-index-missing-column",
+    "DataFrame.set_index",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.set_index("nope"),
+    raises=("KeyError", "None of ['nope'] are in the columns"),
+)
+case(
+    "errors/sort-by-missing-column",
+    "DataFrame.sort_values",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.sort_values("nope"),
+    raises=("KeyError", "nope"),
+)
+case(
     "errors/missing-label",
     "DataFrame.loc",
     level="L4",
