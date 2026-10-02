@@ -15094,6 +15094,134 @@ TAIL17_CASES = (
 )
 
 
+def _tail18_tight(pd):
+    """A tight dict with two level rows and two level columns, every level named."""
+    return pd.DataFrame.from_dict(
+        {
+            "index": [("a", 1), ("b", 2)],
+            "columns": [("x", "p"), ("x", "q")],
+            "data": [[1, 2], [3, 4]],
+            "index_names": ["k", "n"],
+            "column_names": ["g", "h"],
+        },
+        orient="tight",
+    )
+
+
+def _tail18_records(pd):
+    """A numpy record array with an int field and a float field."""
+    np = _tail10_numpy()
+    return np.array([(1, 2.5), (2, 3.5), (3, 4.5)], dtype=[("a", "i8"), ("b", "f8")])
+
+
+def _tail18_frame(pd):
+    """Two int columns under three letters."""
+    return pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]}, index=list("abc"))
+
+
+def _tail18_grid(pd):
+    """A two by three int grid as a numpy array."""
+    np = _tail10_numpy()
+    return np.array([[1, 0], [2, 9], [0, 6]])
+
+
+TAIL18_CASES = (
+    (
+        "from-dict-tight-row-levels",
+        "DataFrame.from_dict",
+        ("data", "orient"),
+        lambda pd: _tail_levels(_tail18_tight(pd).index),
+    ),
+    (
+        "from-dict-tight-column-levels",
+        "DataFrame.from_dict",
+        ("data", "orient"),
+        lambda pd: _tail_levels(_tail18_tight(pd).columns),
+    ),
+    (
+        "from-dict-tight-single-name",
+        "DataFrame.from_dict",
+        ("data", "orient"),
+        lambda pd: pd.DataFrame.from_dict(
+            {
+                "index": ["a", "b"],
+                "columns": ["x", "y"],
+                "data": [[1, 2], [3, 4]],
+                "index_names": ["k"],
+                "column_names": ["c"],
+            },
+            orient="tight",
+        ),
+    ),
+    (
+        "from-records-fields",
+        "DataFrame.from_records",
+        ("data",),
+        lambda pd: pd.DataFrame.from_records(_tail18_records(pd)),
+    ),
+    (
+        "from-records-fields-index",
+        "DataFrame.from_records",
+        ("data", "index"),
+        lambda pd: pd.DataFrame.from_records(_tail18_records(pd), index="a"),
+    ),
+    (
+        "replace-objects-number-to-text",
+        "Series.replace",
+        ("to_replace", "value"),
+        lambda pd: pd.Series(["a", 1, "b"], dtype="object").replace(1, "one"),
+    ),
+    (
+        "replace-numpy-scalar-key",
+        "Series.replace",
+        ("to_replace", "value"),
+        lambda pd: pd.Series([1, 2, 3, 2]).replace(_tail10_numpy().int64(2), 9),
+    ),
+    (
+        "loc-named-row-key",
+        "DataFrame.loc",
+        (),
+        lambda pd: _tail18_frame(pd).loc[pd.Index(["c", "a"], name="k")],
+    ),
+    (
+        "loc-named-column-key",
+        "DataFrame.loc",
+        (),
+        lambda pd: _tail18_frame(pd).loc[:, pd.Index(["y"], name="c")],
+    ),
+    (
+        "frame-reindex-named-key",
+        "DataFrame.reindex",
+        ("labels",),
+        lambda pd: _tail18_frame(pd).reindex(pd.Index(["b", "a"], name="k")),
+    ),
+    (
+        "series-reindex-named-key",
+        "Series.reindex",
+        ("index",),
+        lambda pd: pd.Series([1, 2, 3], index=list("abc")).reindex(pd.Index(["c", "b"], name="k")),
+    ),
+    (
+        "frame-eq-numpy-grid",
+        "DataFrame.eq",
+        ("other",),
+        lambda pd: _tail18_frame(pd).eq(_tail18_grid(pd)),
+    ),
+    (
+        "frame-add-numpy-grid",
+        "DataFrame.add",
+        ("other",),
+        lambda pd: _tail18_frame(pd).add(_tail18_grid(pd)),
+    ),
+    (
+        "droplevel-columns-keeps-name",
+        "DataFrame.droplevel",
+        ("level", "axis"),
+        lambda pd: _tail_levels(_tail18_tight(pd).droplevel(0, axis=1).columns),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -15112,6 +15240,7 @@ for _id, _api, _covers, _build in (
     + TAIL15_CASES
     + TAIL16_CASES
     + TAIL17_CASES
+    + TAIL18_CASES
 ):
     case(
         f"basics/{_id}",

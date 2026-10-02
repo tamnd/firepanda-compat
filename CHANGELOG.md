@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Fourteen tail cases for tight dicts with named levels, record arrays in `from_records`, replace on mixed objects and with a numpy scalar, loc and reindex by a named index, arithmetic and comparison with a numpy grid, and droplevel on columns keeping the name.
+- Board after firepanda #1540: 6690 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Sixteen tail cases for a NaN in a float sort key on a series, a frame, an index and row labels, and a fill value against a single operand.
 - Board after firepanda #1538: 6676 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Twenty-four tail cases for mask with a short condition, regex replace by column, reductions of a frame with no columns, clip by bounds with a gap, crosstab rows by categories, a column resampler's mapping, apply's None groups and text beside numbers in set operations.
