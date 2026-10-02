@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Six errors cases that pin pandas' wording for positions off the end (an iloc column, a list of columns, one cell, take) and for a group by narrowed to columns it does not have.
+- Board after firepanda #1561: 6836 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Four errors cases that pin pandas' missing column messages: which names of a list are not in the index, the whole key repeated when none are, set_index naming the missing columns, and sort_values by a missing column.
 - Board after firepanda #1560: 6830 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Fifteen basics cases for RangeIndex methods that keep a range: slices, take, delete, insert, sort, append, union, intersection by pandas' range arithmetic, integer arithmetic, max as a Python int, and repeat falling back to a plain Index.

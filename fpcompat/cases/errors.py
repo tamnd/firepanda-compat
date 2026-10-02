@@ -62,6 +62,56 @@ case(
     note="when none of the list is there pandas repeats the whole key as an index",
 )
 case(
+    "errors/iloc-column-off-the-end",
+    "DataFrame.iloc",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.iloc[:, 999],
+    raises=("IndexError", "single positional indexer is out-of-bounds"),
+)
+case(
+    "errors/iloc-column-list-off-the-end",
+    "DataFrame.iloc",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.iloc[:, [0, 999]],
+    raises=("IndexError", "positional indexers are out-of-bounds"),
+)
+case(
+    "errors/iloc-cell-column-off-the-end",
+    "DataFrame.iloc",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.iloc[0, 999],
+    raises=("IndexError", "index 999 is out of bounds for axis 0 with size"),
+    note="one cell off the end is worded the way numpy words it, which pandas passes on",
+)
+case(
+    "errors/take-off-the-end",
+    "DataFrame.take",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.take([0, 10**6]),
+    raises=("IndexError", "indices are out-of-bounds"),
+)
+case(
+    "errors/grouped-column-not-found",
+    "DataFrame.groupby",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.groupby(df.columns[0])["nope"],
+    raises=("KeyError", "Column not found: nope"),
+)
+case(
+    "errors/grouped-columns-not-found",
+    "DataFrame.groupby",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.groupby(df.columns[0])[["nope", "nada"]],
+    raises=("KeyError", "Columns not found: 'nada', 'nope'"),
+    note="pandas sorts the missing names before it lists them",
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",
