@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Fifteen tail cases for number categories on a column of text categories through rename_categories and set_categories, map on a category column with distinct, meeting and missing answers, from_codes with number categories, Categorical.map and a decided number dtype matching floats.
+- Board after firepanda #1546: 6734 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Fourteen tail cases for column names of mixed kinds, reset_index with a number name, an index keeping a number name, time indexers as positions, datetime and zoned index values, unnamed level dtypes on a MultiIndex, isocalendar with a gap and asof on a single number.
 - Board after firepanda #1545: 6719 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Fifteen tail cases for numeric uniques, label values and masks, `Index.equals` across number types, datetime index flags with a gap, `infer_objects` on frames and indexes, and the categories of a categorical array.

@@ -15423,6 +15423,100 @@ TAIL20_CASES = (
 )
 
 
+def _tail21_letters(pd):
+    """Three rows over two text categories, with labels and a name."""
+    return pd.Series(["x", "y", "x"], dtype="category", index=[4, 5, 6], name="k")
+
+
+TAIL21_CASES = (
+    (
+        "rename-categories-to-numbers",
+        "cat.rename_categories",
+        ("new_categories",),
+        lambda pd: _tail21_letters(pd).cat.rename_categories([10, 20]),
+    ),
+    (
+        "rename-categories-number-dict",
+        "cat.rename_categories",
+        ("new_categories",),
+        lambda pd: _tail21_letters(pd).cat.rename_categories({"x": 5, "y": 7}),
+    ),
+    (
+        "rename-categories-number-codes",
+        "cat.rename_categories",
+        ("new_categories",),
+        lambda pd: _tail21_letters(pd).cat.rename_categories([1.5, 2.5]).cat.codes,
+    ),
+    (
+        "rename-categories-number-labels",
+        "cat.rename_categories",
+        ("new_categories",),
+        lambda pd: _tail21_letters(pd).cat.rename_categories([10, 20]).cat.categories.to_series(),
+    ),
+    (
+        "set-categories-numbers-by-value",
+        "cat.set_categories",
+        ("new_categories",),
+        lambda pd: _tail21_letters(pd).cat.set_categories([1, 2]),
+    ),
+    (
+        "set-categories-numbers-renamed",
+        "cat.set_categories",
+        ("new_categories", "rename"),
+        lambda pd: _tail21_letters(pd).cat.set_categories([1], rename=True),
+    ),
+    (
+        "map-category-to-floats",
+        "Series.map",
+        ("func",),
+        lambda pd: _tail21_letters(pd).map({"x": 1.5, "y": 2.5}),
+    ),
+    (
+        "map-category-meeting",
+        "Series.map",
+        ("func",),
+        lambda pd: _tail21_letters(pd).map({"x": 1, "y": 1}),
+    ),
+    ("map-category-upper", "Series.map", ("func",), lambda pd: _tail21_letters(pd).map(str.upper)),
+    (
+        "map-category-with-gap",
+        "Series.map",
+        ("func",),
+        lambda pd: pd.Series(["x", None, "y"], dtype="category").map({"x": 3, "y": 4}),
+    ),
+    (
+        "map-category-missing-key",
+        "Series.map",
+        ("func",),
+        lambda pd: _tail21_letters(pd).map({"x": 3}),
+    ),
+    (
+        "codes-number-categories",
+        "pandas.Categorical",
+        (),
+        lambda pd: pd.Series(pd.Categorical.from_codes([0, 1, 0, -1], categories=[10, 20])),
+    ),
+    (
+        "codes-float-categories",
+        "pandas.Categorical",
+        (),
+        lambda pd: pd.Series(pd.Categorical.from_codes([1, 1, 0], categories=[0.5, 1.5])),
+    ),
+    (
+        "categorical-map-numbers",
+        "pandas.Categorical",
+        (),
+        lambda pd: pd.Series(pd.Categorical(["a", "b", "a"]).map({"a": 3, "b": 2})),
+    ),
+    (
+        "decided-number-dtype-floats",
+        "Series.astype",
+        ("dtype",),
+        lambda pd: pd.Series([0, 1, 0, 2.5]).astype(pd.CategoricalDtype([0, 1], ordered=True)),
+    ),
+)
+
+
 for _id, _api, _covers, _build in (
     TAIL_CASES
     + TAIL2_CASES
@@ -15444,6 +15538,7 @@ for _id, _api, _covers, _build in (
     + TAIL18_CASES
     + TAIL19_CASES
     + TAIL20_CASES
+    + TAIL21_CASES
 ):
     case(
         f"basics/{_id}",
