@@ -16067,6 +16067,13 @@ def _tail30_stamped(pd):
     return pd.DataFrame({"a": [1, 1], "b": [1.0, 2.0]}, index=stamps).groupby("a")
 
 
+def _tail30_written(pd, value):
+    """A whole number masked column after one value is written into its first row."""
+    column = pd.Series([1, 2, 3], dtype="Int64")
+    column.loc[0] = value
+    return column
+
+
 TAIL30_CASES = (
     (
         "whole-floor-divided-by-zero",
@@ -16854,6 +16861,105 @@ TAIL30_CASES = (
         "GroupBy.resample",
         (),
         lambda pd: sorted({"a", "b"} & set(dir(_tail30_stamped(pd).resample("D")))),
+    ),
+    (
+        "empty-series-is-objects",
+        "pandas.Series",
+        (),
+        lambda pd: str(pd.Series([]).dtype),
+    ),
+    (
+        "index-only-series-is-floats",
+        "pandas.Series",
+        (),
+        lambda pd: str(pd.Series(index=[0, 1]).dtype),
+    ),
+    (
+        "empty-series-keeps-masked-dtype",
+        "pandas.Series",
+        (),
+        lambda pd: [
+            str(pd.Series([], dtype=kind).dtype)
+            for kind in ("Int64", "Float64", "boolean", "UInt8", "string", "object")
+        ],
+    ),
+    (
+        "empty-series-astype-keeps-dtype",
+        "Series.astype",
+        (),
+        lambda pd: [
+            str(pd.Series([]).astype(kind).dtype)
+            for kind in ("Int64", "Float64", "boolean", "UInt8", "string", "object")
+        ],
+    ),
+    (
+        "all-gap-astype-keeps-dtype",
+        "Series.astype",
+        (),
+        lambda pd: [
+            str(pd.Series([float("nan")]).astype(kind).dtype)
+            for kind in ("Int64", "Float64", "boolean", "UInt8", "string", "object")
+        ],
+    ),
+    (
+        "empty-series-keeps-arrow-dtype",
+        "pandas.Series",
+        (),
+        lambda pd: str(pd.Series([], dtype="int64[pyarrow]").dtype),
+    ),
+    (
+        "empty-series-keeps-period-dtype",
+        "pandas.Series",
+        (),
+        lambda pd: str(pd.Series([], dtype="period[M]").dtype),
+    ),
+    (
+        "empty-series-keeps-sparse-dtype",
+        "pandas.Series",
+        (),
+        lambda pd: str(pd.Series([], dtype="Sparse[int64]").dtype),
+    ),
+    (
+        "empty-masked-sum",
+        "Series.sum",
+        (),
+        lambda pd: int(pd.Series([], dtype="Int64").sum()),
+    ),
+    (
+        "empty-masked-count",
+        "Series.count",
+        (),
+        lambda pd: int(pd.Series([], dtype="Float64").count()),
+    ),
+    (
+        "masked-loc-writes-whole",
+        "Series.loc",
+        (),
+        lambda pd: _tail30_written(pd, 9),
+    ),
+    (
+        "masked-loc-writes-float-whole",
+        "Series.loc",
+        (),
+        lambda pd: _tail30_written(pd, 4.0),
+    ),
+    (
+        "masked-loc-writes-gap",
+        "Series.loc",
+        (),
+        lambda pd: _tail30_written(pd, pd.NA).isna().tolist(),
+    ),
+    (
+        "masked-loc-writes-keep-dtype",
+        "Series.loc",
+        (),
+        lambda pd: str(_tail30_written(pd, 5).dtype),
+    ),
+    (
+        "boolean-loc-writes-gap",
+        "Series.loc",
+        (),
+        lambda pd: str(pd.Series([True, False], dtype="boolean").where([False, True]).dtype),
     ),
 )
 

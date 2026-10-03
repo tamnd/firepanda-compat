@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Fifteen basics for a column of no values: an empty or all None series is objects and labels alone are floats, `dtype=` and `astype` keep a masked, string, object, Arrow, period or sparse type with no values, an empty masked column sums and counts, and `loc` writes a value or a gap into a masked column.
+- Board after firepanda #1584: 7096 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Cases for the settings a group by's rolling, expanding, ewm and resample hold, read as values, and for what they list for `dir`.
 - Board after firepanda #1583: 7081 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Cases for the fields and methods of instant, span and period arrays, and for `as_unit` refusing an unknown unit on a column, an index and an array.
