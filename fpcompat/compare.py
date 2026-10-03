@@ -44,6 +44,7 @@ import builtins
 import enum
 import math
 import warnings
+import zoneinfo
 from dataclasses import dataclass, field, replace
 from typing import Any
 
@@ -1420,8 +1421,9 @@ def resolve_error(name: str) -> type[BaseException]:
     # that matter here are the 46 pandas types rather than `ValueError`. pyarrow is
     # last and it is there because the Arrow backed accessors let Arrow's own errors
     # through unchanged, so `ArrowInvalid` is part of what a caller sees and there is
-    # no honest way to describe those cases without naming it.
-    for namespace in (pd.errors, builtins, pa.lib):
+    # no honest way to describe those cases without naming it. zoneinfo is there
+    # because pandas lets its `ZoneInfoNotFoundError` through for a zone it cannot find.
+    for namespace in (pd.errors, builtins, pa.lib, zoneinfo):
         found = getattr(namespace, short, None)
         if isinstance(found, type) and issubclass(found, BaseException):
             return found

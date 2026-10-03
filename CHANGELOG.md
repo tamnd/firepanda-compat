@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Thirteen errors cases for time mistakes and a missing label: unreadable frequencies for `round` and `floor`, unknown units for `Timestamp`, `Timedelta` and `to_datetime`, `.dt` and `.str` on columns of the wrong kind, whole numbers added to instants and instants scaled, localizing a zoned column, an unknown zone, and `get_loc` on a missing label. The error resolver also looks in `zoneinfo`, because pandas lets its `ZoneInfoNotFoundError` through.
+- Board after firepanda #1570: 6876 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Ten errors cases for unequal column lengths, fillna list-like values on a frame, a column and an index, a ddof that is not a number, argmax past the one axis, nlargest and nsmallest on text, a group quantile out of range and the order of merge's validate words, and nine basics cases (TAIL30) for whole numbers floor divided or modulo zero and nlargest on flags and nullable whole numbers, after firepanda #1566 and #1568.
 - Board after firepanda #1568: 6863 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Three errors cases for functions named by a string that does not exist, under transform and apply, and for concat reading a bad axis as a frame's.

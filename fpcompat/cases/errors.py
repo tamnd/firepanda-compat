@@ -257,6 +257,112 @@ case(
     raises=("ValueError", '- "m:m"\n- "one_to_one"'),
 )
 case(
+    "errors/round-to-unreadable-frequency",
+    "Series.dt.round",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(pd.to_datetime(["2024-01-01"])).dt.round("xx"),
+    raises=("ValueError", "Invalid frequency: xx. Failed to parse with error message"),
+)
+case(
+    "errors/floor-to-retired-month-alias",
+    "Series.dt.floor",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(pd.to_datetime(["2024-01-01"])).dt.floor("M"),
+    raises=("ValueError", "'M' is no longer supported for offsets"),
+)
+case(
+    "errors/timestamp-unknown-unit",
+    "pandas.Timestamp",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Timestamp(1, unit="xx"),
+    raises=("ValueError", "Unrecognized unit xx"),
+)
+case(
+    "errors/timedelta-unknown-unit",
+    "pandas.Timedelta",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Timedelta(1, unit="xx"),
+    raises=("ValueError", "invalid unit abbreviation: xx"),
+)
+case(
+    "errors/to-datetime-list-unknown-unit",
+    "pandas.to_datetime",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.to_datetime([1], unit="xx"),
+    raises=("ValueError", "Unrecognized unit xx"),
+)
+case(
+    "errors/dt-on-numbers",
+    "Series.dt",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series([1, 2]).dt,
+    raises=("AttributeError", "Can only use .dt accessor with datetimelike values"),
+)
+case(
+    "errors/str-on-whole-numbers",
+    "Series.str",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series([1, 2]).str,
+    raises=("AttributeError", "with string values, not integer"),
+)
+case(
+    "errors/instants-plus-whole-number",
+    "Series.add",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(pd.to_datetime(["2024-01-01"])).add(1),
+    raises=("TypeError", "Addition/subtraction of integers and integer-arrays with DatetimeArray"),
+)
+case(
+    "errors/instants-times-two",
+    "Series.mul",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(pd.to_datetime(["2024-01-01"])).mul(2),
+    raises=("TypeError", "cannot perform __mul__ with this index type: DatetimeArray"),
+)
+case(
+    "errors/timestamp-plus-whole-number",
+    "pandas.Timestamp",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Timestamp("2024-01-01") + 1,
+    raises=("TypeError", "integer-arrays with Timestamp is no longer supported"),
+)
+case(
+    "errors/localize-a-zoned-column",
+    "Series.dt.tz_localize",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: (
+        pd.Series(pd.to_datetime(["2024-01-01"])).dt.tz_localize("UTC").dt.tz_localize("UTC")
+    ),
+    raises=("TypeError", "Already tz-aware, use tz_convert to convert."),
+)
+case(
+    "errors/localize-to-unknown-zone",
+    "Series.dt.tz_localize",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(pd.to_datetime(["2024-01-01"])).dt.tz_localize("Mars/Base"),
+    raises=("ZoneInfoNotFoundError", "No time zone found with key Mars/Base"),
+)
+case(
+    "errors/get-loc-missing-label",
+    "Index.get_loc",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.columns.get_loc("zz"),
+    raises=("KeyError", "zz"),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",
