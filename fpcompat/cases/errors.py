@@ -363,6 +363,100 @@ case(
     raises=("KeyError", "zz"),
 )
 case(
+    "errors/iloc-float-row",
+    "DataFrame.iloc",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.iloc[1.0],
+    raises=("TypeError", "Cannot index by location index with a non-integer key"),
+)
+case(
+    "errors/iloc-text-row",
+    "Series.iloc",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].iloc["a"],
+    raises=("TypeError", "Cannot index by location index with a non-integer key"),
+)
+case(
+    "errors/iloc-pair-with-float",
+    "DataFrame.iloc",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.iloc[1.5, 0],
+    raises=("ValueError", "Location based indexing can only have [integer, integer slice"),
+)
+case(
+    "errors/iloc-pair-with-name",
+    "DataFrame.iloc",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.iloc[0, "a"],
+    raises=("ValueError", "Location based indexing can only have [integer, integer slice"),
+)
+case(
+    "errors/iat-float",
+    "DataFrame.iat",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.iat[1.5, 0],
+    raises=("ValueError", "iAt based indexing can only have integer indexers"),
+)
+case(
+    "errors/series-iat-text",
+    "Series.iat",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].iat["a"],
+    raises=("ValueError", "iAt based indexing can only have integer indexers"),
+)
+case(
+    "errors/head-text-count",
+    "DataFrame.head",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.head("2"),
+    raises=(
+        "TypeError",
+        "cannot do positional indexing on RangeIndex with these indexers [2] of type str",
+    ),
+)
+case(
+    "errors/series-head-float-count",
+    "Series.head",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].head(1.5),
+    raises=(
+        "TypeError",
+        "cannot do positional indexing on RangeIndex with these indexers [1.5] of type float",
+    ),
+)
+case(
+    "errors/tail-text-count",
+    "DataFrame.tail",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.tail("2"),
+    raises=("TypeError", "bad operand type for unary -: 'str'"),
+)
+case(
+    "errors/groupby-sum-numeric-only-text",
+    "GroupBy.sum",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.groupby("a").sum(numeric_only="x"),
+    raises=("ValueError", "numeric_only accepts only Boolean values"),
+)
+case(
+    "errors/groupby-max-numeric-only-text",
+    "GroupBy.max",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.groupby("a").max(numeric_only="x"),
+    raises=("ValueError", "numeric_only accepts only Boolean values"),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",
