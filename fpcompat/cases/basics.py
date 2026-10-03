@@ -16028,6 +16028,16 @@ def _tail29_evens(pd):
     return pd.RangeIndex(0, 20, 2, name="n")
 
 
+def _tail30_masked(pd):
+    """Masked whole numbers with no gap."""
+    return pd.array([1, 2, 3], dtype="Int64")
+
+
+def _tail30_categories(pd):
+    """Three values over categories in an order of their own, one unused."""
+    return pd.Categorical(["a", "b", "a"], categories=["b", "a", "z"])
+
+
 TAIL30_CASES = (
     (
         "whole-floor-divided-by-zero",
@@ -16132,6 +16142,186 @@ TAIL30_CASES = (
         "DataFrame.transpose",
         (),
         lambda pd: pd.DataFrame({"a": [1, 2], "b": [3, 4]}).transpose(None),
+    ),
+    (
+        "array-take-picks",
+        "pandas.array",
+        (),
+        lambda pd: _tail30_masked(pd).take([2, 0, -1]).tolist(),
+    ),
+    (
+        "array-take-fill-gap",
+        "pandas.array",
+        (),
+        lambda pd: _tail30_masked(pd).take([0, -1], allow_fill=True).isna().tolist(),
+    ),
+    (
+        "array-take-fill-value",
+        "pandas.array",
+        (),
+        lambda pd: _tail30_masked(pd).take([-1], allow_fill=True, fill_value=9).tolist(),
+    ),
+    (
+        "array-take-class",
+        "pandas.array",
+        (),
+        lambda pd: type(_tail30_masked(pd).take([0])).__name__,
+    ),
+    (
+        "array-delete-list",
+        "pandas.array",
+        (),
+        lambda pd: _tail30_masked(pd).delete([0, 2]).tolist(),
+    ),
+    (
+        "array-insert-negative",
+        "pandas.array",
+        (),
+        lambda pd: _tail30_masked(pd).insert(-1, 9).tolist(),
+    ),
+    (
+        "array-repeat-counts",
+        "pandas.array",
+        (),
+        lambda pd: _tail30_masked(pd).repeat([1, 0, 2]).tolist(),
+    ),
+    (
+        "array-repeat-text",
+        "pandas.array",
+        (),
+        lambda pd: pd.array(["a", "b"], dtype="string").repeat(2).tolist(),
+    ),
+    (
+        "array-equals-other-type",
+        "pandas.array",
+        (),
+        lambda pd: _tail30_masked(pd).equals(pd.array([1, 2, 3], dtype="Int32")),
+    ),
+    (
+        "array-equals-copy",
+        "pandas.array",
+        (),
+        lambda pd: _tail30_masked(pd).equals(_tail30_masked(pd).copy()),
+    ),
+    (
+        "array-equals-list",
+        "pandas.array",
+        (),
+        lambda pd: _tail30_masked(pd).equals([1, 2, 3]),
+    ),
+    (
+        "array-numpy-take-fill-type",
+        "Series.array",
+        (),
+        lambda pd: str(pd.Series([1, 2, 3]).array.take([0, -1], allow_fill=True).dtype),
+    ),
+    (
+        "array-numpy-prod",
+        "Series.array",
+        (),
+        lambda pd: int(pd.Series([1, 2, 3]).array.prod()),
+    ),
+    (
+        "array-numpy-median",
+        "Series.array",
+        (),
+        lambda pd: float(pd.Series([1, 2, 3]).array.median()),
+    ),
+    (
+        "array-numpy-sem",
+        "Series.array",
+        (),
+        lambda pd: round(float(pd.Series([1, 2, 3]).array.sem()), 6),
+    ),
+    (
+        "array-numpy-var",
+        "Series.array",
+        (),
+        lambda pd: float(pd.Series([1, 2, 3]).array.var()),
+    ),
+    (
+        "array-reshape-flat",
+        "pandas.array",
+        (),
+        lambda pd: _tail30_masked(pd).reshape(-1).tolist(),
+    ),
+    (
+        "array-ravel",
+        "pandas.array",
+        (),
+        lambda pd: _tail30_masked(pd).ravel().tolist(),
+    ),
+    (
+        "array-masked-round",
+        "pandas.array",
+        (),
+        lambda pd: pd.array([1.25, 2.5], dtype="Float64").round(1).tolist(),
+    ),
+    (
+        "array-boolean-all",
+        "pandas.array",
+        (),
+        lambda pd: bool(pd.array([True, False], dtype="boolean").all()),
+    ),
+    (
+        "array-timedelta-median",
+        "Series.array",
+        (),
+        lambda pd: str(pd.Series(pd.to_timedelta(["1D", "0s"])).array.median()),
+    ),
+    (
+        "array-period-median-even",
+        "Series.array",
+        (),
+        lambda pd: str(pd.Series(pd.period_range("2024-01", periods=4, freq="M")).array.median()),
+    ),
+    (
+        "categorical-insert-known",
+        "pandas.Categorical",
+        (),
+        lambda pd: _tail30_categories(pd).insert(1, "z").tolist(),
+    ),
+    (
+        "categorical-take-fill-value",
+        "pandas.Categorical",
+        (),
+        lambda pd: _tail30_categories(pd).take([0, -1], allow_fill=True, fill_value="z").tolist(),
+    ),
+    (
+        "categorical-describe-counts",
+        "pandas.Categorical",
+        (),
+        lambda pd: _tail30_categories(pd).describe()["counts"].tolist(),
+    ),
+    (
+        "categorical-describe-freqs",
+        "pandas.Categorical",
+        (),
+        lambda pd: _tail30_categories(pd).describe()["freqs"].round(4).tolist(),
+    ),
+    (
+        "categorical-set-ordered",
+        "pandas.Categorical",
+        (),
+        lambda pd: bool(_tail30_categories(pd).set_ordered(True).ordered),
+    ),
+    (
+        "categorical-notna",
+        "pandas.Categorical",
+        (),
+        lambda pd: _tail30_categories(pd).notna().tolist(),
+    ),
+    (
+        "categorical-copy-class",
+        "pandas.Categorical",
+        (),
+        lambda pd: type(_tail30_categories(pd).copy()).__name__,
+    ),
+    (
+        "categorical-delete-categories",
+        "pandas.Categorical",
+        (),
+        lambda pd: _tail30_categories(pd).delete(0).categories.tolist(),
     ),
 )
 

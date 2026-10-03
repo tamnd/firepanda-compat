@@ -955,6 +955,113 @@ case(
     raises=("TypeError", "argsort() got an unexpected keyword argument 'zz'"),
 )
 case(
+    "errors/array-take-below-minus-one",
+    "pandas.array",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].array.take([-2], allow_fill=True),
+    raises=("ValueError", "'indices' contains values less than allowed (-2 < -1)"),
+)
+case(
+    "errors/array-take-out-of-bounds",
+    "pandas.array",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].array.take([5]),
+    raises=("IndexError", "index 5 is out of bounds for axis 0 with size 2"),
+)
+case(
+    "errors/array-take-fill-out-of-bounds",
+    "pandas.array",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].array.take([5], allow_fill=True),
+    raises=("IndexError", "indices are out-of-bounds"),
+)
+case(
+    "errors/array-delete-out-of-bounds",
+    "pandas.array",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].array.delete(5),
+    raises=("IndexError", "index 5 is out of bounds for axis 0 with size 2"),
+)
+case(
+    "errors/array-insert-out-of-range",
+    "pandas.array",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].array.insert(5, 1),
+    raises=("IndexError", "loc must be an integer between -2 and 2"),
+)
+case(
+    "errors/array-repeat-axis",
+    "pandas.array",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.array([1, 2], dtype="Int64").repeat(2, axis=1),
+    raises=(
+        "ValueError",
+        "the 'axis' parameter is not supported in the pandas implementation of repeat()",
+    ),
+)
+case(
+    "errors/array-repeat-mismatch",
+    "pandas.array",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].array.repeat([1, 2, 3]),
+    raises=("ValueError", "operands could not be broadcast together"),
+)
+case(
+    "errors/array-reshape-size",
+    "pandas.array",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].array.reshape(3),
+    raises=("ValueError", "cannot reshape array of size 2 into shape (3,)"),
+)
+case(
+    "errors/array-text-insert-number",
+    "pandas.array",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.array(["x"], dtype="string").insert(0, 1),
+    raises=("TypeError", "Invalid value '1' for dtype 'str'"),
+)
+case(
+    "errors/categorical-insert-new",
+    "pandas.Categorical",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Categorical(["a"]).insert(0, "q"),
+    raises=("TypeError", "Cannot setitem on a Categorical with a new category (q)"),
+)
+case(
+    "errors/categorical-take-fill-new",
+    "pandas.Categorical",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Categorical(["a"]).take([-1], allow_fill=True, fill_value="q"),
+    raises=("TypeError", "Cannot setitem on a Categorical with a new category (q)"),
+)
+case(
+    "errors/categorical-check-for-ordered",
+    "pandas.Categorical",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Categorical(["a"]).check_for_ordered("min"),
+    raises=("TypeError", "Categorical is not ordered for operation min"),
+)
+case(
+    "errors/categorical-set-ordered-bool",
+    "pandas.Categorical",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Categorical(["a"]).set_ordered(1),
+    raises=("TypeError", "'ordered' must either be 'True' or 'False'"),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",
