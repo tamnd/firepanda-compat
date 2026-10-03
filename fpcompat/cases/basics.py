@@ -16028,6 +16028,66 @@ def _tail29_evens(pd):
     return pd.RangeIndex(0, 20, 2, name="n")
 
 
+TAIL30_CASES = (
+    (
+        "whole-floor-divided-by-zero",
+        "Series.floordiv",
+        (),
+        lambda pd: pd.Series([-2, 0, 3]) // 0,
+    ),
+    (
+        "whole-modulo-zero",
+        "Series.mod",
+        (),
+        lambda pd: pd.Series([4, 5, 6]) % pd.Series([0, 2, 4]),
+    ),
+    (
+        "zero-floor-divided-by-whole",
+        "Series.rfloordiv",
+        (),
+        lambda pd: 0 // pd.Series([-2, 0, 3]),
+    ),
+    (
+        "whole-floor-divided-no-zero-stays-whole",
+        "Series.floordiv",
+        (),
+        lambda pd: pd.Series([-2, 0, 3]) // 2,
+    ),
+    (
+        "frame-floor-divided-by-frame-with-zero",
+        "DataFrame.floordiv",
+        (),
+        lambda pd: (
+            pd.DataFrame({"a": [4, 6], "b": [1, 0]}) // pd.DataFrame({"a": [2, 3], "b": [0, 0]})
+        ),
+    ),
+    (
+        "frame-floordiv-zero",
+        "DataFrame.floordiv",
+        (),
+        lambda pd: pd.DataFrame({"a": [-1, 0, 1]}).floordiv(0),
+    ),
+    (
+        "nlargest-flags",
+        "DataFrame.nlargest",
+        (),
+        lambda pd: pd.DataFrame({"c": [False, True, False], "d": [1, 2, 3]}).nlargest(1, "c"),
+    ),
+    (
+        "nsmallest-nullable-whole",
+        "Series.nsmallest",
+        (),
+        lambda pd: pd.Series([3, None, 5, 1], dtype="Int64").nsmallest(4),
+    ),
+    (
+        "nlargest-nullable-whole-keep-all",
+        "Series.nlargest",
+        (),
+        lambda pd: pd.Series([3, 5, 5, 1], dtype="Int64").nlargest(1, keep="all"),
+    ),
+)
+
+
 TAIL29_CASES = (
     (
         "range-slice-stays-range",
@@ -16147,6 +16207,7 @@ for _id, _api, _covers, _build in (
     + TAIL27_CASES
     + TAIL28_CASES
     + TAIL29_CASES
+    + TAIL30_CASES
 ):
     case(
         f"basics/{_id}",

@@ -177,6 +177,86 @@ case(
     note="pandas reads the axis as a frame's even when only columns are joined",
 )
 case(
+    "errors/frame-columns-of-different-lengths",
+    "pandas.DataFrame",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.DataFrame({"a": [1, 2, 3], "b": [1]}),
+    raises=("ValueError", "All arrays must be of the same length"),
+)
+case(
+    "errors/fillna-list-value",
+    "DataFrame.fillna",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.fillna([1]),
+    raises=("TypeError", '"value" parameter must be a scalar or dict, but you passed a "list"'),
+)
+case(
+    "errors/series-fillna-set-value",
+    "Series.fillna",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df[df.columns[0]].fillna({1}),
+    raises=("TypeError", '"value" parameter must be a scalar, dict or Series'),
+)
+case(
+    "errors/index-fillna-list-value",
+    "Index.fillna",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.index.fillna([1]),
+    raises=("TypeError", "'value' must be a scalar, passed: list"),
+)
+case(
+    "errors/std-ddof-not-a-number",
+    "DataFrame.std",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.std(ddof="a"),
+    raises=("ValueError", "could not convert string to float: 'a'"),
+)
+case(
+    "errors/argmax-past-the-one-axis",
+    "Series.argmax",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df[df.columns[0]].argmax(axis=1),
+    raises=("ValueError", "`axis` must be fewer than the number of dimensions (1)"),
+)
+case(
+    "errors/nlargest-text-column",
+    "DataFrame.nlargest",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.DataFrame({"c": ["a", "b"]}).nlargest(1, "c"),
+    raises=("TypeError", "Column 'c' has dtype str, cannot use method 'nlargest' with this dtype"),
+)
+case(
+    "errors/series-nsmallest-text",
+    "Series.nsmallest",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(["a", "b"]).nsmallest(1),
+    raises=("TypeError", "Cannot use method 'nsmallest' with dtype str"),
+)
+case(
+    "errors/grouped-quantile-out-of-range",
+    "GroupBy.quantile",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.DataFrame({"k": [1, 1], "v": [1.0, 2.0]}).groupby("k").quantile(2),
+    raises=("ValueError", "Each 'q' must be between 0 and 1. Got '2.0' instead"),
+)
+case(
+    "errors/merge-validate-words-in-order",
+    "DataFrame.merge",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.merge(df, on=list(df.columns), validate="x"),
+    raises=("ValueError", '- "m:m"\n- "one_to_one"'),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",

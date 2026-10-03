@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Ten errors cases for unequal column lengths, fillna list-like values on a frame, a column and an index, a ddof that is not a number, argmax past the one axis, nlargest and nsmallest on text, a group quantile out of range and the order of merge's validate words, and nine basics cases (TAIL30) for whole numbers floor divided or modulo zero and nlargest on flags and nullable whole numbers, after firepanda #1566 and #1568.
+- Board after firepanda #1568: 6863 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Three errors cases for functions named by a string that does not exist, under transform and apply, and for concat reading a bad axis as a frame's.
 - Board after firepanda #1565: 6844 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Five errors cases for argument checks in pandas' words: ascending that is not a flag for sort_values and sort_index, diff periods that are not whole, the keep wording of duplicated, and a regex that is not a flag.
