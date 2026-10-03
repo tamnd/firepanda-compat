@@ -16109,6 +16109,30 @@ TAIL30_CASES = (
         (),
         lambda pd: pd.Series([pd.RangeIndex(3).all(dtype=1), pd.RangeIndex(1, 3).any(out=1)]),
     ),
+    (
+        "pct-change-fill-value",
+        "DataFrame.pct_change",
+        (),
+        lambda pd: pd.DataFrame({"a": [1, 2, 4], "b": [1.5, 3.0, 6.0]}).pct_change(fill_value=1),
+    ),
+    (
+        "series-pct-change-fill-value-backward",
+        "Series.pct_change",
+        (),
+        lambda pd: pd.Series([1.5, 3.0, 6.0]).pct_change(periods=-1, fill_value=2),
+    ),
+    (
+        "take-numpy-defaults",
+        "Series.take",
+        (),
+        lambda pd: pd.Series([1, 2, 3]).take([2, 0], out=None, mode="raise"),
+    ),
+    (
+        "transpose-axes-none",
+        "DataFrame.transpose",
+        (),
+        lambda pd: pd.DataFrame({"a": [1, 2], "b": [3, 4]}).transpose(None),
+    ),
 )
 
 

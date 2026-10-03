@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for wrong calls on an index, which name the method as pandas does, for numpy's keywords on `take`, `transpose` and a MultiIndex, for `to_numpy`'s keywords, and for `pct_change` handing `fill_value` to `shift`.
+- Board after firepanda #1578: 6952 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Cases for wrong calls on a group by, a window and a resampler, which name the method as pandas does, for `agg` with nothing to do, and for a window's named aggregation.
 - Board after firepanda #1577: 6933 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Cases for numpy's keywords on reductions (out, keepdims, dtype, initial, overwrite_input, a value by position, and unknown keywords) on frames, series and indexes.

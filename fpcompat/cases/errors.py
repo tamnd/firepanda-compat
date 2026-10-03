@@ -826,6 +826,135 @@ case(
     raises=("KeyError", "Label(s) ['zz'] do not exist"),
 )
 case(
+    "errors/range-index-repeat-unknown-keyword",
+    "Index.repeat",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.index.repeat(2, zz=1),
+    raises=("TypeError", "Index.repeat() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/range-index-searchsorted-unknown-keyword",
+    "Index.searchsorted",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.index.searchsorted(1, zz=1),
+    raises=("TypeError", "RangeIndex.searchsorted() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/index-tolist-unknown-keyword",
+    "Index.tolist",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.set_index("b").index.tolist(zz=1),
+    raises=("TypeError", "IndexOpsMixin.tolist() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/multiindex-rename-unknown-keyword",
+    "MultiIndex.rename",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.set_index(["a", "b"]).index.rename("x", zz=1),
+    raises=("TypeError", "Index.set_names() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/frame-take-out",
+    "DataFrame.take",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.take([0], out=1),
+    raises=(
+        "ValueError",
+        "the 'out' parameter is not supported in the pandas implementation of take()",
+    ),
+)
+case(
+    "errors/series-take-unknown-keyword",
+    "Series.take",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].take([0], zz=1),
+    raises=("TypeError", "take() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/index-take-unknown-keyword",
+    "Index.take",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.index.take([0], zz=1),
+    raises=("TypeError", "take() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/frame-transpose-axes",
+    "DataFrame.transpose",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.transpose(1),
+    raises=(
+        "ValueError",
+        "the 'axes' parameter is not supported in the pandas implementation of transpose()",
+    ),
+)
+case(
+    "errors/series-transpose-two-values",
+    "Series.transpose",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].transpose(None, None),
+    raises=("TypeError", "transpose() takes at most 1 argument (2 given)"),
+)
+case(
+    "errors/series-to-numpy-unknown-keyword",
+    "Series.to_numpy",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].to_numpy(zz=1),
+    raises=("TypeError", "to_numpy() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/text-to-numpy-unknown-keyword",
+    "Series.to_numpy",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["c"].to_numpy(zz=1),
+    raises=("TypeError", "ArrowExtensionArray.to_numpy() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/frame-pct-change-unknown-keyword",
+    "DataFrame.pct_change",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.pct_change(zz=1),
+    raises=("TypeError", "DataFrame.shift() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/series-pct-change-unknown-keyword",
+    "Series.pct_change",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].pct_change(zz=1),
+    raises=("TypeError", "NDFrame.shift() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/multiindex-max-out",
+    "MultiIndex.max",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.set_index(["a", "b"]).index.max(out=1),
+    raises=(
+        "ValueError",
+        "the 'out' parameter is not supported in the pandas implementation of max()",
+    ),
+)
+case(
+    "errors/index-argsort-unknown-keyword",
+    "Index.argsort",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.index.argsort(zz=1),
+    raises=("TypeError", "argsort() got an unexpected keyword argument 'zz'"),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",
