@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for wrong calls naming the method as pandas does (head, fillna, pivot, divide, tolist, shift) and for pivot_table and get_dummies mistakes.
+- Board after firepanda #1575: 6907 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Three error cases for merge arguments: a `left_index` or `right_index` that is not a Boolean, and `merge_ordered` with `how="cross"`.
 - Board after firepanda #1574: 6897 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Seven error cases for arithmetic text cannot do, reached through `diff`, `pct_change`, a frame's `cumprod`, `mul` by text or floats, and `clip` with numeric bounds.

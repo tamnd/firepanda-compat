@@ -537,6 +537,90 @@ case(
     raises=("ValueError", "do not recognize join method cross"),
 )
 case(
+    "errors/head-unknown-keyword",
+    "DataFrame.head",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.head(zz=1),
+    raises=("TypeError", "NDFrame.head() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/fillna-method-keyword",
+    "DataFrame.fillna",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.fillna(0, method="ffill"),
+    raises=("TypeError", "NDFrame.fillna() got an unexpected keyword argument 'method'"),
+)
+case(
+    "errors/pivot-without-columns",
+    "DataFrame.pivot",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.pivot(index="a"),
+    raises=("TypeError", "DataFrame.pivot() missing 1 required keyword-only argument: 'columns'"),
+)
+case(
+    "errors/divide-without-other",
+    "DataFrame.div",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.div(),
+    raises=("TypeError", "DataFrame.truediv() missing 1 required positional argument"),
+)
+case(
+    "errors/series-tolist-keyword",
+    "Series.tolist",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].tolist(zz=1),
+    raises=("TypeError", "IndexOpsMixin.tolist() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/series-shift-keyword",
+    "Series.shift",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].shift(zz=1),
+    raises=("TypeError", "NDFrame.shift() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/pivot-table-unknown-function",
+    "DataFrame.pivot_table",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.pivot_table(index="a", columns="c", values="b", aggfunc="bogus"),
+    raises=("AttributeError", "'bogus' is not a valid function for 'DataFrameGroupBy' object"),
+)
+case(
+    "errors/pivot-table-margins-name-taken",
+    "DataFrame.pivot_table",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.fillna({"c": "x"}).pivot_table(
+        index="c", values="b", margins=True, margins_name="one"
+    ),
+    raises=("ValueError", 'Conflicting name "one" in margins'),
+)
+case(
+    "errors/pivot-table-margins-name-number",
+    "DataFrame.pivot_table",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.fillna({"c": "x"}).pivot_table(
+        index="c", values="b", margins=True, margins_name=1
+    ),
+    raises=("ValueError", "margins_name argument must be a string"),
+)
+case(
+    "errors/get-dummies-missing-column",
+    "pandas.get_dummies",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.get_dummies(df, columns=["zz", "c"]),
+    raises=("KeyError", "['zz'] not in index"),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",
