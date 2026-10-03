@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for the settings a group by's rolling, expanding, ewm and resample hold, read as values, and for what they list for `dir`.
+- Board after firepanda #1583: 7081 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Cases for the fields and methods of instant, span and period arrays, and for `as_unit` refusing an unknown unit on a column, an index and an array.
 - Board after firepanda #1581: 7059 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Cases for period index ordinals, fullness and resolution, interval closed flags and `to_tuples`, a column group by's `dtype` and a numpy array's `repeat` along axis 0.

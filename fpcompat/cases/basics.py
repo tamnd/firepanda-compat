@@ -16056,6 +16056,17 @@ def _tail30_months(pd):
     return pd.array(pd.period_range("2024-01", periods=2, freq="M"))
 
 
+def _tail30_grouped(pd):
+    """A frame grouped by a key column with two rows in the first group."""
+    return pd.DataFrame({"a": [1, 1, 2], "b": [1.5, 2.5, 3.5]}).groupby("a")
+
+
+def _tail30_stamped(pd):
+    """A frame on two daily stamps grouped by a key column."""
+    stamps = pd.date_range("2024-01-01", periods=2)
+    return pd.DataFrame({"a": [1, 1], "b": [1.0, 2.0]}, index=stamps).groupby("a")
+
+
 TAIL30_CASES = (
     (
         "whole-floor-divided-by-zero",
@@ -16711,6 +16722,138 @@ TAIL30_CASES = (
         "DatetimeIndex.is_normalized",
         (),
         lambda pd: pd.DatetimeIndex(["2024-01-01", pd.NaT]).is_normalized,
+    ),
+    (
+        "groupby-rolling-window",
+        "GroupBy.rolling",
+        (),
+        lambda pd: _tail30_grouped(pd).rolling(2).window,
+    ),
+    (
+        "groupby-rolling-min-periods",
+        "GroupBy.rolling",
+        (),
+        lambda pd: _tail30_grouped(pd).rolling(2, min_periods=1).min_periods,
+    ),
+    (
+        "groupby-rolling-center",
+        "GroupBy.rolling",
+        (),
+        lambda pd: _tail30_grouped(pd).rolling(2, center=True).center,
+    ),
+    (
+        "groupby-rolling-method",
+        "GroupBy.rolling",
+        (),
+        lambda pd: _tail30_grouped(pd).rolling(2).method,
+    ),
+    (
+        "groupby-rolling-win-type",
+        "GroupBy.rolling",
+        (),
+        lambda pd: _tail30_grouped(pd).rolling(2).win_type,
+    ),
+    (
+        "groupby-rolling-obj-columns",
+        "GroupBy.rolling",
+        (),
+        lambda pd: _tail30_grouped(pd).rolling(2).obj.columns.tolist(),
+    ),
+    (
+        "groupby-rolling-ndim",
+        "GroupBy.rolling",
+        (),
+        lambda pd: _tail30_grouped(pd).rolling(2).ndim,
+    ),
+    (
+        "groupby-rolling-column-ndim",
+        "GroupBy.rolling",
+        (),
+        lambda pd: _tail30_grouped(pd)["b"].rolling(2).ndim,
+    ),
+    (
+        "groupby-rolling-exclusions",
+        "GroupBy.rolling",
+        (),
+        lambda pd: sorted(_tail30_grouped(pd).rolling(2).exclusions),
+    ),
+    (
+        "groupby-rolling-dir-window",
+        "GroupBy.rolling",
+        (),
+        lambda pd: "window" in dir(_tail30_grouped(pd).rolling(2)),
+    ),
+    (
+        "groupby-expanding-window",
+        "GroupBy.expanding",
+        (),
+        lambda pd: _tail30_grouped(pd).expanding().window,
+    ),
+    (
+        "groupby-expanding-min-periods",
+        "GroupBy.expanding",
+        (),
+        lambda pd: _tail30_grouped(pd).expanding().min_periods,
+    ),
+    (
+        "groupby-ewm-com",
+        "GroupBy.ewm",
+        (),
+        lambda pd: _tail30_grouped(pd).ewm(com=1).com,
+    ),
+    (
+        "groupby-ewm-adjust",
+        "GroupBy.ewm",
+        (),
+        lambda pd: _tail30_grouped(pd).ewm(com=1).adjust,
+    ),
+    (
+        "groupby-ewm-span",
+        "GroupBy.ewm",
+        (),
+        lambda pd: _tail30_grouped(pd).ewm(span=3).span,
+    ),
+    (
+        "groupby-resample-closed",
+        "GroupBy.resample",
+        (),
+        lambda pd: _tail30_stamped(pd).resample("D").closed,
+    ),
+    (
+        "groupby-resample-label-month",
+        "GroupBy.resample",
+        (),
+        lambda pd: _tail30_stamped(pd).resample("ME").label,
+    ),
+    (
+        "groupby-resample-freq",
+        "GroupBy.resample",
+        (),
+        lambda pd: str(_tail30_stamped(pd).resample("D").freq),
+    ),
+    (
+        "groupby-resample-origin",
+        "GroupBy.resample",
+        (),
+        lambda pd: _tail30_stamped(pd).resample("2h", origin="epoch").origin,
+    ),
+    (
+        "groupby-resample-offset",
+        "GroupBy.resample",
+        (),
+        lambda pd: str(_tail30_stamped(pd).resample("2h", offset="30min").offset),
+    ),
+    (
+        "groupby-resample-key",
+        "GroupBy.resample",
+        (),
+        lambda pd: _tail30_stamped(pd).resample("D").key,
+    ),
+    (
+        "groupby-resample-dir-columns",
+        "GroupBy.resample",
+        (),
+        lambda pd: sorted({"a", "b"} & set(dir(_tail30_stamped(pd).resample("D")))),
     ),
 )
 
