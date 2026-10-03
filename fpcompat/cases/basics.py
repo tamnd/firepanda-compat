@@ -16038,6 +16038,8 @@ def _tail30_categories(pd):
     return pd.Categorical(["a", "b", "a"], categories=["b", "a", "z"])
 
 
+_TAIL30_FLAGS = ("closed_left", "closed_right", "open_left", "open_right")
+
 TAIL30_CASES = (
     (
         "whole-floor-divided-by-zero",
@@ -16322,6 +16324,137 @@ TAIL30_CASES = (
         "pandas.Categorical",
         (),
         lambda pd: _tail30_categories(pd).delete(0).categories.tolist(),
+    ),
+    (
+        "period-index-asi8",
+        "pandas.PeriodIndex",
+        (),
+        lambda pd: pd.PeriodIndex(["2024-01", "2024-03"], freq="M").asi8.tolist(),
+    ),
+    (
+        "period-index-is-full",
+        "pandas.PeriodIndex",
+        (),
+        lambda pd: pd.PeriodIndex(["2024-01", "2024-02", "2024-02"], freq="M").is_full,
+    ),
+    (
+        "period-index-not-full",
+        "pandas.PeriodIndex",
+        (),
+        lambda pd: pd.PeriodIndex(["2024-01", "2024-03"], freq="M").is_full,
+    ),
+    (
+        "period-index-empty-is-full",
+        "pandas.PeriodIndex",
+        (),
+        lambda pd: pd.PeriodIndex([], freq="M").is_full,
+    ),
+    (
+        "period-range-resolution-quarter",
+        "pandas.period_range",
+        (),
+        lambda pd: pd.period_range("2024Q1", periods=2, freq="Q").resolution,
+    ),
+    (
+        "period-range-resolution-hour",
+        "pandas.period_range",
+        (),
+        lambda pd: pd.period_range("2024-01-01", periods=2, freq="h").resolution,
+    ),
+    (
+        "interval-index-closed-left-flags",
+        "pandas.IntervalIndex",
+        (),
+        lambda pd: [
+            getattr(pd.IntervalIndex.from_breaks([0, 1], closed="left"), n) for n in _TAIL30_FLAGS
+        ],
+    ),
+    (
+        "interval-index-closed-both-flags",
+        "pandas.IntervalIndex",
+        (),
+        lambda pd: [
+            getattr(pd.IntervalIndex.from_breaks([0, 1], closed="both"), n) for n in _TAIL30_FLAGS
+        ],
+    ),
+    (
+        "interval-array-closed-neither-flags",
+        "pandas.IntervalIndex",
+        (),
+        lambda pd: [
+            getattr(pd.IntervalIndex.from_breaks([0, 1], closed="neither").array, n)
+            for n in _TAIL30_FLAGS
+        ],
+    ),
+    (
+        "interval-index-to-tuples",
+        "pandas.IntervalIndex",
+        (),
+        lambda pd: pd.IntervalIndex.from_breaks([0, 1, 2]).to_tuples().tolist(),
+    ),
+    (
+        "interval-index-to-tuples-type",
+        "pandas.IntervalIndex",
+        (),
+        lambda pd: str(pd.IntervalIndex.from_breaks([0, 1, 2]).to_tuples().dtype),
+    ),
+    (
+        "interval-array-to-tuples",
+        "pandas.IntervalIndex",
+        (),
+        lambda pd: [
+            tuple(int(e) for e in p)
+            for p in pd.IntervalIndex.from_breaks([0, 1, 2]).array.to_tuples()
+        ],
+    ),
+    (
+        "interval-array-can-hold-na",
+        "pandas.IntervalIndex",
+        (),
+        lambda pd: pd.IntervalIndex.from_breaks([0, 1]).array.can_hold_na,
+    ),
+    (
+        "groupby-column-dtype",
+        "Series.groupby",
+        (),
+        lambda pd: [
+            str(k)
+            for k in pd.DataFrame({"a": [1, 1, 2], "b": [1.5, 2.5, 3.5]})
+            .groupby("a")["b"]
+            .dtype.tolist()
+        ],
+    ),
+    (
+        "groupby-column-dtype-name",
+        "Series.groupby",
+        (),
+        lambda pd: (
+            pd.DataFrame({"a": [1, 1, 2], "b": [1.5, 2.5, 3.5]}).groupby("a")["b"].dtype.name
+        ),
+    ),
+    (
+        "groupby-column-dtype-index",
+        "Series.groupby",
+        (),
+        lambda pd: (
+            pd.DataFrame({"a": [1, 1, 2], "b": [1.5, 2.5, 3.5]})
+            .groupby("a")["b"]
+            .dtype.index.tolist()
+        ),
+    ),
+    (
+        "groupby-column-dtype-type",
+        "Series.groupby",
+        (),
+        lambda pd: str(
+            pd.DataFrame({"a": [1, 1, 2], "b": [1.5, 2.5, 3.5]}).groupby("a")["b"].dtype.dtype
+        ),
+    ),
+    (
+        "array-numpy-repeat-axis-zero",
+        "Series.array",
+        (),
+        lambda pd: pd.Series([1, 2]).array.repeat(2, axis=0).tolist(),
     ),
 )
 

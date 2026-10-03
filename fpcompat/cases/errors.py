@@ -1062,6 +1062,30 @@ case(
     raises=("TypeError", "'ordered' must either be 'True' or 'False'"),
 )
 case(
+    "errors/period-index-is-full-unsorted",
+    "pandas.PeriodIndex",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.PeriodIndex(["2024-03", "2024-01"], freq="M").is_full,
+    raises=("ValueError", "Index is not monotonic"),
+)
+case(
+    "errors/period-range-resolution-week",
+    "pandas.period_range",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.period_range("2024-01-01", periods=2, freq="W").resolution,
+    raises=("ValueError", "Invalid frequency: W-SUN"),
+)
+case(
+    "errors/period-range-resolution-multiple",
+    "pandas.period_range",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.period_range("2024-01", periods=2, freq="2M").resolution,
+    raises=("ValueError", "Invalid frequency: 2M"),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",

@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for period index ordinals, fullness and resolution, interval closed flags and `to_tuples`, a column group by's `dtype` and a numpy array's `repeat` along axis 0.
+- Board after firepanda #1580: 7016 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Cases for the methods every array has (take with allow_fill, delete, insert, repeat, equals, ravel, reshape), the reductions on numpy, masked, timedelta and period arrays, and Categorical's insert, take, describe, set_ordered, notna and check_for_ordered, with the refusals in pandas' words.
 - Board after firepanda #1579: 6995 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Cases for wrong calls on an index, which name the method as pandas does, for numpy's keywords on `take`, `transpose` and a MultiIndex, for `to_numpy`'s keywords, and for `pct_change` handing `fill_value` to `shift`.
