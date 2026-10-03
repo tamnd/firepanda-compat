@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Cases for numpy's keywords on reductions (out, keepdims, dtype, initial, overwrite_input, a value by position, and unknown keywords) on frames, series and indexes.
+- Board after firepanda #1576: 6918 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Cases for wrong calls naming the method as pandas does (head, fillna, pivot, divide, tolist, shift) and for pivot_table and get_dummies mistakes.
 - Board after firepanda #1575: 6907 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Three error cases for merge arguments: a `left_index` or `right_index` that is not a Boolean, and `merge_ordered` with `how="cross"`.

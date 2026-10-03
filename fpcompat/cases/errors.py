@@ -621,6 +621,115 @@ case(
     raises=("KeyError", "['zz'] not in index"),
 )
 case(
+    "errors/sum-out-keyword",
+    "DataFrame.sum",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.sum(out=1),
+    raises=(
+        "ValueError",
+        "the 'out' parameter is not supported in the pandas implementation of sum()",
+    ),
+)
+case(
+    "errors/sum-unknown-keyword",
+    "DataFrame.sum",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.sum(zz=1),
+    raises=("TypeError", "sum() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/series-mean-keepdims",
+    "Series.mean",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].mean(keepdims=True),
+    raises=(
+        "ValueError",
+        "the 'keepdims' parameter is not supported in the pandas implementation of mean()",
+    ),
+)
+case(
+    "errors/median-overwrite-input",
+    "DataFrame.median",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.median(overwrite_input=True),
+    raises=(
+        "ValueError",
+        "the 'overwrite_input' parameter is not supported in the pandas implementation of median()",
+    ),
+)
+case(
+    "errors/series-std-initial",
+    "Series.std",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["b"].std(initial=None),
+    raises=("TypeError", "std() got an unexpected keyword argument 'initial'"),
+)
+case(
+    "errors/all-dtype-keyword",
+    "DataFrame.all",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.all(dtype="f8"),
+    raises=("TypeError", "all() got an unexpected keyword argument 'dtype'"),
+)
+case(
+    "errors/series-cumsum-dtype-by-position",
+    "Series.cumsum",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].cumsum(0, True, 1),
+    raises=(
+        "ValueError",
+        "the 'dtype' parameter is not supported in the pandas implementation of cumsum()",
+    ),
+)
+case(
+    "errors/cummax-keepdims",
+    "DataFrame.cummax",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.cummax(keepdims=True),
+    raises=("TypeError", "cummax() got an unexpected keyword argument 'keepdims'"),
+)
+case(
+    "errors/series-idxmin-out",
+    "Series.idxmin",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df["a"].idxmin(out=1),
+    raises=(
+        "ValueError",
+        "the 'out' parameter is not supported in the pandas implementation of argmax()",
+    ),
+)
+case(
+    "errors/index-all-dtype",
+    "Index.all",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.set_index("b").index.all(dtype=1),
+    raises=(
+        "ValueError",
+        "the 'dtype' parameter is not supported in the pandas implementation of all()",
+    ),
+)
+case(
+    "errors/index-max-keepdims",
+    "Index.max",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.index.max(keepdims=True),
+    raises=(
+        "ValueError",
+        "the 'keepdims' parameter is not supported in the pandas implementation of max()",
+    ),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",
