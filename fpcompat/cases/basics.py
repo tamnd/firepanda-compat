@@ -16040,6 +16040,22 @@ def _tail30_categories(pd):
 
 _TAIL30_FLAGS = ("closed_left", "closed_right", "open_left", "open_right")
 
+
+def _tail30_instants(pd):
+    """Two instants in an array, a Wednesday morning and a Friday midnight."""
+    return pd.array(pd.to_datetime(["2024-01-31 10:15:30", "2024-03-01 00:00:00"]))
+
+
+def _tail30_spans(pd):
+    """Two spans in an array, one over a day and one a few seconds below zero."""
+    return pd.array(pd.to_timedelta(["1D 2h", "-3s"]))
+
+
+def _tail30_months(pd):
+    """Two monthly periods in an array, January and February of a leap year."""
+    return pd.array(pd.period_range("2024-01", periods=2, freq="M"))
+
+
 TAIL30_CASES = (
     (
         "whole-floor-divided-by-zero",
@@ -16455,6 +16471,246 @@ TAIL30_CASES = (
         "Series.array",
         (),
         lambda pd: pd.Series([1, 2]).array.repeat(2, axis=0).tolist(),
+    ),
+    (
+        "array-dt-year",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).year.tolist(),
+    ),
+    (
+        "array-dt-year-type",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_instants(pd).year.dtype),
+    ),
+    (
+        "array-dt-gap-year",
+        "Series.array",
+        (),
+        lambda pd: str(pd.array(pd.to_datetime(["2024-01-31", pd.NaT])).year.tolist()),
+    ),
+    (
+        "array-dt-dayofweek",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).dayofweek.tolist(),
+    ),
+    (
+        "array-dt-dayofyear",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).day_of_year.tolist(),
+    ),
+    (
+        "array-dt-days-in-month",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).days_in_month.tolist(),
+    ),
+    (
+        "array-dt-is-month-start",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).is_month_start.tolist(),
+    ),
+    (
+        "array-dt-is-month-end",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).is_month_end.tolist(),
+    ),
+    (
+        "array-dt-is-leap-year",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).is_leap_year.tolist(),
+    ),
+    (
+        "array-dt-unit",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).unit,
+    ),
+    (
+        "array-dt-resolution",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).resolution,
+    ),
+    (
+        "array-dt-asi8",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).asi8.tolist(),
+    ),
+    (
+        "array-dt-is-normalized",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).is_normalized,
+    ),
+    (
+        "array-dt-floor",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_instants(pd).floor("h")[0]),
+    ),
+    (
+        "array-dt-ceil",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_instants(pd).ceil("h")[0]),
+    ),
+    (
+        "array-dt-round-class",
+        "Series.array",
+        (),
+        lambda pd: type(_tail30_instants(pd).round("h")).__name__,
+    ),
+    (
+        "array-dt-normalize",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_instants(pd).normalize()[0]),
+    ),
+    (
+        "array-dt-as-unit",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_instants(pd).as_unit("s").dtype),
+    ),
+    (
+        "array-dt-day-name",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).day_name().tolist(),
+    ),
+    (
+        "array-dt-month-name",
+        "Series.array",
+        (),
+        lambda pd: _tail30_instants(pd).month_name().tolist(),
+    ),
+    (
+        "array-dt-to-period",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_instants(pd).to_period("M").dtype),
+    ),
+    (
+        "array-dt-isocalendar-week",
+        "Series.array",
+        (),
+        lambda pd: int(_tail30_instants(pd).isocalendar()["week"].iloc[1]),
+    ),
+    (
+        "array-dt-strftime",
+        "Series.array",
+        (),
+        lambda pd: list(_tail30_instants(pd).strftime("%Y-%m")),
+    ),
+    (
+        "array-dt-tz-localize",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_instants(pd).tz_localize("UTC").dtype),
+    ),
+    (
+        "array-td-days",
+        "Series.array",
+        (),
+        lambda pd: _tail30_spans(pd).days.tolist(),
+    ),
+    (
+        "array-td-seconds",
+        "Series.array",
+        (),
+        lambda pd: _tail30_spans(pd).seconds.tolist(),
+    ),
+    (
+        "array-td-total-seconds",
+        "Series.array",
+        (),
+        lambda pd: _tail30_spans(pd).total_seconds().tolist(),
+    ),
+    (
+        "array-td-components-hours",
+        "Series.array",
+        (),
+        lambda pd: _tail30_spans(pd).components["hours"].tolist(),
+    ),
+    (
+        "array-td-floor",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_spans(pd).floor("h")[1]),
+    ),
+    (
+        "array-td-as-unit",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_spans(pd).as_unit("s").dtype),
+    ),
+    (
+        "array-td-to-pytimedelta",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_spans(pd).to_pytimedelta()[0]),
+    ),
+    (
+        "array-period-year",
+        "Series.array",
+        (),
+        lambda pd: _tail30_months(pd).year.tolist(),
+    ),
+    (
+        "array-period-day",
+        "Series.array",
+        (),
+        lambda pd: _tail30_months(pd).day.tolist(),
+    ),
+    (
+        "array-period-week",
+        "Series.array",
+        (),
+        lambda pd: _tail30_months(pd).week.tolist(),
+    ),
+    (
+        "array-period-freqstr",
+        "Series.array",
+        (),
+        lambda pd: _tail30_months(pd).freqstr,
+    ),
+    (
+        "array-period-start-time",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_months(pd).start_time[1]),
+    ),
+    (
+        "array-period-end-time",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_months(pd).end_time[1]),
+    ),
+    (
+        "array-period-asfreq",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_months(pd).asfreq("D")[0]),
+    ),
+    (
+        "array-period-to-timestamp",
+        "Series.array",
+        (),
+        lambda pd: str(_tail30_months(pd).to_timestamp()[1]),
+    ),
+    (
+        "datetime-index-gap-not-normalized",
+        "DatetimeIndex.is_normalized",
+        (),
+        lambda pd: pd.DatetimeIndex(["2024-01-01", pd.NaT]).is_normalized,
     ),
 )
 

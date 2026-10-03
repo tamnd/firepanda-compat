@@ -1086,6 +1086,30 @@ case(
     raises=("ValueError", "Invalid frequency: 2M"),
 )
 case(
+    "errors/array-dt-as-unit-unknown",
+    "Series.array",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.array(pd.to_datetime(["2024-01-01"])).as_unit("q"),
+    raises=("ValueError", "Supported units are 's', 'ms', 'us', 'ns'"),
+)
+case(
+    "errors/dt-as-unit-day",
+    "dt.as_unit",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(pd.to_timedelta(["1D"])).dt.as_unit("D"),
+    raises=("ValueError", "Supported units are 's', 'ms', 'us', 'ns'"),
+)
+case(
+    "errors/datetime-index-as-unit-unknown",
+    "DatetimeIndex.as_unit",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.DatetimeIndex(["2024-01-01"]).as_unit("q"),
+    raises=("ValueError", "Supported units are 's', 'ms', 'us', 'ns'"),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",
