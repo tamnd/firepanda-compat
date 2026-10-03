@@ -457,6 +457,62 @@ case(
     raises=("ValueError", "numeric_only accepts only Boolean values"),
 )
 case(
+    "errors/text-diff",
+    "Series.diff",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(["a", "b"]).diff(),
+    raises=("TypeError", "operation 'sub' not supported for dtype 'str' with dtype 'str'"),
+)
+case(
+    "errors/text-pct-change",
+    "Series.pct_change",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(["a", "b"]).pct_change(),
+    raises=("TypeError", "operation 'truediv' not supported for dtype 'str' with dtype 'str'"),
+)
+case(
+    "errors/frame-text-diff",
+    "DataFrame.diff",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df[["c"]].fillna("x").diff(),
+    raises=("TypeError", "operation 'sub' not supported for dtype 'str' with dtype 'str'"),
+)
+case(
+    "errors/frame-text-cumprod",
+    "DataFrame.cumprod",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.fillna({"c": "x"}).cumprod(),
+    raises=("TypeError", "operation 'cumprod' not supported for dtype 'str'"),
+)
+case(
+    "errors/text-times-text",
+    "Series.mul",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(["a", "b"]).mul(pd.Series(["a", "b"])),
+    raises=("TypeError", "Can only string multiply by an integer."),
+)
+case(
+    "errors/text-times-floats",
+    "Series.mul",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(["a", "b"]).mul(pd.Series([1.5, 2.0])),
+    raises=("TypeError", "Can only string multiply by an integer."),
+)
+case(
+    "errors/text-clip-by-numbers",
+    "Series.clip",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.Series(["a", "b"]).clip(0, 1),
+    raises=("TypeError", "Invalid comparison between dtype=str and int"),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",

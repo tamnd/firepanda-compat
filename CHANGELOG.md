@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Seven error cases for arithmetic text cannot do, reached through `diff`, `pct_change`, a frame's `cumprod`, `mul` by text or floats, and `clip` with numeric bounds.
+- Board after firepanda #1573: 6894 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Eleven error cases for position keys and flags: `iloc` with a float, a string or a pair holding one, `iat` with a non-integer, `head` and `tail` with a count that is no whole number, and a group by `numeric_only` that is not a Boolean.
 - Board after firepanda #1572: 6887 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Thirteen errors cases for time mistakes and a missing label: unreadable frequencies for `round` and `floor`, unknown units for `Timestamp`, `Timedelta` and `to_datetime`, `.dt` and `.str` on columns of the wrong kind, whole numbers added to instants and instants scaled, localizing a zoned column, an unknown zone, and `get_loc` on a missing label. The error resolver also looks in `zoneinfo`, because pandas lets its `ZoneInfoNotFoundError` through.
