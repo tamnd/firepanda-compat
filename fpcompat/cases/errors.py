@@ -152,6 +152,31 @@ case(
     raises=("ValueError", "'to_replace' must be 'None' if 'regex' is not a bool"),
 )
 case(
+    "errors/transform-unknown-name",
+    "Series.transform",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df[df.columns[0]].transform("nope"),
+    raises=("ValueError", "Transform function failed"),
+)
+case(
+    "errors/apply-unknown-name",
+    "Series.apply",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df[df.columns[0]].apply("nope"),
+    raises=("AttributeError", "'nope' is not a valid function for 'Series' object"),
+)
+case(
+    "errors/concat-series-bad-axis",
+    "pandas.concat",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.concat([df[df.columns[0]], df[df.columns[0]]], axis=5),
+    raises=("ValueError", "No axis named 5 for object type DataFrame"),
+    note="pandas reads the axis as a frame's even when only columns are joined",
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",
