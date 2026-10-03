@@ -16085,6 +16085,30 @@ TAIL30_CASES = (
         (),
         lambda pd: pd.Series([3, 5, 5, 1], dtype="Int64").nlargest(1, keep="all"),
     ),
+    (
+        "rolling-named-aggregation",
+        "Rolling.agg",
+        (),
+        lambda pd: (
+            pd.DataFrame({"a": [1, 1, 2], "b": [1.5, 2.5, 3.5]}, index=[5, 6, 7])
+            .rolling(2)
+            .agg(x=("a", "sum"), y=("b", "max"))
+        ),
+    ),
+    (
+        "expanding-named-aggregation",
+        "Expanding.agg",
+        (),
+        lambda pd: (
+            pd.DataFrame({"a": [1, 1, 2], "b": [1.5, 2.5, 3.5]}).expanding().agg(x=("b", "mean"))
+        ),
+    ),
+    (
+        "range-index-all-takes-numpy-keywords-unread",
+        "Index.all",
+        (),
+        lambda pd: pd.Series([pd.RangeIndex(3).all(dtype=1), pd.RangeIndex(1, 3).any(out=1)]),
+    ),
 )
 
 

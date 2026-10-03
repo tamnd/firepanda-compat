@@ -730,6 +730,102 @@ case(
     ),
 )
 case(
+    "errors/groupby-sum-unknown-keyword",
+    "GroupBy.sum",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.groupby("a").sum(zz=1),
+    raises=("TypeError", "GroupBy.sum() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/series-groupby-head-unknown-keyword",
+    "GroupBy.head",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.groupby("a")["b"].head(zz=1),
+    raises=("TypeError", "GroupBy.head() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/series-groupby-idxmax-unknown-keyword",
+    "GroupBy.idxmax",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.groupby("a")["b"].idxmax(zz=1),
+    raises=("TypeError", "SeriesGroupBy.idxmax() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/groupby-skew-unknown-keyword",
+    "GroupBy.skew",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.groupby("a")[["b"]].skew(zz=1),
+    raises=("TypeError", "group_skew() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/groupby-nth-unknown-keyword",
+    "GroupBy.nth",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.groupby("a").nth(zz=1),
+    raises=("TypeError", "GroupByNthSelector.__call__() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/rolling-sum-unknown-keyword",
+    "Rolling.sum",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.rolling(2).sum(zz=1),
+    raises=("TypeError", "Rolling.sum() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/expanding-mean-unknown-keyword",
+    "Expanding.mean",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.expanding().mean(zz=1),
+    raises=("TypeError", "Expanding.mean() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/ewm-std-unknown-keyword",
+    "ExponentialMovingWindow.std",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.ewm(com=1).std(zz=1),
+    raises=("TypeError", "ExponentialMovingWindow.std() got an unexpected keyword argument 'zz'"),
+)
+case(
+    "errors/rolling-agg-without-function",
+    "Rolling.agg",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.rolling(2).agg(),
+    raises=("TypeError", "Must provide 'func' or tuples of '(column, aggfunc)."),
+)
+case(
+    "errors/series-groupby-agg-without-function",
+    "GroupBy.agg",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.groupby("a")["b"].agg(),
+    raises=("TypeError", "Must provide 'func' or named aggregation **kwargs."),
+)
+case(
+    "errors/series-groupby-agg-keyword-not-function",
+    "GroupBy.agg",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.groupby("a")["b"].agg(x=1),
+    raises=("TypeError", "func is expected but received int in **kwargs."),
+)
+case(
+    "errors/rolling-named-aggregation-missing-column",
+    "Rolling.agg",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.rolling(2).agg(x=("zz", "sum")),
+    raises=("KeyError", "Label(s) ['zz'] do not exist"),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",
