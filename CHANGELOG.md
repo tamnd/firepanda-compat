@@ -8,6 +8,8 @@ divergence registry format.
 
 ### Added
 
+- Three error cases for merge arguments: a `left_index` or `right_index` that is not a Boolean, and `merge_ordered` with `how="cross"`.
+- Board after firepanda #1574: 6897 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Seven error cases for arithmetic text cannot do, reached through `diff`, `pct_change`, a frame's `cumprod`, `mul` by text or floats, and `clip` with numeric bounds.
 - Board after firepanda #1573: 6894 pass, 0 unimplemented, 69 divergent, 0 fail.
 - Eleven error cases for position keys and flags: `iloc` with a float, a string or a pair holding one, `iat` with a non-integer, `head` and `tail` with a count that is no whole number, and a group by `numeric_only` that is not a Boolean.

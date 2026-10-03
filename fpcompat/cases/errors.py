@@ -513,6 +513,30 @@ case(
     raises=("TypeError", "Invalid comparison between dtype=str and int"),
 )
 case(
+    "errors/merge-left-index-not-bool",
+    "DataFrame.merge",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: df.merge(df, left_index=1, right_index=True),
+    raises=("ValueError", "left_index parameter must be of type bool, not <class 'int'>"),
+)
+case(
+    "errors/merge-right-index-not-bool",
+    "pandas.merge",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.merge(df, df, right_index="y"),
+    raises=("ValueError", "right_index parameter must be of type bool, not <class 'str'>"),
+)
+case(
+    "errors/merge-ordered-cross",
+    "pandas.merge_ordered",
+    level="L4",
+    frames=("two",),
+    expr=lambda pd, df: pd.merge_ordered(df[["a", "b"]], df[["a"]], on="a", how="cross"),
+    raises=("ValueError", "do not recognize join method cross"),
+)
+case(
     "errors/set-index-missing-column",
     "DataFrame.set_index",
     level="L4",
